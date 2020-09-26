@@ -10,7 +10,7 @@ contract Staking is Storage {
         // generate 5 percent of GHST in frens per year
         // 31536000 seconds in a year * 20 (5 percent) = 630720000
         // Conceptually this is: frens_ = account.frens + (account.ghst / 630720000) * (block.timestamp - account.lastUpdate);
-        // but how it is below is greater percision
+        // but how it is below is greater precision
         frens_ = account.frens + (account.ghst * (block.timestamp - account.lastUpdate)) / 630720000;
     }
 
