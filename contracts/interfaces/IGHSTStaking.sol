@@ -14,6 +14,7 @@ interface IGHSTStaking {
     // unstake and withdraw ghst back to the user
     function withdrawStake(uint256 _ghstValue) external;
 
+    // ERC1155 functions
     function safeTransferFrom(
         address _from,
         address _to,
@@ -30,6 +31,7 @@ interface IGHSTStaking {
         bytes calldata _data
     ) external;
 
+    // balance of specific Wearable Voucher
     function balanceOf(address _owner, uint256 _id) external view returns (uint256 balance_);
 
     function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids) external view returns (uint256[] memory balances_);
