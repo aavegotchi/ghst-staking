@@ -18,8 +18,9 @@ import "./libraries/Storage.sol";
 
 contract GHSTStaking is Storage {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
 
-    constructor(address _owner, IDiamondCut.FacetCut[] memory _diamondCut, address ) payable {
+    constructor(address _owner, IDiamondCut.FacetCut[] memory _diamondCut) payable {
         LibDiamondCut.diamondCut(_diamondCut, address(0), new bytes(0));
 
         LibDiamondStorage.DiamondStorage storage ds = LibDiamondStorage.diamondStorage();
@@ -31,7 +32,7 @@ contract GHSTStaking is Storage {
         ds.supportedInterfaces[IERC165.supportsInterface.selector] = true;
 
         // DiamondCut
-        ds.supportedInterfaces[IDiamondCut.diamondCut.selector] = true;
+        // ds.supportedInterfaces[IDiamondCut.diamondCut.selector] = true;
 
         // DiamondLoupe
         bytes4 interfaceID = IDiamondLoupe.facets.selector ^
@@ -42,6 +43,18 @@ contract GHSTStaking is Storage {
 
         // ERC173
         ds.supportedInterfaces[IERC173.transferOwnership.selector ^ IERC173.owner.selector] = true;
+
+        // ERC1155
+        ds.supportedInterfaces[0xd9b67a26] = true;
+
+        // create wearable vouchers:
+        emit TransferSingle(msg.sender, address(0), address(0), 0, 0);
+        emit TransferSingle(msg.sender, address(0), address(0), 1, 0);
+        emit TransferSingle(msg.sender, address(0), address(0), 2, 0);
+        emit TransferSingle(msg.sender, address(0), address(0), 3, 0);
+        emit TransferSingle(msg.sender, address(0), address(0), 4, 0);
+        emit TransferSingle(msg.sender, address(0), address(0), 5, 0);
+
     }
 
     // Find facet for function that is called and execute the
@@ -68,5 +81,7 @@ contract GHSTStaking is Storage {
         }
     }
 
-    receive() external payable {}
+    receive() external payable {
+        revert("GHSTStaking: Does not accept either");
+    }
 }

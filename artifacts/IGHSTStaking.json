@@ -28,6 +28,25 @@
     {
       "inputs": [
         {
+          "internalType": "address",
+          "name": "_owner",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOfAll",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "balances_",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "address[]",
           "name": "_owners",
           "type": "address[]"
@@ -47,6 +66,19 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "_ids",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "claimWearableVouchers",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -179,6 +211,24 @@
     {
       "inputs": [
         {
+          "internalType": "string[]",
+          "name": "_values",
+          "type": "string[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "_ids",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "setURIs",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "uint256",
           "name": "_ghstValue",
           "type": "uint256"
@@ -206,6 +256,70 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalSupplies",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "totalSupplies_",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        }
+      ],
+      "name": "totalSupply",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "totalSupply_",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "uris",
+      "outputs": [
+        {
+          "internalType": "string[]",
+          "name": "uris_",
+          "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        }
+      ],
+      "name": "wearableVoucherCosts",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "_frensCost",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "pure",
       "type": "function"
     },
     {
