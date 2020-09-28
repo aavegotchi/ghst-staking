@@ -26,7 +26,13 @@ async function main () {
 
   const abiEncodedAddress = ethers.utils.defaultAbiCoder.encode(['address'], [ghstAddress])
   // eslint-disable-next-line no-unused-vars
-  const result = await util.upgradeDiamond(ghstStakingDiamondAddress, ['Upgrade1'], [], 'Upgrade1', [abiEncodedAddress])
+  const result = await util.upgradeDiamond({
+    diamondAddress: ghstStakingDiamondAddress,
+    facetNames: ['Upgrade1'],
+    selectorsToRemove: [],
+    initFacetName: 'Upgrade1',
+    initArgs: [abiEncodedAddress]
+  })
   // console.log(result)
 }
 
