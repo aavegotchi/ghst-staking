@@ -22,9 +22,9 @@ async function main () {
   console.log('---')
 
   const ghstStakingDiamondAddress = '0x416a5ef245f77C9f547b5Ed812baEE3bE3d60431'
-  const ghstAddress = 
+  const ghstAddress = '0xBa05924532cf50Dc9598d2A708Daf69316fBA47F'
 
-  const abiEncodedAddress = ethers.utils.defaultAbiCoder.encode(['address'], [deployedDiamond.address])
+  const abiEncodedAddress = ethers.utils.defaultAbiCoder.encode(['address'], [ghstAddress])
   // eslint-disable-next-line no-unused-vars
   const result = await util.upgradeDiamond(ghstStakingDiamondAddress, ['Upgrade1'], [], 'Upgrade1', [abiEncodedAddress])
   // console.log(result)
