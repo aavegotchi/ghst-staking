@@ -20,25 +20,13 @@ async function main () {
   const account = await accounts[0].getAddress()
   console.log('Account: ' + account)
   console.log('---')
-  const deployedFacets = await util.deployFacets(
-    'DiamondCutFacet',
-    'DiamondLoupeFacet',
-    'OwnershipFacet',
-    'Staking',
-    'WearableVouchers'
-  )
-  const deployedDiamond = await util.deployDiamond('GHSTStaking', account, deployedFacets)
-  console.log(deployedDiamond.address)
+
+  const ghstStakingDiamondAddress = '0x416a5ef245f77C9f547b5Ed812baEE3bE3d60431'
+  const ghstAddress = 
 
   const abiEncodedAddress = ethers.utils.defaultAbiCoder.encode(['address'], [deployedDiamond.address])
   // eslint-disable-next-line no-unused-vars
-  const result = await util.upgradeDiamond({
-    diamondAddress: deployedDiamond.address,
-    facetNames: ['Upgrade1'],
-    selectorsToRemove: [],
-    initFacetName: 'Upgrade1',
-    initArgs: [abiEncodedAddress]
-  })
+  const result = await util.upgradeDiamond(ghstStakingDiamondAddress, ['Upgrade1'], [], 'Upgrade1', [abiEncodedAddress])
   // console.log(result)
 }
 
