@@ -19,13 +19,13 @@ contract Staking is Storage {
 
     function updateFrens() internal {
         Account storage account = s.accounts[msg.sender];
-        account.frens = uint40(frens(msg.sender));
+        account.frens = uint96(frens(msg.sender));
         account.lastUpdate = uint32(block.timestamp);
     }
 
     function stake(uint256 _ghstValue) external {
         updateFrens();
-        s.accounts[msg.sender].ghst += uint40(_ghstValue);
+        s.accounts[msg.sender].ghst += uint96(_ghstValue);
         IERC20(s.ghstContract).transferFrom(msg.sender, address(this), _ghstValue);
     }
 
@@ -37,7 +37,7 @@ contract Staking is Storage {
         updateFrens();
         uint256 bal = s.accounts[msg.sender].ghst;
         require(bal >= _ghstValue, "Staking: Can't withdraw more than staked");
-        s.accounts[msg.sender].ghst = uint40(bal - _ghstValue);
+        s.accounts[msg.sender].ghst = uint96(bal - _ghstValue);
         IERC20(s.ghstContract).transfer(msg.sender, _ghstValue);
     }
 
@@ -55,7 +55,7 @@ contract Staking is Storage {
             s.wearableTickets[id].accountBalances[msg.sender] += 1;
             s.wearableTickets[id].totalSupply += 1;
         }
-        s.accounts[msg.sender].frens = uint40(frensBal);
+        s.accounts[msg.sender].frens = uint96(frensBal);
         emit TransferBatch(address(this), address(0), msg.sender, _ids, values);
         uint256 size;
         address to = msg.sender;
