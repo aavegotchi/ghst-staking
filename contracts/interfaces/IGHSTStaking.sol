@@ -3,10 +3,10 @@ pragma solidity ^0.7.1;
 pragma experimental ABIEncoderV2;
 
 interface IGHSTStaking {
-    function wearableVoucherCosts(uint256 _id) external pure returns (uint256 _frensCost);
+    function wearableTicketCost(uint256 _id) external pure returns (uint256 _frensCost);
 
     // ids are 0 through 5.  0 is the lowest level and 5 is the highest level
-    function claimWearableVouchers(uint256[] calldata _ids) external;
+    function claimWearableTickets(uint256[] calldata _ids) external;
 
     // get how many frens points an account has
     function frens(address _account) external view returns (uint256 frens_);
@@ -20,12 +20,12 @@ interface IGHSTStaking {
     // unstake and withdraw ghst back to the user
     function withdrawStake(uint256 _ghstValue) external;
 
-    // Wearable Vouchers functions
+    // Wearable Tickets functions
 
-    // set URIs for the six different wearable vouchers
+    // set URIs for the six different wearable tickets
     function setURIs(string[] calldata _values, uint256[] calldata _ids) external;
 
-    // get the URIs for the wearable vouchers
+    // get the URIs for the wearable tickets
     function uris() external view returns (string[] memory uris_);
 
     function safeTransferFrom(

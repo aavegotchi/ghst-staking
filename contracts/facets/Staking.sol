@@ -41,6 +41,13 @@ contract Staking is Storage {
         IERC20(s.ghstContract).transfer(msg.sender, _ghstValue);
     }
 
+    function withdrawStake() external {
+        updateFrens();
+        uint256 bal = s.accounts[msg.sender].ghst;
+        s.accounts[msg.sender].ghst = uint96(0);
+        IERC20(s.ghstContract).transfer(msg.sender, bal);
+    }
+
     function claimWearableTickets(uint256[] calldata _ids) external {
         updateFrens();
         uint256[] memory values = new uint256[](_ids.length);

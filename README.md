@@ -6,4 +6,4 @@ The ABI for it is here: https://github.com/aavegotchi/ghst-staking/blob/master/a
 
 ### On Kovan Testnet
 
-- GHSTStaking diamond is here: 0xdb9712886d66184c3192F71CAe4626A29c135058
+- GHSTStaking diamond is here: 0x5E083148DF00401cdA6D129E7688FA6c7D3B51fD
