@@ -80,17 +80,17 @@ contract Staking is Storage {
 
     function wearableTicketCost(uint256 _id) public pure returns (uint256 _frensCost) {
         if (_id == 0) {
-            _frensCost = 50;
+            _frensCost = 50e18;
         } else if (_id == 1) {
-            _frensCost = 250;
+            _frensCost = 250e18;
         } else if (_id == 2) {
-            _frensCost = 500;
+            _frensCost = 500e18;
         } else if (_id == 3) {
-            _frensCost = 2_500;
+            _frensCost = 2_500e18;
         } else if (_id == 4) {
-            _frensCost = 10_000;
+            _frensCost = 10_000e18;
         } else if (_id == 5) {
-            _frensCost = 50_000;
+            _frensCost = 50_000e18;
         }
     }
 }
