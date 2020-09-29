@@ -3,22 +3,22 @@ pragma solidity ^0.7.1;
 
 contract Storage {
     struct Account {
-        uint40 ghst;
-        uint40 frens;
+        uint96 ghst;
+        uint96 frens;
         uint32 lastUpdate;
     }
 
-    struct WearableVoucher {
+    struct WearableTicket {
         // user address => balance
         mapping(address => uint256) accountBalances;
         string uri;
-        uint40 totalSupply;
+        uint96 totalSupply;
     }
 
     struct AppStorage {
         mapping(address => mapping(address => bool)) approved;
         mapping(address => Account) accounts;
-        mapping(uint256 => WearableVoucher) wearableVouchers;
+        mapping(uint256 => WearableTicket) wearableTickets;
         // enables us to add additional map slots here
         bytes32[1000] emptyMapSlots;
         address contractOwner;

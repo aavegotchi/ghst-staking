@@ -41,19 +41,19 @@ contract Staking is Storage {
         IERC20(s.ghstContract).transfer(msg.sender, _ghstValue);
     }
 
-    function claimWearableVouchers(uint256[] calldata _ids) external {
+    function claimWearableTickets(uint256[] calldata _ids) external {
         updateFrens();
         uint256[] memory values = new uint256[](_ids.length);
         uint256 frensBal = s.accounts[msg.sender].frens;
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
-            require(id < 6, "Staking: Wearable Voucher not found");
-            uint256 cost = wearableVoucherCost(id);
+            require(id < 6, "Staking: Wearable Ticket not found");
+            uint256 cost = wearableTicketCost(id);
             values[i] = cost;
             require(frensBal >= cost, "Staking: Not enough frens points");
             frensBal -= cost;
-            s.wearableVouchers[id].accountBalances[msg.sender] += 1;
-            s.wearableVouchers[id].totalSupply += 1;
+            s.wearableTickets[id].accountBalances[msg.sender] += 1;
+            s.wearableTickets[id].totalSupply += 1;
         }
         s.accounts[msg.sender].frens = uint40(frensBal);
         emit TransferBatch(address(this), address(0), msg.sender, _ids, values);
@@ -66,24 +66,24 @@ contract Staking is Storage {
             require(
                 ERC1155_BATCH_ACCEPTED ==
                     IERC1155TokenReceiver(msg.sender).onERC1155BatchReceived(address(this), address(0), _ids, values, new bytes(0)),
-                "Staking: Wearable Voucher transfer rejected/failed"
+                "Staking: Wearable Ticket transfer rejected/failed"
             );
         }
     }
 
-    function wearableVoucherCost(uint256 _id) public pure returns (uint256 _frensCost) {
+    function wearableTicketCost(uint256 _id) public pure returns (uint256 _frensCost) {
         if (_id == 0) {
-            _frensCost = 10_000;
+            _frensCost = 50;
         } else if (_id == 1) {
-            _frensCost = 50_000;
+            _frensCost = 250;
         } else if (_id == 2) {
-            _frensCost = 250_000;
+            _frensCost = 500;
         } else if (_id == 3) {
-            _frensCost = 1_000_000;
+            _frensCost = 2_500;
         } else if (_id == 4) {
-            _frensCost = 5_000_000;
+            _frensCost = 10_000;
         } else if (_id == 5) {
-            _frensCost = 20_000_000;
+            _frensCost = 50_000;
         }
     }
 }

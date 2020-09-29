@@ -30,7 +30,6 @@ library LibDiamondCut {
         address _init,
         bytes memory _calldata
     ) internal {
-        require(_diamondCut.length > 0, "LibDiamondCut: No facets to cut");
         LibDiamondStorage.DiamondStorage storage ds = LibDiamondStorage.diamondStorage();
         uint256 originalSelectorCount = ds.selectorCount;
         uint256 selectorCount = originalSelectorCount;

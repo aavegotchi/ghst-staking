@@ -20,8 +20,10 @@ contract GHSTStaking is Storage {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
 
-    constructor(address _owner, IDiamondCut.FacetCut[] memory _diamondCut) payable {
+    constructor(address _owner, IDiamondCut.FacetCut[] memory _diamondCut, address _ghstContract) payable {
         LibDiamondCut.diamondCut(_diamondCut, address(0), new bytes(0));        
+
+        s.ghstContract = _ghstContract;
 
         LibDiamondStorage.DiamondStorage storage ds = LibDiamondStorage.diamondStorage();
         s.contractOwner = _owner;

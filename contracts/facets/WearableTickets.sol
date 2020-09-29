@@ -6,27 +6,27 @@ import "../interfaces/IERC1155.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/Storage.sol";
 
-contract WearableVouchers is Storage, IERC1155 {
+contract WearableTickets is Storage, IERC1155 {
     bytes4 constant ERC1155_ERC165 = 0xd9b67a26; // ERC-165 identifier for the main token standard.
     bytes4 constant ERC1155_ERC165_TOKENRECEIVER = 0x4e2312e0; // ERC-165 identifier for the `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")) ^ bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
     bytes4 constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
     bytes4 constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
 
     function setURIs(string[] calldata _values, uint256[] calldata _ids) external {
-        require(msg.sender == s.contractOwner, "WearableVouchers: Must be admin of contract");
-        require(_values.length == _ids.length, "WearableVouchers: Wrong array length");
+        require(msg.sender == s.contractOwner, "WearableTickets: Must be admin of contract");
+        require(_values.length == _ids.length, "WearableTickets: Wrong array length");
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
-            require(id < 6, "WearableVouchers: Wearable Voucher not found");
+            require(id < 6, "WearableTickets: Wearable Voucher not found");
             string memory value = _values[i];
-            s.wearableVouchers[id].uri = value;
+            s.wearableTickets[id].uri = value;
             emit URI(value, id);
         }
     }
 
     function uris() external view returns (string[] memory uris_) {
         for (uint256 i; i < 6; i++) {
-            uris_[i] = s.wearableVouchers[i].uri;
+            uris_[i] = s.wearableTickets[i].uri;
         }
     }
 
@@ -51,12 +51,12 @@ contract WearableVouchers is Storage, IERC1155 {
         uint256 _value,
         bytes calldata _data
     ) external override {
-        require(_to != address(0), "WearableVouchers: Can't transfer to 0 address");
-        require(_from == msg.sender || s.approved[_from][msg.sender], "WearableVouchers: Not approved to transfer");
-        uint256 bal = s.wearableVouchers[_id].accountBalances[_from];
-        require(bal >= _value, "WearableVouchers: _value greater than balance");
-        s.wearableVouchers[_id].accountBalances[_from] = bal - _value;
-        s.wearableVouchers[_id].accountBalances[_to] += _value;
+        require(_to != address(0), "WearableTickets: Can't transfer to 0 address");
+        require(_from == msg.sender || s.approved[_from][msg.sender], "WearableTickets: Not approved to transfer");
+        uint256 bal = s.wearableTickets[_id].accountBalances[_from];
+        require(bal >= _value, "WearableTickets: _value greater than balance");
+        s.wearableTickets[_id].accountBalances[_from] = bal - _value;
+        s.wearableTickets[_id].accountBalances[_to] += _value;
         emit TransferSingle(msg.sender, _from, _to, _id, _value);
         uint256 size;
         assembly {
@@ -65,7 +65,7 @@ contract WearableVouchers is Storage, IERC1155 {
         if (size > 0) {
             require(
                 ERC1155_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155Received(msg.sender, _from, _id, _value, _data),
-                "WearableVouchers: Transfer rejected/failed by _to"
+                "WearableTickets: Transfer rejected/failed by _to"
             );
         }
     }
@@ -93,16 +93,16 @@ contract WearableVouchers is Storage, IERC1155 {
         uint256[] calldata _values,
         bytes calldata _data
     ) external override {
-        require(_to != address(0), "WearableVouchers: Can't transfer to 0 address");
-        require(_ids.length != _values.length, "WearableVouchers: _ids not the same length as _values");
-        require(_from == msg.sender || s.approved[_from][msg.sender], "WearableVouchers: Not approved to transfer");
+        require(_to != address(0), "WearableTickets: Can't transfer to 0 address");
+        require(_ids.length != _values.length, "WearableTickets: _ids not the same length as _values");
+        require(_from == msg.sender || s.approved[_from][msg.sender], "WearableTickets: Not approved to transfer");
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
             uint256 value = _values[i];
-            uint256 bal = s.wearableVouchers[id].accountBalances[_from];
-            require(bal >= value, "WearableVouchers: _value greater than balance");
-            s.wearableVouchers[id].accountBalances[_from] = bal - value;
-            s.wearableVouchers[id].accountBalances[_to] += value;
+            uint256 bal = s.wearableTickets[id].accountBalances[_from];
+            require(bal >= value, "WearableTickets: _value greater than balance");
+            s.wearableTickets[id].accountBalances[_from] = bal - value;
+            s.wearableTickets[id].accountBalances[_to] += value;
         }
         emit TransferBatch(msg.sender, _from, _to, _ids, _values);
         uint256 size;
@@ -112,26 +112,26 @@ contract WearableVouchers is Storage, IERC1155 {
         if (size > 0) {
             require(
                 ERC1155_BATCH_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155BatchReceived(msg.sender, _from, _ids, _values, _data),
-                "WearableVouchers: Transfer rejected/failed by _to"
+                "WearableTickets: Transfer rejected/failed by _to"
             );
         }
     }
 
     function totalSupplies() external view returns (uint256[] memory totalSupplies_) {
         for (uint256 i; i < 6; i++) {
-            totalSupplies_[i] = s.wearableVouchers[i].totalSupply;
+            totalSupplies_[i] = s.wearableTickets[i].totalSupply;
         }
     }
 
     function totalSupply(uint256 _id) external view returns (uint256 totalSupply_) {
         require(_id < 6, "WearableVourchers: Wearable Voucher not found");
-        totalSupply_ = s.wearableVouchers[_id].totalSupply;
+        totalSupply_ = s.wearableTickets[_id].totalSupply;
     }
 
     // returns the balance of each wearable voucher
     function balanceOfAll(address _owner) external view returns (uint256[] memory balances_) {
         for (uint256 i; i < 6; i++) {
-            balances_[i] = s.wearableVouchers[i].accountBalances[_owner];
+            balances_[i] = s.wearableTickets[i].accountBalances[_owner];
         }
     }
 
@@ -142,7 +142,7 @@ contract WearableVouchers is Storage, IERC1155 {
         @return balance_ The _owner's balance of the token type requested
      */
     function balanceOf(address _owner, uint256 _id) external override view returns (uint256 balance_) {
-        balance_ = s.wearableVouchers[_id].accountBalances[_owner];
+        balance_ = s.wearableTickets[_id].accountBalances[_owner];
     }
 
     /**
@@ -152,10 +152,10 @@ contract WearableVouchers is Storage, IERC1155 {
         @return balances_ The _owner's balance of the token types requested (i.e. balance for each (owner, id) pair)
      */
     function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids) external override view returns (uint256[] memory balances_) {
-        require(_owners.length == _ids.length, "WearableVouchers: _owners not same length as _ids");
+        require(_owners.length == _ids.length, "WearableTickets: _owners not same length as _ids");
         balances_ = new uint256[](_owners.length);
         for (uint256 i; i < _owners.length; i++) {
-            balances_[i] = s.wearableVouchers[_ids[i]].accountBalances[_owners[i]];
+            balances_[i] = s.wearableTickets[_ids[i]].accountBalances[_owners[i]];
         }
     }
 

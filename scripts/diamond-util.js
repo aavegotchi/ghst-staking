@@ -28,13 +28,19 @@ async function deployFacets (...facetNames) {
   for (const name of facetNames) {
     const facetFactory = await ethers.getContractFactory(name)
     console.log(`Deploying ${name}`)
-    deployed.push([name, await facetFactory.deploy()])
+    const deployedFactory = await facetFactory.deploy()
+    await deployedFactory.deployed()
+    console.log(`${name} deployed: ${deployedFactory.address}`)
+    console.log('--')
+    deployed.push([name, deployedFactory])
   }
+  /*
   for (const [name, deployedFactory] of deployed) {
     await deployedFactory.deployed()
     console.log('--')
     console.log(`${name} deployed: ${deployedFactory.address}`)
   }
+  */
   return deployed
 }
 
