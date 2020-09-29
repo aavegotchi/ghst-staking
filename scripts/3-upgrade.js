@@ -21,7 +21,7 @@ async function main () {
   console.log('Account: ' + account)
   console.log('---')
 
-  const ghstStakingDiamondAddress = '0xdb9712886d66184c3192F71CAe4626A29c135058'
+  const ghstStakingDiamondAddress = '0x5E083148DF00401cdA6D129E7688FA6c7D3B51fD'
 
   // eslint-disable-next-line no-unused-vars
   const result = await util.upgradeDiamond({
