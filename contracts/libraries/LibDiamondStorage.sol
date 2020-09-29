@@ -17,7 +17,7 @@ library LibDiamondStorage {
         mapping(uint256 => bytes32) selectorSlots;
         // The number of function selectors in selectorSlots
         uint16 selectorCount;        
-    }
+    }   
 
     function diamondStorage() internal pure returns (DiamondStorage storage ds) {
         bytes32 position = DIAMOND_STORAGE_POSITION;

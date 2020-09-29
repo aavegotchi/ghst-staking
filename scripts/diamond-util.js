@@ -75,15 +75,8 @@ async function upgradeDiamond ({
   initFacetName = undefined,
   initArgs = undefined
 }) {
-  let diamondCutFacet
-  let diamondLoupeFacet
-  try {
-    diamondCutFacet = (await ethers.getContractFactory('DiamondCutFacet')).attach(diamondAddress)
-    diamondLoupeFacet = (await ethers.getContractFactory('DiamondLoupeFacet')).attach(diamondAddress)
-  } catch (err) {
-    console.log('showing error: -------------------------------------------- ')
-    console.log(err)
-  }
+  const diamondCutFacet = (await ethers.getContractFactory('DiamondCutFacet')).attach(diamondAddress)
+  const diamondLoupeFacet = (await ethers.getContractFactory('DiamondLoupeFacet')).attach(diamondAddress)
 
   const diamondCut = []
   const existingFacets = await diamondLoupeFacet.facets()
