@@ -22,14 +22,18 @@ async function main () {
   console.log('Account: ' + account)
   console.log('---')
 
-  const ghstContractAddress = '0xeDaA788Ee96a0749a2De48738f5dF0AA88E99ab5'
+  // kovan
+  // const ghstContractAddress = '0xeDaA788Ee96a0749a2De48738f5dF0AA88E99ab5'
+
+  // mainnet
+  const ghstContractAddress = '0x3F382DbD960E3a9bbCeaE22651E88158d2791550'
 
   // eslint-disable-next-line no-unused-vars
   const deployedDiamond = await diamond.deploy({
     diamondName: 'GHSTStaking',
     owner: account,
     facetNames: [
-      'DiamondCutFacet',
+      // 'DiamondCutFacet',
       'DiamondLoupeFacet',
       'OwnershipFacet',
       'Staking',
