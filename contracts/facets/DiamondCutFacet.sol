@@ -9,9 +9,11 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IDiamondCut.sol";
 import "../libraries/LibDiamondStorage.sol";
 import "../libraries/LibDiamondCut.sol";
-import "../libraries/Storage.sol";
+import "../libraries/AppStorage.sol";
 
-contract DiamondCutFacet is Storage, IDiamondCut {
+contract DiamondCutFacet is IDiamondCut {
+    AppStorage s;
+
     // Standard diamondCut external function
     /// @notice Add/replace/remove any number of functions and optionally execute
     ///         a function with delegatecall

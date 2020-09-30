@@ -10,17 +10,18 @@ pragma experimental ABIEncoderV2;
 
 import "./libraries/LibDiamondStorage.sol";
 import "./libraries/LibDiamondCut.sol";
-import "./facets/OwnershipFacet.sol";
 import "./facets/DiamondLoupeFacet.sol";
 import "./facets/DiamondCutFacet.sol";
 import "./interfaces/IDiamondCut.sol";
-import "./libraries/Storage.sol";
+import "./interfaces/IERC173.sol";
+import "./libraries/AppStorage.sol";
 
-contract GHSTStaking is Storage {
+contract GHSTStaking {
+    AppStorage s;
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
 
-    constructor(address _owner, IDiamondCut.FacetCut[] memory _diamondCut, address _ghstContract) payable {
+    constructor(IDiamondCut.FacetCut[] memory _diamondCut, address _owner, address _ghstContract) {
         LibDiamondCut.diamondCut(_diamondCut, address(0), new bytes(0));        
 
         s.ghstContract = _ghstContract;
@@ -68,7 +69,7 @@ contract GHSTStaking is Storage {
             ds.slot := position
         }
         address facet = address(bytes20(ds.facets[msg.sig]));
-        require(facet != address(0), "Diamond: Function does not exist");
+        require(facet != address(0), "GHSTSTaking: Function does not exist");
         assembly {
             calldatacopy(0, 0, calldatasize())
             let result := delegatecall(gas(), facet, 0, calldatasize(), 0, 0)

@@ -4,9 +4,10 @@ pragma experimental ABIEncoderV2;
 
 import "../interfaces/IERC1155.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
-import "../libraries/Storage.sol";
+import "../libraries/AppStorage.sol";
 
-contract WearableTickets is Storage, IERC1155 {
+contract WearableTickets is IERC1155 {
+    AppStorage s;
     bytes4 constant ERC1155_ERC165 = 0xd9b67a26; // ERC-165 identifier for the main token standard.
     bytes4 constant ERC1155_ERC165_TOKENRECEIVER = 0x4e2312e0; // ERC-165 identifier for the `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")) ^ bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
     bytes4 constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
