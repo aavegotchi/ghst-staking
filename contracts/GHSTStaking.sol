@@ -8,28 +8,25 @@ pragma experimental ABIEncoderV2;
 * Implementation of an example of a diamond.
 /******************************************************************************/
 
-import "./libraries/LibDiamondStorage.sol";
-import "./libraries/LibDiamondCut.sol";
-import "./facets/DiamondLoupeFacet.sol";
-import "./facets/DiamondCutFacet.sol";
+import "./libraries/LibDiamond.sol";
+import "./interfaces/IDiamondLoupe.sol";
 import "./interfaces/IDiamondCut.sol";
 import "./interfaces/IERC173.sol";
+import "./interfaces/IERC165.sol";
 import "./libraries/AppStorage.sol";
 
 contract GHSTStaking {
-    AppStorage s;
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    AppStorage s;    
     event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
 
     constructor(IDiamondCut.FacetCut[] memory _diamondCut, address _owner, address _ghstContract) {
-        LibDiamondCut.diamondCut(_diamondCut, address(0), new bytes(0));        
+        LibDiamond.diamondCut(_diamondCut, address(0), new bytes(0));
+        LibDiamond.setContractOwner(_owner);
 
+        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
+        
         s.ghstContract = _ghstContract;
-
-        LibDiamondStorage.DiamondStorage storage ds = LibDiamondStorage.diamondStorage();
-        s.contractOwner = _owner;
-        emit OwnershipTransferred(address(0), _owner);
-
+        
         // adding ERC165 data
         // ERC165
         ds.supportedInterfaces[IERC165.supportsInterface.selector] = true;
@@ -37,18 +34,22 @@ contract GHSTStaking {
         // DiamondCut
         // ds.supportedInterfaces[IDiamondCut.diamondCut.selector] = true;
 
-        // DiamondLoupe
-        bytes4 interfaceID = IDiamondLoupe.facets.selector ^
+       // DiamondLoupe
+        ds.supportedInterfaces[
+            IDiamondLoupe.facets.selector ^
             IDiamondLoupe.facetFunctionSelectors.selector ^
             IDiamondLoupe.facetAddresses.selector ^
-            IDiamondLoupe.facetAddress.selector;
-        ds.supportedInterfaces[interfaceID] = true;
+            IDiamondLoupe.facetAddress.selector
+        ] = true;
 
         // ERC173
         ds.supportedInterfaces[IERC173.transferOwnership.selector ^ IERC173.owner.selector] = true;
 
-        // ERC1155
-        ds.supportedInterfaces[0xd9b67a26] = true;
+        // ERC173
+        ds.supportedInterfaces[
+            IERC173.transferOwnership.selector ^ 
+            IERC173.owner.selector
+        ] = true;
 
         // create wearable vouchers:
         emit TransferSingle(msg.sender, address(0), address(0), 0, 0);
@@ -63,8 +64,8 @@ contract GHSTStaking {
     // Find facet for function that is called and execute the
     // function if a facet is found and return any value.
     fallback() external payable {
-        LibDiamondStorage.DiamondStorage storage ds;
-        bytes32 position = LibDiamondStorage.DIAMOND_STORAGE_POSITION;
+        LibDiamond.DiamondStorage storage ds;
+        bytes32 position = LibDiamond.DIAMOND_STORAGE_POSITION;
         assembly {
             ds.slot := position
         }

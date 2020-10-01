@@ -10,10 +10,58 @@ pragma experimental ABIEncoderV2;
 * This code is as complex as it is to reduce gas costs.
 /******************************************************************************/
 
-import "./LibDiamondStorage.sol";
 import "../interfaces/IDiamondCut.sol";
 
-library LibDiamondCut {
+library LibDiamond {
+        bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.diamond.storage");
+
+    struct DiamondStorage {
+        // maps function selectors to the facets that execute the functions.
+        // and maps the selectors to their position in the selectorSlots array.        
+        // func selector => address facet, selector position
+        mapping(bytes4 => bytes32) facets;
+        // array of slots of function selectors.
+        // each slot holds 8 function selectors.
+        mapping(uint256 => bytes32) selectorSlots;
+        // The number of function selectors in selectorSlots
+        uint16 selectorCount;
+        // owner of the contract
+        // Used to query if a contract implements an interface.
+        // Used to implement ERC-165.
+        mapping(bytes4 => bool) supportedInterfaces;
+        // owner of the contract
+        address contractOwner;
+    }
+
+    function diamondStorage() internal pure returns (DiamondStorage storage ds) {
+        bytes32 position = DIAMOND_STORAGE_POSITION;
+        assembly {
+            ds.slot := position
+        }
+    }
+   
+   event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+   function setContractOwner(address _newOwner) internal {
+        DiamondStorage storage ds = diamondStorage();
+        address previousOwner = ds.contractOwner;
+        ds.contractOwner = _newOwner;
+        emit OwnershipTransferred(previousOwner, _newOwner);
+    }
+
+    function contractOwner() internal view returns (address contractOwner_) {
+        contractOwner_ = diamondStorage().contractOwner;
+    }
+
+    function enforceIsContractOwner() view internal {
+        require(msg.sender == diamondStorage().contractOwner, "LibDiamond: Must be contract owner");
+    }
+
+    modifier onlyOwner {
+        require(msg.sender == diamondStorage().contractOwner, "LibDiamond: Must be contract owner");
+        _;
+    }
+
     event DiamondCut(IDiamondCut.FacetCut[] _diamondCut, address _init, bytes _calldata);
 
     bytes32 constant CLEAR_ADDRESS_MASK = bytes32(uint256(0xffffffffffffffffffffffff));
@@ -30,7 +78,7 @@ library LibDiamondCut {
         address _init,
         bytes memory _calldata
     ) internal {
-        LibDiamondStorage.DiamondStorage storage ds = LibDiamondStorage.diamondStorage();
+        DiamondStorage storage ds = diamondStorage();
         uint256 originalSelectorCount = ds.selectorCount;
         uint256 selectorCount = originalSelectorCount;
         bytes32 selectorSlot;
@@ -67,11 +115,11 @@ library LibDiamondCut {
         IDiamondCut.FacetCutAction _action,
         bytes4[] memory _selectors
     ) internal returns (uint256, bytes32) {
-        LibDiamondStorage.DiamondStorage storage ds = LibDiamondStorage.diamondStorage();
+        DiamondStorage storage ds = diamondStorage();
         require(_selectors.length > 0, "LibDiamondCut: No selectors in facet to cut");
         // adding or replacing functions
         if (_newFacetAddress != address(0)) {
-            hasContractCode(_newFacetAddress, "LibDiamondCut: facet has no code");
+            enforceHasContractCode(_newFacetAddress, "LibDiamondCut: facet has no code");
             // add and replace selectors
             for (uint256 selectorIndex; selectorIndex < _selectors.length; selectorIndex++) {
                 bytes4 selector = _selectors[selectorIndex];
@@ -170,7 +218,7 @@ library LibDiamondCut {
         } else {
             require(_calldata.length > 0, "LibDiamondCut: _calldata is empty but _init is not address(0)");
             if (_init != address(this)) {
-                LibDiamondCut.hasContractCode(_init, "LibDiamondCut: _init address has no code");
+                enforceHasContractCode(_init, "LibDiamondCut: _init address has no code");
             }
             (bool success, bytes memory error) = _init.delegatecall(_calldata);
             if (!success) {
@@ -184,7 +232,7 @@ library LibDiamondCut {
         }
     }
 
-    function hasContractCode(address _contract, string memory _errorMessage) internal view {
+    function enforceHasContractCode(address _contract, string memory _errorMessage) internal view {
         uint256 contractSize;
         assembly {
             contractSize := extcodesize(_contract)

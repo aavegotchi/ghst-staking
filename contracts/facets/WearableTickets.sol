@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IERC1155.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/AppStorage.sol";
+import "../libraries/LibDiamond.sol";
 
 contract WearableTickets is IERC1155 {
     AppStorage s;
@@ -14,7 +15,7 @@ contract WearableTickets is IERC1155 {
     bytes4 constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
 
     function setURIs(string[] calldata _values, uint256[] calldata _ids) external {
-        require(msg.sender == s.contractOwner, "WearableTickets: Must be admin of contract");
+        LibDiamond.enforceIsContractOwner();
         require(_values.length == _ids.length, "WearableTickets: Wrong array length");
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
