@@ -2,6 +2,7 @@
 pragma solidity ^0.7.1;
 
 import "../libraries/AppStorage.sol";
+import "../libraries/SafeERC20.sol";
 import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 
@@ -27,7 +28,7 @@ contract Staking {
     function stake(uint256 _ghstValue) external {
         updateFrens();
         s.accounts[msg.sender].ghst += uint96(_ghstValue);
-        IERC20(s.ghstContract).transferFrom(msg.sender, address(this), _ghstValue);
+        SafeERC20.transferFrom(s.ghstContract, msg.sender, address(this), _ghstValue);
     }
 
     function staked(address _account) external view returns (uint256 staked_) {
@@ -39,14 +40,14 @@ contract Staking {
         uint256 bal = s.accounts[msg.sender].ghst;
         require(bal >= _ghstValue, "Staking: Can't withdraw more than staked");
         s.accounts[msg.sender].ghst = uint96(bal - _ghstValue);
-        IERC20(s.ghstContract).transfer(msg.sender, _ghstValue);
+        SafeERC20.transfer(s.ghstContract, msg.sender, _ghstValue);
     }
 
     function withdrawStake() external {
         updateFrens();
         uint256 bal = s.accounts[msg.sender].ghst;
         s.accounts[msg.sender].ghst = uint96(0);
-        IERC20(s.ghstContract).transfer(msg.sender, bal);
+        SafeERC20.transfer(s.ghstContract, msg.sender, bal);
     }
 
     function claimWearableTickets(uint256[] calldata _ids) external {
