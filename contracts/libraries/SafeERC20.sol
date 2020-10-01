@@ -6,6 +6,8 @@ pragma solidity ^0.7.1;
 *
 /******************************************************************************/
 
+import "../interfaces/IERC20.sol";
+
 library SafeERC20 {
     function transferFrom(
         address _token,
@@ -18,8 +20,7 @@ library SafeERC20 {
             size := extcodesize(_token)
         }
         require(size > 0, "SafeERC20: ERC20 token address has no code");
-        // transferFrom(address,address,uint256) == 0x23b872dd
-        (bool success, bytes memory result) = _token.call(abi.encodeWithSelector(0x23b872dd, _from, _to, _value));
+        (bool success, bytes memory result) = _token.call(abi.encodeWithSelector(IERC20.transferFrom.selector, _from, _to, _value));
         handleReturn(success, result);
     }
 
@@ -33,8 +34,7 @@ library SafeERC20 {
             size := extcodesize(_token)
         }
         require(size > 0, "SafeERC20: ERC20 token address has no code");
-        // transfer(address,uint256) == 0xa9059cbb
-        (bool success, bytes memory result) = _token.call(abi.encodeWithSelector(0xa9059cbb, _to, _value));
+        (bool success, bytes memory result) = _token.call(abi.encodeWithSelector(IERC20.transfer.selector, _to, _value));
         handleReturn(success, result);
     }
 
