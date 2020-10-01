@@ -79,9 +79,9 @@ library LibDiamondCut {
                 // add
                 if (_action == IDiamondCut.FacetCutAction.Add) {
                     require(address(bytes20(oldFacet)) == address(0), "LibDiamondCut: Can't add function that already exists");
-                    // update the last slot at then end of the function
+                    // update the last slot at the end of the function
                     uint256 selectorInSlotIndex = _selectorCount % 8;
-                    ds.facets[selector] = bytes32(bytes20(_newFacetAddress)) | bytes32(_selectorCount);
+                    ds.facets[selector] = bytes20(_newFacetAddress) | bytes32(_selectorCount);
                     // clear selector position in slot and add selector
                     _selectorSlot =
                         (_selectorSlot & ~(CLEAR_SELECTOR_MASK >> (selectorInSlotIndex * 32))) |
@@ -100,7 +100,7 @@ library LibDiamondCut {
                     require(oldFacetAddress != _newFacetAddress, "LibDiamondCut: Can't replace function with same function");
                     require(oldFacetAddress != address(0), "LibDiamondCut: Can't replace function that doesn't exist");
                     // replace old facet address
-                    ds.facets[selector] = (oldFacet & CLEAR_ADDRESS_MASK) | bytes32(bytes20(_newFacetAddress));
+                    ds.facets[selector] = (oldFacet & CLEAR_ADDRESS_MASK) | bytes20(_newFacetAddress);
                 } else {
                     revert("LibDiamondCut: Incorrect FacetCutAction");
                 }
