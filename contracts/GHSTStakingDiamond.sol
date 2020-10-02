@@ -43,15 +43,17 @@ contract GHSTStakingDiamond {
             IDiamondLoupe.facetAddresses.selector ^
             IDiamondLoupe.facetAddress.selector
         ] = true;
-
-        // ERC173
-        ds.supportedInterfaces[IERC173.transferOwnership.selector ^ IERC173.owner.selector] = true;
-
+        
         // ERC173
         ds.supportedInterfaces[
             IERC173.transferOwnership.selector ^ 
             IERC173.owner.selector
         ] = true;
+
+        // ERC1155
+        // ERC-1155 `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")) ^ bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
+        ds.supportedInterfaces[0x4e2312e0] = true;
+
 
         // create wearable vouchers:
         emit TransferSingle(msg.sender, address(0), address(0), 0, 0);
