@@ -19,6 +19,7 @@ struct AppStorage {
     mapping(address => mapping(address => bool)) approved;
     mapping(address => Account) accounts;
     mapping(uint256 => WearableTicket) wearableTickets;
+    string wearableTicketsBaseUri;
     // enables us to add additional map slots here
     bytes32[1000] emptyMapSlots;
     address ghstContract;

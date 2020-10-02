@@ -6,6 +6,7 @@ import "../interfaces/IERC1155.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/AppStorage.sol";
 import "../libraries/LibDiamond.sol";
+import "../libraries/Strings.sol";
 
 contract WearableTicketsFacet is IERC1155 {
     AppStorage s;
@@ -14,22 +15,17 @@ contract WearableTicketsFacet is IERC1155 {
     bytes4 constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
     bytes4 constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
 
-    function setURIs(string[] calldata _values, uint256[] calldata _ids) external {
+    function setURIs(string memory _value) external {
         LibDiamond.enforceIsContractOwner();
-        require(_values.length == _ids.length, "WearableTickets: Wrong array length");
-        for (uint256 i; i < _ids.length; i++) {
-            uint256 id = _ids[i];
-            require(id < 6, "WearableTickets: Wearable Voucher not found");
-            string memory value = _values[i];
-            s.wearableTickets[id].uri = value;
-            emit URI(value, id);
+        s.wearableTicketsBaseUri = _value;
+        for (uint256 i; i < 6; i++) {
+            emit URI(string(abi.encodePacked(_value, Strings.toString(i))), i);
         }
     }
 
-    function uris() external view returns (string[] memory uris_) {
-        for (uint256 i; i < 6; i++) {
-            uris_[i] = s.wearableTickets[i].uri;
-        }
+    function uri(uint256 _id) external view returns (string memory) {
+        require(_id < 6, "_id now found for wearkable ticket");
+        return string(abi.encodePacked(s.wearableTicketsBaseUri, Strings.toString(_id)));
     }
 
     /**
