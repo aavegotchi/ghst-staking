@@ -49,11 +49,7 @@ contract GHSTStakingDiamond {
             IERC173.transferOwnership.selector ^ 
             IERC173.owner.selector
         ] = true;
-
-        // ERC1155
-        // ERC-1155 `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")) ^ bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
-        ds.supportedInterfaces[0x4e2312e0] = true;
-
+        
         // ERC1155
         // ERC165 identifier for the main token standard.
         ds.supportedInterfaces[0xd9b67a26] = true;
