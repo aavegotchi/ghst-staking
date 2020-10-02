@@ -14,9 +14,17 @@ contract StakingFacet {
 
     function frens(address _account) public view returns (uint256 frens_) {
         Account memory account = s.accounts[_account];
+        uint256 poolGhst;
+        if (account.uniV2PoolTokens > 0) {
+            // Calculated from the burn function of the UniswapV2Pair.sol contract
+            // https://github.com/Uniswap/uniswap-v2-core/blob/master/contracts/UniswapV2Pair.sol#L144
+            uint256 poolContractGhstBalance = IERC20(s.ghstContract).balanceOf(s.uniV2PoolContract);
+            // multiply the poolGhst by 2 because the user is also supplying Eth for the pool
+            poolGhst = ((account.uniV2PoolTokens * poolContractGhstBalance) / IERC20(s.uniV2PoolContract).totalSupply()) * 2;
+        }
         // 86400 the number of seconds in 1 day
         // frens are generated 1 fren for each GHST over 24 hours
-        frens_ = account.frens + (account.ghst * (block.timestamp - account.lastUpdate)) / 86400;
+        frens_ = account.frens + ((account.ghst + poolGhst) * (block.timestamp - account.lastUpdate)) / 86400;
     }
 
     function updateFrens() internal {
@@ -25,17 +33,24 @@ contract StakingFacet {
         account.lastUpdate = uint32(block.timestamp);
     }
 
-    function stake(uint256 _ghstValue) external {
+    function stakeGhst(uint256 _ghstValue) external {
         updateFrens();
         s.accounts[msg.sender].ghst += uint96(_ghstValue);
         LibERC20.transferFrom(s.ghstContract, msg.sender, address(this), _ghstValue);
     }
 
-    function staked(address _account) external view returns (uint256 staked_) {
-        staked_ = s.accounts[_account].ghst;
+    function stakeUniV2PoolTokens(uint256 _uniV2PoolTokens) external {
+        updateFrens();
+        s.accounts[msg.sender].uniV2PoolTokens += uint96(_uniV2PoolTokens);
+        LibERC20.transferFrom(s.uniV2PoolContract, msg.sender, address(this), _uniV2PoolTokens);
     }
 
-    function withdrawStake(uint256 _ghstValue) external {
+    function staked(address _account) external view returns (uint256 ghst_, uint256 uniV2PoolTokens_) {
+        ghst_ = s.accounts[_account].ghst;
+        uniV2PoolTokens_ = s.accounts[_account].uniV2PoolTokens;
+    }
+
+    function withdrawGhstStake(uint256 _ghstValue) external {
         updateFrens();
         uint256 bal = s.accounts[msg.sender].ghst;
         require(bal >= _ghstValue, "Staking: Can't withdraw more than staked");
@@ -43,11 +58,26 @@ contract StakingFacet {
         LibERC20.transfer(s.ghstContract, msg.sender, _ghstValue);
     }
 
-    function withdrawStake() external {
+    function withdrawUniV2PoolStake(uint256 _uniV2PoolTokens) external {
+        updateFrens();
+        uint256 bal = s.accounts[msg.sender].uniV2PoolTokens;
+        require(bal >= _uniV2PoolTokens, "Staking: Can't withdraw more than staked");
+        s.accounts[msg.sender].uniV2PoolTokens = uint96(bal - _uniV2PoolTokens);
+        LibERC20.transfer(s.uniV2PoolContract, msg.sender, _uniV2PoolTokens);
+    }
+
+    function withdrawGhstStake() external {
         updateFrens();
         uint256 bal = s.accounts[msg.sender].ghst;
         s.accounts[msg.sender].ghst = uint96(0);
         LibERC20.transfer(s.ghstContract, msg.sender, bal);
+    }
+
+    function withdrawUniV2PoolStake() external {
+        updateFrens();
+        uint256 bal = s.accounts[msg.sender].uniV2PoolTokens;
+        s.accounts[msg.sender].uniV2PoolTokens = uint96(0);
+        LibERC20.transfer(s.uniV2PoolContract, msg.sender, bal);
     }
 
     function claimWearableTickets(uint256[] calldata _ids) external {

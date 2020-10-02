@@ -23,23 +23,24 @@ async function main () {
   console.log('---')
 
   // kovan
-  // const ghstContractAddress = '0xeDaA788Ee96a0749a2De48738f5dF0AA88E99ab5'
+  const ghstContractAddress = '0xeDaA788Ee96a0749a2De48738f5dF0AA88E99ab5'
+  const uniV2PoolContractAddress = '0xed804550911e985c428537fbf8f8622e4dba4b5d'
 
   // mainnet
-  const ghstContractAddress = '0x3F382DbD960E3a9bbCeaE22651E88158d2791550'
+  // const ghstContractAddress = '0x3F382DbD960E3a9bbCeaE22651E88158d2791550'
 
   // eslint-disable-next-line no-unused-vars
   const deployedDiamond = await diamond.deploy({
     diamondName: 'GHSTStakingDiamond',
     owner: account,
     facetNames: [
-      // 'DiamondCutFacet',
+      'DiamondCutFacet',
       'DiamondLoupeFacet',
       'OwnershipFacet',
       'StakingFacet',
       'WearableTicketsFacet'
     ],
-    otherArgs: [ghstContractAddress]
+    otherArgs: [ghstContractAddress, uniV2PoolContractAddress]
   })
 }
 

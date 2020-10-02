@@ -19,13 +19,15 @@ contract GHSTStakingDiamond {
     AppStorage s;    
     event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
 
-    constructor(IDiamondCut.FacetCut[] memory _diamondCut, address _owner, address _ghstContract) {
+    constructor(IDiamondCut.FacetCut[] memory _diamondCut, address _owner, address _ghstContract, address _uniV2PoolContract) {
         LibDiamond.diamondCut(_diamondCut, address(0), new bytes(0));
         LibDiamond.setContractOwner(_owner);
 
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         
         s.ghstContract = _ghstContract;
+
+        s.uniV2PoolContract = _uniV2PoolContract;
         
         // adding ERC165 data
         // ERC165

@@ -11,16 +11,19 @@ interface IGHSTStakingDiamond {
     // get how many frens points an account has
     function frens(address _account) external view returns (uint256 frens_);
 
-    // stake ghst for frens points
-    function stake(uint256 _ghstValue) external;
+    function stakeGhst(uint256 _ghstValue) external;
 
-    // get how much ghst an account has staked for frens
-    function staked(address _account) external view returns (uint256 staked_);
+    function stakeUniV2PoolTokens(uint256 _uniV2PoolTokens) external;
 
-    // unstake and withdraw ghst back to the user
-    function withdrawStake(uint256 _ghstValue) external;
+    function staked(address _account) external view returns (uint256 ghst_, uint256 uniV2PoolTokens_);
 
-    // Wearable Tickets functions
+    function withdrawGhstStake(uint256 _ghstValue) external;
+
+    function withdrawUniV2PoolStake(uint256 _uniV2PoolTokens) external;
+
+    function withdrawGhstStake() external;
+
+    function withdrawUniV2PoolStake() external;
 
     // set URIs for the six different wearable tickets
     function setURIs(string[] calldata _values, uint256[] calldata _ids) external;
