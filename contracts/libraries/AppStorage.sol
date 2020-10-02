@@ -11,7 +11,6 @@ struct Account {
 struct WearableTicket {
     // user address => balance
     mapping(address => uint256) accountBalances;
-    string uri;
     uint96 totalSupply;
 }
 

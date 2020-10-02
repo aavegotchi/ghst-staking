@@ -15,17 +15,17 @@ contract WearableTicketsFacet is IERC1155 {
     bytes4 constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
     bytes4 constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
 
-    function setURIs(string memory _value) external {
+    function setBaseURI(string memory _value) external {
         LibDiamond.enforceIsContractOwner();
         s.wearableTicketsBaseUri = _value;
         for (uint256 i; i < 6; i++) {
-            emit URI(string(abi.encodePacked(_value, Strings.toString(i))), i);
+            emit URI(string(abi.encodePacked(_value, Strings.uintStr(i))), i);
         }
     }
 
     function uri(uint256 _id) external view returns (string memory) {
         require(_id < 6, "_id now found for wearkable ticket");
-        return string(abi.encodePacked(s.wearableTicketsBaseUri, Strings.toString(_id)));
+        return string(abi.encodePacked(s.wearableTicketsBaseUri, Strings.uintStr(_id)));
     }
 
     /**
