@@ -34,7 +34,7 @@ async function main () {
     diamondName: 'GHSTStakingDiamond',
     owner: account,
     facetNames: [
-      'DiamondCutFacet',
+      // 'DiamondCutFacet',
       'DiamondLoupeFacet',
       'OwnershipFacet',
       'StakingFacet',
