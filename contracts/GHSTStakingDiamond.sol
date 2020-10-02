@@ -14,6 +14,7 @@ import "./interfaces/IDiamondCut.sol";
 import "./interfaces/IERC173.sol";
 import "./interfaces/IERC165.sol";
 import "./libraries/AppStorage.sol";
+import "./interfaces/IERC1155Metadata_URI.sol";
 
 contract GHSTStakingDiamond {
     AppStorage s;    
@@ -54,7 +55,11 @@ contract GHSTStakingDiamond {
         // ERC165 identifier for the main token standard.
         ds.supportedInterfaces[0xd9b67a26] = true;
 
-        // create wearable vouchers:
+        // ERC1155
+        // ERC1155Metadata_URI        
+        ds.supportedInterfaces[IERC1155Metadata_URI.uri.selector] = true;
+
+        // create wearable tickets:
         emit TransferSingle(msg.sender, address(0), address(0), 0, 0);
         emit TransferSingle(msg.sender, address(0), address(0), 1, 0);
         emit TransferSingle(msg.sender, address(0), address(0), 2, 0);
