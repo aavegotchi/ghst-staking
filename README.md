@@ -5,7 +5,7 @@ Uses the [diamond-2](https://github.com/mudgen/diamond-2) implementation of EIP-
 
 The functionality for GHSTStakingDiamond that can be used in the UI is here: https://github.com/aavegotchi/ghst-staking/blob/master/contracts/interfaces/IGHSTStakingDiamond.sol
 
-The ABI for it is here: https://github.com/aavegotchi/ghst-staking/blob/master/artifacts/GHSTStakingDiamond.json
+The ABI for it is here: https://github.com/aavegotchi/ghst-staking/blob/master/artifacts/IGHSTStakingDiamond.json
 
 ### On Kovan Testnet
 
