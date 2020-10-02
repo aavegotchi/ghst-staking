@@ -30,14 +30,14 @@ async function main () {
 
   // eslint-disable-next-line no-unused-vars
   const deployedDiamond = await diamond.deploy({
-    diamondName: 'GHSTStaking',
+    diamondName: 'GHSTStakingDiamond',
     owner: account,
     facetNames: [
       // 'DiamondCutFacet',
       'DiamondLoupeFacet',
       'OwnershipFacet',
-      'Staking',
-      'WearableTickets'
+      'StakingFacet',
+      'WearableTicketsFacet'
     ],
     otherArgs: [ghstContractAddress]
   })

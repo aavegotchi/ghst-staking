@@ -8,7 +8,7 @@ pragma solidity ^0.7.1;
 
 import "../interfaces/IERC20.sol";
 
-library SafeERC20 {
+library LibERC20 {
     function transferFrom(
         address _token,
         address _from,

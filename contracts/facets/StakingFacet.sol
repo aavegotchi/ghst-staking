@@ -2,11 +2,11 @@
 pragma solidity ^0.7.1;
 
 import "../libraries/AppStorage.sol";
-import "../libraries/SafeERC20.sol";
+import "../libraries/LibERC20.sol";
 import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 
-contract Staking {
+contract StakingFacet {
     AppStorage s;
     bytes4 constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
     // event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
@@ -28,7 +28,7 @@ contract Staking {
     function stake(uint256 _ghstValue) external {
         updateFrens();
         s.accounts[msg.sender].ghst += uint96(_ghstValue);
-        SafeERC20.transferFrom(s.ghstContract, msg.sender, address(this), _ghstValue);
+        LibERC20.transferFrom(s.ghstContract, msg.sender, address(this), _ghstValue);
     }
 
     function staked(address _account) external view returns (uint256 staked_) {
@@ -40,14 +40,14 @@ contract Staking {
         uint256 bal = s.accounts[msg.sender].ghst;
         require(bal >= _ghstValue, "Staking: Can't withdraw more than staked");
         s.accounts[msg.sender].ghst = uint96(bal - _ghstValue);
-        SafeERC20.transfer(s.ghstContract, msg.sender, _ghstValue);
+        LibERC20.transfer(s.ghstContract, msg.sender, _ghstValue);
     }
 
     function withdrawStake() external {
         updateFrens();
         uint256 bal = s.accounts[msg.sender].ghst;
         s.accounts[msg.sender].ghst = uint96(0);
-        SafeERC20.transfer(s.ghstContract, msg.sender, bal);
+        LibERC20.transfer(s.ghstContract, msg.sender, bal);
     }
 
     function claimWearableTickets(uint256[] calldata _ids) external {

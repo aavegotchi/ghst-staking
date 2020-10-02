@@ -15,7 +15,7 @@ import "./interfaces/IERC173.sol";
 import "./interfaces/IERC165.sol";
 import "./libraries/AppStorage.sol";
 
-contract GHSTStaking {
+contract GHSTStakingDiamond {
     AppStorage s;    
     event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
 

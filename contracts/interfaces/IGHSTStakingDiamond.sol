@@ -2,7 +2,7 @@
 pragma solidity ^0.7.1;
 pragma experimental ABIEncoderV2;
 
-interface IGHSTStaking {
+interface IGHSTStakingDiamond {
     function wearableTicketCost(uint256 _id) external pure returns (uint256 _frensCost);
 
     // ids are 0 through 5.  0 is the lowest level and 5 is the highest level
