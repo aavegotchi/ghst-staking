@@ -19,10 +19,8 @@ contract StakingFacet {
             // Calculated from the burn function of the UniswapV2Pair.sol contract
             // https://github.com/Uniswap/uniswap-v2-core/blob/master/contracts/UniswapV2Pair.sol#L144
             uint256 poolContractGhstBalance = IERC20(s.ghstContract).balanceOf(s.uniV2PoolContract);
-            uint256 uniV2PoolTokenSupply = IERC20(s.uniV2PoolContract).totalSupply();
-            require(uniV2PoolTokenSupply > 0, "Uniswap Pool token supply is 0");
             // multiply the poolGhst by 2 because the user is also supplying Eth for the pool
-            poolGhst = ((account.uniV2PoolTokens * poolContractGhstBalance) / uniV2PoolTokenSupply) * 2;
+            poolGhst = ((account.uniV2PoolTokens * poolContractGhstBalance) / IERC20(s.uniV2PoolContract).totalSupply()) * 2;
         }
         // 86400 the number of seconds in 1 day
         // frens are generated 1 fren for each GHST over 24 hours
