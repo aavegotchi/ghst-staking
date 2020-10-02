@@ -88,7 +88,7 @@ contract StakingFacet {
             uint256 id = _ids[i];
             require(id < 6, "Staking: Wearable Ticket not found");
             uint256 cost = wearableTicketCost(id);
-            values[i]++;
+            values[i] = 1;
             require(frensBal >= cost, "Staking: Not enough frens points");
             frensBal -= cost;
             s.wearableTickets[id].accountBalances[msg.sender] += 1;
