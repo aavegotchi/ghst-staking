@@ -211,17 +211,12 @@
     {
       "inputs": [
         {
-          "internalType": "string[]",
-          "name": "_values",
-          "type": "string[]"
-        },
-        {
-          "internalType": "uint256[]",
-          "name": "_ids",
-          "type": "uint256[]"
+          "internalType": "string",
+          "name": "_value",
+          "type": "string"
         }
       ],
-      "name": "setURIs",
+      "name": "setBaseURI",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -309,13 +304,19 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "uris",
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        }
+      ],
+      "name": "uri",
       "outputs": [
         {
-          "internalType": "string[]",
-          "name": "uris_",
-          "type": "string[]"
+          "internalType": "string",
+          "name": "",
+          "type": "string"
         }
       ],
       "stateMutability": "view",

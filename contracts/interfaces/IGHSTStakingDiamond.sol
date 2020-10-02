@@ -26,10 +26,10 @@ interface IGHSTStakingDiamond {
     function withdrawUniV2PoolStake() external;
 
     // set URIs for the six different wearable tickets
-    function setURIs(string[] calldata _values, uint256[] calldata _ids) external;
+    function setBaseURI(string memory _value) external;
 
     // get the URIs for the wearable tickets
-    function uris() external view returns (string[] memory uris_);
+    function uri(uint256 _id) external view returns (string memory);
 
     function safeTransferFrom(
         address _from,
