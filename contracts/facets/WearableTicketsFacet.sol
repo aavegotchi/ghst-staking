@@ -114,6 +114,7 @@ contract WearableTicketsFacet is IERC1155 {
     }
 
     function totalSupplies() external view returns (uint256[] memory totalSupplies_) {
+        totalSupplies_ = new uint256[](6);
         for (uint256 i; i < 6; i++) {
             totalSupplies_[i] = s.wearableTickets[i].totalSupply;
         }
