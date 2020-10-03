@@ -127,6 +127,7 @@ contract WearableTicketsFacet is IERC1155 {
 
     // returns the balance of each wearable voucher
     function balanceOfAll(address _owner) external view returns (uint256[] memory balances_) {
+        balances_ = new uint256[](6);
         for (uint256 i; i < 6; i++) {
             balances_[i] = s.wearableTickets[i].accountBalances[_owner];
         }
