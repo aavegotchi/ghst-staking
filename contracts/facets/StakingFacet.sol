@@ -26,7 +26,7 @@ contract StakingFacet {
             uint256 uniV2PoolTotalSupply = IERC20(s.uniV2PoolContract).totalSupply();
             // Calculate share of GHST from the pool
             poolGhst = (account.uniV2PoolTokens * poolGhstContractBalance) / uniV2PoolTotalSupply;
-            // Calculate share of Eth form the pool
+            // Calculate share of Eth from the pool
             uint256 poolEth = (account.uniV2PoolTokens * poolEthContractBalance) / uniV2PoolTotalSupply;
             // Calculate and add GHST from share of ETH in the pool
             poolGhst += (poolEth * poolGhstContractBalance) / poolEthContractBalance;
