@@ -5,6 +5,7 @@ import "../libraries/AppStorage.sol";
 import "../libraries/LibERC20.sol";
 import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
+import "../interfaces/IUniswapV2Pair.sol";
 
 contract StakingFacet {
     AppStorage s;
@@ -18,9 +19,19 @@ contract StakingFacet {
         if (account.uniV2PoolTokens > 0) {
             // Calculated from the burn function of the UniswapV2Pair.sol contract
             // https://github.com/Uniswap/uniswap-v2-core/blob/master/contracts/UniswapV2Pair.sol#L144
-            uint256 poolContractGhstBalance = IERC20(s.ghstContract).balanceOf(s.uniV2PoolContract);
-            // multiply the poolGhst by 2 because the user is also supplying Eth for the pool
-            poolGhst = ((account.uniV2PoolTokens * poolContractGhstBalance) / IERC20(s.uniV2PoolContract).totalSupply()) * 2;
+            (uint256 poolGhstContractBalance, uint256 poolEthContractBalance, ) = IUniswapV2Pair(s.uniV2PoolContract).getReserves();
+            if (IUniswapV2Pair(s.uniV2PoolContract).token0() != s.ghstContract) {
+                (poolGhstContractBalance, poolEthContractBalance) = (poolEthContractBalance, poolGhstContractBalance);
+            }
+            uint256 uniV2PoolTotalSupply = IERC20(s.uniV2PoolContract).totalSupply();
+            // Calculate share of GHST from the pool
+            poolGhst = (account.uniV2PoolTokens * poolGhstContractBalance) / uniV2PoolTotalSupply;
+            // Calculate share of Eth form the pool
+            uint256 poolEth = (account.uniV2PoolTokens * poolEthContractBalance) / uniV2PoolTotalSupply;
+            // Calulate and add GHST from share of ETH in the pool
+            poolGhst += (poolEth * poolGhstContractBalance) / poolEthContractBalance;
+            // 20 percent bonus for adding liquidity to uniswap
+            poolGhst += poolGhst / 5;
         }
         // 86400 the number of seconds in 1 day
         // frens are generated 1 fren for each GHST over 24 hours
