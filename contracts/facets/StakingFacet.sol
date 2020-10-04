@@ -28,7 +28,7 @@ contract StakingFacet {
             poolGhst = (account.uniV2PoolTokens * poolGhstContractBalance) / uniV2PoolTotalSupply;
             // Calculate share of Eth form the pool
             uint256 poolEth = (account.uniV2PoolTokens * poolEthContractBalance) / uniV2PoolTotalSupply;
-            // Calulate and add GHST from share of ETH in the pool
+            // Calculate and add GHST from share of ETH in the pool
             poolGhst += (poolEth * poolGhstContractBalance) / poolEthContractBalance;
             // 20 percent bonus for adding liquidity to uniswap
             poolGhst += poolGhst / 5;
