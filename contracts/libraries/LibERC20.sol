@@ -19,7 +19,7 @@ library LibERC20 {
         assembly {
             size := extcodesize(_token)
         }
-        require(size > 0, "SafeERC20: ERC20 token address has no code");
+        require(size > 0, "LibERC20: ERC20 token address has no code");
         (bool success, bytes memory result) = _token.call(abi.encodeWithSelector(IERC20.transferFrom.selector, _from, _to, _value));
         handleReturn(success, result);
     }
@@ -33,7 +33,7 @@ library LibERC20 {
         assembly {
             size := extcodesize(_token)
         }
-        require(size > 0, "SafeERC20: ERC20 token address has no code");
+        require(size > 0, "LibERC20: ERC20 token address has no code");
         (bool success, bytes memory result) = _token.call(abi.encodeWithSelector(IERC20.transfer.selector, _to, _value));
         handleReturn(success, result);
     }
@@ -41,14 +41,14 @@ library LibERC20 {
     function handleReturn(bool _success, bytes memory _result) internal pure {
         if (_success) {
             if (_result.length > 0) {
-                require(abi.decode(_result, (bool)), "SafeERC20: transfer or transferFrom returned false");
+                require(abi.decode(_result, (bool)), "LibERC20: transfer or transferFrom returned false");
             }
         } else {
             if (_result.length > 0) {
                 // bubble up any reason for revert
                 revert(string(_result));
             } else {
-                revert("SafeERC20: transfer or transferFrom reverted");
+                revert("LibERC20: transfer or transferFrom reverted");
             }
         }
     }
