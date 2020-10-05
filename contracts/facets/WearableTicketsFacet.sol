@@ -22,7 +22,7 @@ contract WearableTicketsFacet is IERC1155 {
     }
 
     function uri(uint256 _id) external view returns (string memory) {
-        require(_id < 6, "_id now found for wearkable ticket");
+        require(_id < 6, "_id not found for wearable ticket");
         return string(abi.encodePacked(s.wearableTicketsBaseUri, Strings.uintStr(_id)));
     }
 
