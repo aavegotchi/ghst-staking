@@ -26,7 +26,7 @@ contract StakingFacet {
 
     function updateFrens() internal {
         Account storage account = s.accounts[msg.sender];
-        account.frens = uint96(frens(msg.sender));
+        account.frens = uint104(frens(msg.sender));
         account.lastUpdate = uint32(block.timestamp);
     }
 
