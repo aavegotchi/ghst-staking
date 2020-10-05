@@ -3,10 +3,10 @@ pragma solidity ^0.7.1;
 pragma experimental ABIEncoderV2;
 
 interface IGHSTStakingDiamond {
-    function wearableTicketCost(uint256 _id) external pure returns (uint256 _frensCost);
+    function ticketCost(uint256 _id) external pure returns (uint256 _frensCost);
 
     // ids are 0 through 5.  0 is the lowest level and 5 is the highest level
-    function claimWearableTickets(uint256[] calldata _ids) external;
+    function claimTickets(uint256[] calldata _ids) external;
 
     // get how many frens points an account has
     function frens(address _account) external view returns (uint256 frens_);
@@ -25,10 +25,10 @@ interface IGHSTStakingDiamond {
 
     function withdrawUniV2PoolStake() external;
 
-    // set URIs for the six different wearable tickets
+    // set URIs for the six different  tickets
     function setBaseURI(string memory _value) external;
 
-    // get the URIs for the wearable tickets
+    // get the URIs for the  tickets
     function uri(uint256 _id) external view returns (string memory);
 
     function safeTransferFrom(
@@ -47,15 +47,15 @@ interface IGHSTStakingDiamond {
         bytes calldata _data
     ) external;
 
-    // total supply of wearable voucher
+    // total supply of  voucher
     function totalSupply(uint256 _id) external view returns (uint256 totalSupply_);
 
     function totalSupplies() external view returns (uint256[] memory totalSupplies_);
 
-    // balance of specific Wearable Voucher
+    // balance of specific  Voucher
     function balanceOf(address _owner, uint256 _id) external view returns (uint256 balance_);
 
-    // get balance for each Wearable Voucher
+    // get balance for each  Voucher
     function balanceOfAll(address _owner) external view returns (uint256[] memory balances_);
 
     function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids) external view returns (uint256[] memory balances_);

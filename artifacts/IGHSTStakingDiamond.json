@@ -76,7 +76,7 @@
           "type": "uint256[]"
         }
       ],
-      "name": "claimWearableTickets",
+      "name": "claimTickets",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -272,6 +272,25 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        }
+      ],
+      "name": "ticketCost",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "_frensCost",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "totalSupplies",
       "outputs": [
@@ -320,25 +339,6 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_id",
-          "type": "uint256"
-        }
-      ],
-      "name": "wearableTicketCost",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "_frensCost",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "pure",
       "type": "function"
     },
     {

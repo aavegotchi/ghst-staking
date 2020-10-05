@@ -8,22 +8,22 @@ import "../libraries/AppStorage.sol";
 import "../libraries/LibDiamond.sol";
 import "../libraries/Strings.sol";
 
-contract WearableTicketsFacet is IERC1155 {
+contract TicketsFacet is IERC1155 {
     AppStorage s;
     bytes4 constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
     bytes4 constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
 
     function setBaseURI(string memory _value) external {
         LibDiamond.enforceIsContractOwner();
-        s.wearableTicketsBaseUri = _value;
+        s.ticketsBaseUri = _value;
         for (uint256 i; i < 6; i++) {
             emit URI(string(abi.encodePacked(_value, Strings.uintStr(i))), i);
         }
     }
 
     function uri(uint256 _id) external view returns (string memory) {
-        require(_id < 6, "_id not found for wearable ticket");
-        return string(abi.encodePacked(s.wearableTicketsBaseUri, Strings.uintStr(_id)));
+        require(_id < 6, "_id not found for  ticket");
+        return string(abi.encodePacked(s.ticketsBaseUri, Strings.uintStr(_id)));
     }
 
     /**
@@ -47,12 +47,12 @@ contract WearableTicketsFacet is IERC1155 {
         uint256 _value,
         bytes calldata _data
     ) external override {
-        require(_to != address(0), "WearableTickets: Can't transfer to 0 address");
-        require(_from == msg.sender || s.approved[_from][msg.sender], "WearableTickets: Not approved to transfer");
-        uint256 bal = s.wearableTickets[_id].accountBalances[_from];
-        require(bal >= _value, "WearableTickets: _value greater than balance");
-        s.wearableTickets[_id].accountBalances[_from] = bal - _value;
-        s.wearableTickets[_id].accountBalances[_to] += _value;
+        require(_to != address(0), "Tickets: Can't transfer to 0 address");
+        require(_from == msg.sender || s.approved[_from][msg.sender], "Tickets: Not approved to transfer");
+        uint256 bal = s.tickets[_id].accountBalances[_from];
+        require(bal >= _value, "Tickets: _value greater than balance");
+        s.tickets[_id].accountBalances[_from] = bal - _value;
+        s.tickets[_id].accountBalances[_to] += _value;
         emit TransferSingle(msg.sender, _from, _to, _id, _value);
         uint256 size;
         assembly {
@@ -61,7 +61,7 @@ contract WearableTicketsFacet is IERC1155 {
         if (size > 0) {
             require(
                 ERC1155_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155Received(msg.sender, _from, _id, _value, _data),
-                "WearableTickets: Transfer rejected/failed by _to"
+                "Tickets: Transfer rejected/failed by _to"
             );
         }
     }
@@ -89,16 +89,16 @@ contract WearableTicketsFacet is IERC1155 {
         uint256[] calldata _values,
         bytes calldata _data
     ) external override {
-        require(_to != address(0), "WearableTickets: Can't transfer to 0 address");
-        require(_ids.length != _values.length, "WearableTickets: _ids not the same length as _values");
-        require(_from == msg.sender || s.approved[_from][msg.sender], "WearableTickets: Not approved to transfer");
+        require(_to != address(0), "Tickets: Can't transfer to 0 address");
+        require(_ids.length == _values.length, "Tickets: _ids not the same length as _values");
+        require(_from == msg.sender || s.approved[_from][msg.sender], "Tickets: Not approved to transfer");
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
             uint256 value = _values[i];
-            uint256 bal = s.wearableTickets[id].accountBalances[_from];
-            require(bal >= value, "WearableTickets: _value greater than balance");
-            s.wearableTickets[id].accountBalances[_from] = bal - value;
-            s.wearableTickets[id].accountBalances[_to] += value;
+            uint256 bal = s.tickets[id].accountBalances[_from];
+            require(bal >= value, "Tickets: _value greater than balance");
+            s.tickets[id].accountBalances[_from] = bal - value;
+            s.tickets[id].accountBalances[_to] += value;
         }
         emit TransferBatch(msg.sender, _from, _to, _ids, _values);
         uint256 size;
@@ -108,7 +108,7 @@ contract WearableTicketsFacet is IERC1155 {
         if (size > 0) {
             require(
                 ERC1155_BATCH_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155BatchReceived(msg.sender, _from, _ids, _values, _data),
-                "WearableTickets: Transfer rejected/failed by _to"
+                "Tickets: Transfer rejected/failed by _to"
             );
         }
     }
@@ -116,20 +116,20 @@ contract WearableTicketsFacet is IERC1155 {
     function totalSupplies() external view returns (uint256[] memory totalSupplies_) {
         totalSupplies_ = new uint256[](6);
         for (uint256 i; i < 6; i++) {
-            totalSupplies_[i] = s.wearableTickets[i].totalSupply;
+            totalSupplies_[i] = s.tickets[i].totalSupply;
         }
     }
 
     function totalSupply(uint256 _id) external view returns (uint256 totalSupply_) {
-        require(_id < 6, "WearableVourchers: Wearable Voucher not found");
-        totalSupply_ = s.wearableTickets[_id].totalSupply;
+        require(_id < 6, "Vourchers:  Voucher not found");
+        totalSupply_ = s.tickets[_id].totalSupply;
     }
 
-    // returns the balance of each wearable voucher
+    // returns the balance of each  voucher
     function balanceOfAll(address _owner) external view returns (uint256[] memory balances_) {
         balances_ = new uint256[](6);
         for (uint256 i; i < 6; i++) {
-            balances_[i] = s.wearableTickets[i].accountBalances[_owner];
+            balances_[i] = s.tickets[i].accountBalances[_owner];
         }
     }
 
@@ -140,7 +140,7 @@ contract WearableTicketsFacet is IERC1155 {
         @return balance_ The _owner's balance of the token type requested
      */
     function balanceOf(address _owner, uint256 _id) external override view returns (uint256 balance_) {
-        balance_ = s.wearableTickets[_id].accountBalances[_owner];
+        balance_ = s.tickets[_id].accountBalances[_owner];
     }
 
     /**
@@ -150,10 +150,10 @@ contract WearableTicketsFacet is IERC1155 {
         @return balances_ The _owner's balance of the token types requested (i.e. balance for each (owner, id) pair)
      */
     function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids) external override view returns (uint256[] memory balances_) {
-        require(_owners.length == _ids.length, "WearableTickets: _owners not same length as _ids");
+        require(_owners.length == _ids.length, "Tickets: _owners not same length as _ids");
         balances_ = new uint256[](_owners.length);
         for (uint256 i; i < _owners.length; i++) {
-            balances_[i] = s.wearableTickets[_ids[i]].accountBalances[_owners[i]];
+            balances_[i] = s.tickets[_ids[i]].accountBalances[_owners[i]];
         }
     }
 

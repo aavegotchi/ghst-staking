@@ -16,27 +16,13 @@ contract StakingFacet {
     // this function is currently under development
     function frens(address _account) public view returns (uint256 frens_) {
         Account memory account = s.accounts[_account];
-        uint256 poolGhst;
-        if (account.uniV2PoolTokens > 0) {
-            // Calculated from the burn function of the UniswapV2Pair.sol contract
-            // https://github.com/Uniswap/uniswap-v2-core/blob/master/contracts/UniswapV2Pair.sol#L144
-            (uint256 poolGhstContractBalance, uint256 poolEthContractBalance, ) = IUniswapV2Pair(s.uniV2PoolContract).getReserves();
-            if (IUniswapV2Pair(s.uniV2PoolContract).token0() != s.ghstContract) {
-                (poolGhstContractBalance, poolEthContractBalance) = (poolEthContractBalance, poolGhstContractBalance);
-            }
-            uint256 uniV2PoolTotalSupply = IERC20(s.uniV2PoolContract).totalSupply();
-            // Calculate share of GHST from the pool
-            poolGhst = (account.uniV2PoolTokens * poolGhstContractBalance) / uniV2PoolTotalSupply;
-            // Calculate share of Eth from the pool
-            uint256 poolEth = (account.uniV2PoolTokens * poolEthContractBalance) / uniV2PoolTotalSupply;
-            // Calculate and add GHST from share of ETH in the pool
-            poolGhst += (poolEth * poolGhstContractBalance) / poolEthContractBalance;
-            // 20 percent bonus for adding liquidity to uniswap
-            poolGhst += poolGhst / 5;
-        }
+        uint256 timePeriod = block.timestamp - account.lastUpdate;
+        frens_ = account.frens;
         // 86400 the number of seconds in 1 day
-        // frens are generated 1 fren for each GHST over 24 hours
-        frens_ = account.frens + ((account.ghst + poolGhst) * (block.timestamp - account.lastUpdate)) / 86400;
+        // 100 frens are generated for each LP token over 24 hours
+        frens_ += ((account.uniV2PoolTokens * 100) * timePeriod) / 86400;
+        // 1 fren is generated for each GHST over 24 hours
+        frens_ += (account.ghst * timePeriod) / 86400;
     }
 
     function updateFrens() internal {
@@ -92,19 +78,19 @@ contract StakingFacet {
         LibERC20.transfer(s.uniV2PoolContract, msg.sender, bal);
     }
 
-    function claimWearableTickets(uint256[] calldata _ids) external {
+    function claimTickets(uint256[] calldata _ids) external {
         updateFrens();
         uint256[] memory values = new uint256[](_ids.length);
         uint256 frensBal = s.accounts[msg.sender].frens;
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
-            require(id < 6, "Staking: Wearable Ticket not found");
-            uint256 cost = wearableTicketCost(id);
+            require(id < 6, "Staking:  Ticket not found");
+            uint256 cost = ticketCost(id);
             values[i] = 1;
             require(frensBal >= cost, "Staking: Not enough frens points");
             frensBal -= cost;
-            s.wearableTickets[id].accountBalances[msg.sender] += 1;
-            s.wearableTickets[id].totalSupply += 1;
+            s.tickets[id].accountBalances[msg.sender] += 1;
+            s.tickets[id].totalSupply += 1;
         }
         s.accounts[msg.sender].frens = uint96(frensBal);
         emit TransferBatch(address(this), address(0), msg.sender, _ids, values);
@@ -117,12 +103,12 @@ contract StakingFacet {
             require(
                 ERC1155_BATCH_ACCEPTED ==
                     IERC1155TokenReceiver(msg.sender).onERC1155BatchReceived(address(this), address(0), _ids, values, new bytes(0)),
-                "Staking: Wearable Ticket transfer rejected/failed"
+                "Staking:  Ticket transfer rejected/failed"
             );
         }
     }
 
-    function wearableTicketCost(uint256 _id) public pure returns (uint256 _frensCost) {
+    function ticketCost(uint256 _id) public pure returns (uint256 _frensCost) {
         if (_id == 0) {
             _frensCost = 50e18;
         } else if (_id == 1) {
