@@ -8,7 +8,9 @@
 // const { ethers } = require('ethers')
 // import { ethers } from 'ethers'
 
-const diamond = require('diamond-util')
+// const diamond = require('diamond-util')
+
+const diamond = require('./index.js')
 // const diamond = require('./diamond-util.js')
 
 async function main () {
@@ -30,17 +32,17 @@ async function main () {
   // const ghstContractAddress = '0x3F382DbD960E3a9bbCeaE22651E88158d2791550'
 
   // eslint-disable-next-line no-unused-vars
-  const deployedDiamond = await diamond.deploy({
-    diamondName: 'GHSTStakingDiamond',
-    owner: account,
-    facetNames: [
-      // 'DiamondCutFacet',
-      'DiamondLoupeFacet',
-      'OwnershipFacet',
-      'StakingFacet',
-      'WearableTicketsFacet'
-    ],
-    otherArgs: [ghstContractAddress, uniV2PoolContractAddress]
+  await diamond.upgrade({
+    diamondAddress: '0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd',
+    diamondCut: [
+      [
+        'StakingFacet',
+        diamond.FacetCutAction.Replace,
+        [
+          'frens(address)'
+        ]
+      ]
+    ]
   })
 }
 
