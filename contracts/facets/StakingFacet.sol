@@ -27,8 +27,8 @@ contract StakingFacet {
 
     function updateFrens() internal {
         Account storage account = s.accounts[msg.sender];
-        account.frens = uint96(frens(msg.sender));
-        account.lastUpdate = uint32(block.timestamp);
+        account.frens = uint104(frens(msg.sender));
+        account.lastUpdate = uint40(block.timestamp);
     }
 
     function stakeGhst(uint256 _ghstValue) external {
@@ -92,7 +92,7 @@ contract StakingFacet {
             s.tickets[id].accountBalances[msg.sender] += 1;
             s.tickets[id].totalSupply += 1;
         }
-        s.accounts[msg.sender].frens = uint96(frensBal);
+        s.accounts[msg.sender].frens = uint104(frensBal);
         emit TransferBatch(address(this), address(0), msg.sender, _ids, values);
         uint256 size;
         address to = msg.sender;
