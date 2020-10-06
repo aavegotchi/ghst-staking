@@ -15,12 +15,12 @@ contract StakingFacet {
 
     function frens(address _account) public view returns (uint256 frens_) {
         Account memory account = s.accounts[_account];
-        //
+        // this cannot underflow or overflow
         uint256 timePeriod = block.timestamp - account.lastUpdate;
         frens_ = account.frens;
         // 86400 the number of seconds in 1 day
         // 100 frens are generated for each LP token over 24 hours
-        frens_ += ((account.uniV2PoolTokens * 100) * timePeriod) / 86400;
+        frens_ += ((uint256(account.uniV2PoolTokens) * 100) * timePeriod) / 86400;
         // 1 fren is generated for each GHST over 24 hours
         frens_ += (account.ghst * timePeriod) / 86400;
     }

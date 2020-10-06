@@ -18,7 +18,7 @@ struct AppStorage {
     mapping(address => mapping(address => bool)) approved;
     mapping(address => Account) accounts;
     mapping(uint256 => Ticket) tickets;
-    string ticketsBaseUri;
     address ghstContract;
     address uniV2PoolContract;
+    string ticketsBaseUri;
 }
