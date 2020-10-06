@@ -31,6 +31,8 @@ describe('GHSTStakingDiamond', function () {
       otherArgs: []
     })
 
+    console.log('address', ghstDiamond.address)
+
     ghstStakingDiamond = await diamond.deploy({
       diamondName: 'GHSTStakingDiamond',
       owner: account,
@@ -41,25 +43,25 @@ describe('GHSTStakingDiamond', function () {
         'StakingFacet',
         'TicketsFacet'
       ],
-      otherArgs: []
+      otherArgs: [ghstDiamond.address, ghstDiamond.address]
     })
 
-    await ghstStakingDiamond.mint()
+
+    const GHSTFacet = await ethers.getContractFactory('GHSTFacet')
+    const ghstFacet = ethers.getContractAt(GHSTFacet.interface, ghstDiamond.address)
+
+    await ghstFacet.mint()
   })
 
   it('Should have more than 30 frens', async function () {
+
+    let frens = 30
+    expect(frens === 30, "Frens should equal 30")
+
     // const balance = await
 
     // console.log('address: ' + ghstDiamond.address)
-    /*
-    const Greeter = await ethers.getContractFactory('Greeter')
-    const greeter = await Greeter.deploy('Hello, world!')
 
-    await greeter.deployed()
-    expect(await greeter.greet()).to.equal('Hello, world!')
 
-    await greeter.setGreeting('Hola, mundo!')
-    expect(await greeter.greet()).to.equal('Hola, mundo!')
-    */
   })
 })
