@@ -116,46 +116,44 @@ library LibDiamond {
         bytes4[] memory _selectors
     ) internal returns (uint256, bytes32) {
         DiamondStorage storage ds = diamondStorage();
-        require(_selectors.length > 0, "LibDiamondCut: No selectors in facet to cut");
-        // adding or replacing functions
-        if (_newFacetAddress != address(0)) {
-            enforceHasContractCode(_newFacetAddress, "LibDiamondCut: facet has no code");
-            // add and replace selectors
+        require(_selectors.length > 0, "LibDiamondCut: No selectors in facet to cut");        
+        if (_action == IDiamondCut.FacetCutAction.Add) {
+            require(_newFacetAddress != address(0), "LibDiamondCut: Add facet can't be address(0)");
+            enforceHasContractCode(_newFacetAddress, "LibDiamondCut: Add facet has no code");
             for (uint256 selectorIndex; selectorIndex < _selectors.length; selectorIndex++) {
                 bytes4 selector = _selectors[selectorIndex];
-                bytes32 oldFacet = ds.facets[selector];
-                // add
-                if (_action == IDiamondCut.FacetCutAction.Add) {
-                    require(address(bytes20(oldFacet)) == address(0), "LibDiamondCut: Can't add function that already exists");
-                    // update the last slot at the end of the function
-                    uint256 selectorInSlotIndex = _selectorCount % 8;
-                    ds.facets[selector] = bytes20(_newFacetAddress) | bytes32(_selectorCount);
-                    // clear selector position in slot and add selector
-                    _selectorSlot =
-                        (_selectorSlot & ~(CLEAR_SELECTOR_MASK >> (selectorInSlotIndex * 32))) |
-                        (bytes32(selector) >> (selectorInSlotIndex * 32));
-                    // if slot is full then write it to storage
-                    if (selectorInSlotIndex == 7) {
-                        ds.selectorSlots[_selectorCount / 8] = _selectorSlot;
-                        _selectorSlot = 0;
-                    }
-                    _selectorCount++;
-                } else if (_action == IDiamondCut.FacetCutAction.Replace) {
-                    // replace
-                    address oldFacetAddress = address(bytes20(oldFacet));
-                    // only useful if immutable functions exist
-                    require(oldFacetAddress != address(this), "LibDiamondCut: Can't replace immutable function");
-                    require(oldFacetAddress != _newFacetAddress, "LibDiamondCut: Can't replace function with same function");
-                    require(oldFacetAddress != address(0), "LibDiamondCut: Can't replace function that doesn't exist");
-                    // replace old facet address
-                    ds.facets[selector] = (oldFacet & CLEAR_ADDRESS_MASK) | bytes20(_newFacetAddress);
-                } else {
-                    revert("LibDiamondCut: Incorrect FacetCutAction");
+                bytes32 oldFacet = ds.facets[selector];                
+                require(address(bytes20(oldFacet)) == address(0), "LibDiamondCut: Can't add function that already exists");
+                // add facet for selector                                
+                ds.facets[selector] = bytes20(_newFacetAddress) | bytes32(_selectorCount);                
+                uint256 selectorInSlotPosition = (_selectorCount % 8) * 32;
+                // clear selector position in slot and add selector
+                _selectorSlot =
+                    (_selectorSlot & ~(CLEAR_SELECTOR_MASK >> selectorInSlotPosition)) |
+                    (bytes32(selector) >> selectorInSlotPosition);
+                // if slot is full then write it to storage
+                if (selectorInSlotPosition == 224) {
+                    ds.selectorSlots[_selectorCount / 8] = _selectorSlot;
+                    _selectorSlot = 0;
                 }
+                _selectorCount++;
             }
-        } else {
-            require(_action == IDiamondCut.FacetCutAction.Remove, "LibDiamondCut: action not set to FacetCutAction.Remove");
-            // remove functions
+        } else if(_action == IDiamondCut.FacetCutAction.Replace) {
+            require(_newFacetAddress != address(0), "LibDiamondCut: Replace facet can't be address(0)");
+            enforceHasContractCode(_newFacetAddress, "LibDiamondCut: Replace facet has no code");
+            for (uint256 selectorIndex; selectorIndex < _selectors.length; selectorIndex++) {
+                bytes4 selector = _selectors[selectorIndex];
+                bytes32 oldFacet = ds.facets[selector];  
+                address oldFacetAddress = address(bytes20(oldFacet));
+                // only useful if immutable functions exist
+                require(oldFacetAddress != address(this), "LibDiamondCut: Can't replace immutable function");
+                require(oldFacetAddress != _newFacetAddress, "LibDiamondCut: Can't replace function with same function");
+                require(oldFacetAddress != address(0), "LibDiamondCut: Can't replace function that doesn't exist");
+                // replace old facet address
+                ds.facets[selector] = (oldFacet & CLEAR_ADDRESS_MASK) | bytes20(_newFacetAddress);
+            }
+        } else if(_action == IDiamondCut.FacetCutAction.Remove) {
+            require(_newFacetAddress == address(0), "LibDiamondCut: Remove facet address must be address(0)");
             uint256 selectorSlotCount = _selectorCount / 8;
             uint256 selectorInSlotIndex = (_selectorCount % 8) - 1;
             for (uint256 selectorIndex; selectorIndex < _selectors.length; selectorIndex++) {
@@ -167,7 +165,7 @@ library LibDiamond {
                 }
                 bytes4 lastSelector;
                 uint256 oldSelectorsSlotCount;
-                uint256 oldSelectorSlotPosition;
+                uint256 oldSelectorInSlotPosition;
                 // adding a block here prevents stack too deep error
                 {
                     bytes4 selector = _selectors[selectorIndex];
@@ -185,21 +183,21 @@ library LibDiamond {
                     delete ds.facets[selector];
                     uint256 oldSelectorCount = uint16(uint256(oldFacet));
                     oldSelectorsSlotCount = oldSelectorCount / 8;
-                    oldSelectorSlotPosition = (oldSelectorCount % 8) * 32;
+                    oldSelectorInSlotPosition = (oldSelectorCount % 8) * 32;
                 }
                 if (oldSelectorsSlotCount != selectorSlotCount) {
                     bytes32 oldSelectorSlot = ds.selectorSlots[oldSelectorsSlotCount];
                     // clears the selector we are deleting and puts the last selector in its place.
                     oldSelectorSlot =
-                        (oldSelectorSlot & ~(CLEAR_SELECTOR_MASK >> oldSelectorSlotPosition)) |
-                        (bytes32(lastSelector) >> oldSelectorSlotPosition);
+                        (oldSelectorSlot & ~(CLEAR_SELECTOR_MASK >> oldSelectorInSlotPosition)) |
+                        (bytes32(lastSelector) >> oldSelectorInSlotPosition);
                     // update storage with the modified slot
                     ds.selectorSlots[oldSelectorsSlotCount] = oldSelectorSlot;
                 } else {
                     // clears the selector we are deleting and puts the last selector in its place.
                     _selectorSlot =
-                        (_selectorSlot & ~(CLEAR_SELECTOR_MASK >> oldSelectorSlotPosition)) |
-                        (bytes32(lastSelector) >> oldSelectorSlotPosition);
+                        (_selectorSlot & ~(CLEAR_SELECTOR_MASK >> oldSelectorInSlotPosition)) |
+                        (bytes32(lastSelector) >> oldSelectorInSlotPosition);
                 }
                 if (selectorInSlotIndex == 0) {
                     delete ds.selectorSlots[selectorSlotCount];
@@ -208,7 +206,9 @@ library LibDiamond {
                 selectorInSlotIndex--;
             }
             _selectorCount = selectorSlotCount * 8 + selectorInSlotIndex + 1;
-        }
+        } else {
+            revert("LibDiamondCut: Incorrect FacetCutAction");
+        }       
         return (_selectorCount, _selectorSlot);
     }
 

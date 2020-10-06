@@ -9,12 +9,13 @@ import "../interfaces/IERC1155TokenReceiver.sol";
 import "../interfaces/IUniswapV2Pair.sol";
 
 contract StakingFacet {
-    AppStorage s;
-    bytes4 constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
+    AppStorage internal s;
+    bytes4 internal constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
     event TransferBatch(address indexed _operator, address indexed _from, address indexed _to, uint256[] _ids, uint256[] _values);
-    
+
     function frens(address _account) public view returns (uint256 frens_) {
         Account memory account = s.accounts[_account];
+        //
         uint256 timePeriod = block.timestamp - account.lastUpdate;
         frens_ = account.frens;
         // 86400 the number of seconds in 1 day
