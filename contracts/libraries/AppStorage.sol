@@ -19,8 +19,6 @@ struct AppStorage {
     mapping(address => Account) accounts;
     mapping(uint256 => Ticket) tickets;
     string ticketsBaseUri;
-    // enables us to add additional map slots here
-    bytes32[1000] emptyMapSlots;
     address ghstContract;
     address uniV2PoolContract;
 }

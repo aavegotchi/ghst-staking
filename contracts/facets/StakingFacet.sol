@@ -12,7 +12,7 @@ contract StakingFacet {
     AppStorage s;
     bytes4 constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
     event TransferBatch(address indexed _operator, address indexed _from, address indexed _to, uint256[] _ids, uint256[] _values);
-
+    
     function frens(address _account) public view returns (uint256 frens_) {
         Account memory account = s.accounts[_account];
         uint256 timePeriod = block.timestamp - account.lastUpdate;
@@ -120,6 +120,8 @@ contract StakingFacet {
             _frensCost = 10_000e18;
         } else if (_id == 5) {
             _frensCost = 50_000e18;
+        } else {
+            revert("Staking: _id does not exist");
         }
     }
 }
