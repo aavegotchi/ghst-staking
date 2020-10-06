@@ -2,6 +2,7 @@
 pragma solidity ^0.7.1;
 
 import "../libraries/AppStorage.sol";
+import "../libraries/LibDiamond.sol";
 import "../libraries/LibERC20.sol";
 import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
@@ -10,7 +11,6 @@ import "../interfaces/IUniswapV2Pair.sol";
 contract StakingFacet {
     AppStorage s;
     bytes4 constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
-    // event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
     event TransferBatch(address indexed _operator, address indexed _from, address indexed _to, uint256[] _ids, uint256[] _values);
 
     function frens(address _account) public view returns (uint256 frens_) {
@@ -83,7 +83,7 @@ contract StakingFacet {
         uint256 frensBal = s.accounts[msg.sender].frens;
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
-            require(id < 6, "Staking:  Ticket not found");
+            require(id < 6, "Staking: Ticket not found");
             uint256 cost = ticketCost(id);
             values[i] = 1;
             require(frensBal >= cost, "Staking: Not enough frens points");
@@ -102,7 +102,7 @@ contract StakingFacet {
             require(
                 ERC1155_BATCH_ACCEPTED ==
                     IERC1155TokenReceiver(msg.sender).onERC1155BatchReceived(address(this), address(0), _ids, values, new bytes(0)),
-                "Staking:  Ticket transfer rejected/failed"
+                "Staking: Ticket transfer rejected/failed"
             );
         }
     }

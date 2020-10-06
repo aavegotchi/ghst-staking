@@ -27,8 +27,11 @@ contract GHSTStakingDiamond {
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         
         s.ghstContract = _ghstContract;
-
         s.uniV2PoolContract = _uniV2PoolContract;
+
+        // used to calculate frens points from staked GHST
+        // s.ghstFrensMultiplier = 1;
+        // s.uniV2PoolTokensFrensMultiplier = 100;
         
         // adding ERC165 data
         // ERC165

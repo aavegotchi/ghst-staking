@@ -2,7 +2,37 @@
 pragma solidity ^0.7.1;
 pragma experimental ABIEncoderV2;
 
+import "../interfaces/IDiamondLoupe.sol";
+
 interface IGHSTStakingDiamond {
+    // diamond functions
+    // struct Facet {
+    //     address facetAddress;
+    //     bytes4[] functionSelectors;
+    // }
+    /// @notice Gets all facets and their selectors.
+    /// @return facets_ Facet
+    function facets() external view returns (IDiamondLoupe.Facet[] memory facets_);
+
+    /// @notice Gets all the function selectors supported by a specific facet.
+    /// @param _facet The facet address.
+    /// @return facetFunctionSelectors_
+    function facetFunctionSelectors(address _facet) external view returns (bytes4[] memory facetFunctionSelectors_);
+
+    /// @notice Get all the facet addresses used by a diamond.
+    /// @return facetAddresses_
+    function facetAddresses() external view returns (address[] memory facetAddresses_);
+
+    /// @notice Gets the facet that supports the given selector.
+    /// @dev If facet is not found return address(0).
+    /// @param _functionSelector The function selector.
+    /// @return facetAddress_ The facet address.
+    function facetAddress(bytes4 _functionSelector) external view returns (address facetAddress_);
+
+    function owner() external view returns (address owner_);
+
+    function transferOwnership(address _newOwner) external;
+
     function ticketCost(uint256 _id) external pure returns (uint256 _frensCost);
 
     // ids are 0 through 5.  0 is the lowest level and 5 is the highest level
