@@ -1,5 +1,6 @@
 /* global ethers, describe, it, before */
 const { expect } = require('chai')
+const truffleAssert = require('truffle-assertions');
 
 const diamond = require('diamond-util')
 
@@ -8,7 +9,9 @@ let ghstStakingDiamond
 let account
 let bob = "0xC3c2e1Cf099Bc6e1fA94ce358562BCbD5cc59FE5"
 
+const oneBillion = '1000000000000000000000000000'
 const fourBillion = '4000000000000000000000000000'
+const eightBillion = '8000000000000000000000000000'
 
 describe('GHSTStakingDiamond', async function () {
   before(async function () {
@@ -52,7 +55,7 @@ describe('GHSTStakingDiamond', async function () {
     ghstStakingDiamond = await ethers.getContractAt('IGHSTStakingDiamond', ghstStakingDiamond.address)
 
     await ghstDiamond.mint()
-    await ghstDiamond.approve(ghstStakingDiamond.address, fourBillion)
+    await ghstDiamond.approve(ghstStakingDiamond.address, eightBillion)
   })
 
   // API here: https://www.chaijs.com/api/bdd/
@@ -74,28 +77,27 @@ describe('GHSTStakingDiamond', async function () {
 
     await ethers.provider.send('evm_mine') // mine the next block
     const frens = await ghstStakingDiamond.frens(account)
-    console.log('Frens:' + frens / Math.pow(10, 18))
+    // console.log('Frens:' + frens / Math.pow(10, 18))
     expect(frens).to.equal(ethers.BigNumber.from('46296296296296296296296'))
   })
 
-  it('Should be able to purchase ticket', async function () {
-
-    const frens = await ghstStakingDiamond.frens(account)
-    console.log('Frens Before:' + frens / Math.pow(10, 18))
+  it('Should be able to claim ticket', async function () {
 
     await ghstStakingDiamond.claimTickets(["0", "1", "2", "3", "4", "5"])
     const totalSupply = await ghstStakingDiamond.totalSupply("0")
-
-    const frensAfter = await ghstStakingDiamond.frens(account)
-    console.log('Frens After:' + frensAfter / Math.pow(10, 18))
-
+    await ghstStakingDiamond.frens(account)
     expect(totalSupply).to.equal("1")
   })
 
-  it("Should not be able to purchase Godlike ticket", async function () {
-    await ghstStakingDiamond.claimTickets(["5"])
-    const frens = await ghstStakingDiamond.frens(account)
-    console.log('Frens:' + frens / Math.pow(10, 18))
+
+  it("Cannot claim tickets above 5", async function () {
+    await truffleAssert.reverts(ghstStakingDiamond.claimTickets(["6"]))
+  })
+
+
+  it("Should not be able to purchase 5 Godlike tickets", async function () {
+    await truffleAssert.reverts(ghstStakingDiamond.claimTickets(["5", "5", "5", "5", "5"]), "Staking: Not enough frens points")
+
   })
 
   it("Total supply of tickets should be 6", async function () {
@@ -113,19 +115,66 @@ describe('GHSTStakingDiamond', async function () {
     expect(balance[2]).to.equal("1")
   })
 
-  it("Frens balance should go up", async function () {
-    const frens = await ghstStakingDiamond.frens(account)
-    console.log('Frens:' + frens / Math.pow(10, 18))
+  it("Can transfer own ticket", async function () {
+    await ghstStakingDiamond.safeTransferFrom(account, bob, "0", "1", [])
+    const bobTicketBalance = await ghstStakingDiamond.balanceOf(bob, "0")
+    expect(bobTicketBalance).to.equal("1")
   })
 
-  it("Frens balance should go up more", async function () {
-    const frens = await ghstStakingDiamond.frens(account)
-    console.log('Frens:' + frens / Math.pow(10, 18))
+  it("Cannot transfer someone else's ticket", async function () {
+    await truffleAssert.reverts(ghstStakingDiamond.safeTransferFrom(bob, account, "1", "1", []), "Tickets: Not approved to transfer")
   })
 
-  // it("Can transfer ticket", async function () {
-  //   await ghstStakingDiamond.safeTransferFrom(account, bob,)
-  // })
+  it("Can batch transfer own tickets", async function () {
+    await ghstStakingDiamond.safeBatchTransferFrom(account, bob, ["1", "2"], ["1", "1"], [])
+    const bobTicketBalance1 = await ghstStakingDiamond.balanceOf(bob, "1")
+    const bobTicketBalance2 = await ghstStakingDiamond.balanceOf(bob, "2")
+    expect(bobTicketBalance1).to.equal("1")
+    expect(bobTicketBalance2).to.equal(1)
+  })
+
+  it("Cannot batch transfer someone else's tickets", async function () {
+    await truffleAssert.reverts(ghstStakingDiamond.safeBatchTransferFrom(bob, account, ["3", "4"], ["1", "1"], []), "Tickets: Not approved to transfer")
+  })
+
+
+  it("Cannot transfer more tickets than one owns", async function () {
+    await truffleAssert.reverts(ghstStakingDiamond.safeTransferFrom(account, bob, "3", "5", []), "Tickets: _value greater than balance")
+    await truffleAssert.reverts(ghstStakingDiamond.safeBatchTransferFrom(account, bob, ["3", "4"], ["5", "5"], []), "Tickets: _value greater than balance")
+  })
+
+
+  it("Should stake GHST-ETH", async function () {
+    await ghstDiamond.mint()
+    await ghstStakingDiamond.stakeUniV2PoolTokens(oneBillion)
+    const [ghst, uniswap] = await ghstStakingDiamond.staked(account)
+    expect(uniswap).to.equal(oneBillion)
+  })
+
+
+  /* withdrawGhstStake is not a function?
+  it("Can withdraw staked GHST", async function () {
+
+    let balance = await ghstDiamond.balanceOf(account)
+    expect(balance).to.equal(0)
+    console.log('balance:', balance.toString())
+
+    const withdrawAmount = (10 * Math.pow(10, 18)).toString()
+
+    await ghstStakingDiamond.withdrawGhstStake(withdrawAmount)
+
+    balance = await ghstDiamond.balanceOf(account)
+    expect(balance).to.equal(withdrawAmount)
+    await ghstStakingDiamond.withdrawGhstStake()
+    console.log('balance:', balance)
+
+    balance = await ghstDiamond.balanceOf(account)
+    expect(balance).to.greaterThan(withdrawAmount)
+    console.log('balance:', balance)
+  })
+  */
+
+
 
 
 })
