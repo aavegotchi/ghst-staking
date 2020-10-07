@@ -154,11 +154,10 @@ describe('GHSTStakingDiamond', async function () {
 
     const withdrawAmount = (10 * Math.pow(10, 18)).toString()
     await ghstStakingDiamond['withdrawGhstStake(uint256)'](withdrawAmount)
-
     let balance = await ghstDiamond.balanceOf(account)
     expect(balance).to.equal(initialBalance.add(withdrawAmount))
-    await ghstStakingDiamond['withdrawGhstStake()']()
 
+    await ghstStakingDiamond['withdrawGhstStake()']()
     balance = await ghstDiamond.balanceOf(account)
     expect(balance).to.equal(initialBalance.add(stakedGhst))
   })
