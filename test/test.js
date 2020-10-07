@@ -145,7 +145,6 @@ describe('GHSTStakingDiamond', async function () {
     expect(uniswap).to.equal(oneBillion)
   })
 
-  //  withdrawGhstStake is not a function?
   it('Can withdraw staked GHST', async function () {
     const initialBalance = await ghstDiamond.balanceOf(account)
     expect(initialBalance).to.equal(threeBillion)
