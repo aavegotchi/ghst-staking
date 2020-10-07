@@ -79,11 +79,15 @@ describe('GHSTStakingDiamond', async function () {
   })
 
   it('Should be able to purchase ticket', async function () {
+
+    const frens = await ghstStakingDiamond.frens(account)
+    console.log('Frens Before:' + frens / Math.pow(10, 18))
+
     await ghstStakingDiamond.claimTickets(["0", "1", "2", "3", "4", "5"])
     const totalSupply = await ghstStakingDiamond.totalSupply("0")
 
-    const frens = await ghstStakingDiamond.frens(account)
-    console.log('Frens:' + frens / Math.pow(10, 18))
+    const frensAfter = await ghstStakingDiamond.frens(account)
+    console.log('Frens After:' + frensAfter / Math.pow(10, 18))
 
     expect(totalSupply).to.equal("1")
   })
@@ -107,6 +111,16 @@ describe('GHSTStakingDiamond', async function () {
   it("Balance of third item should be 1", async function () {
     const balance = await ghstStakingDiamond.balanceOfAll(account)
     expect(balance[2]).to.equal("1")
+  })
+
+  it("Frens balance should go up", async function () {
+    const frens = await ghstStakingDiamond.frens(account)
+    console.log('Frens:' + frens / Math.pow(10, 18))
+  })
+
+  it("Frens balance should go up more", async function () {
+    const frens = await ghstStakingDiamond.frens(account)
+    console.log('Frens:' + frens / Math.pow(10, 18))
   })
 
   // it("Can transfer ticket", async function () {
