@@ -1,14 +1,15 @@
-/* global describe, it, ethers before */
+/* global ethers, describe, it, BigNumber, before */
 const { expect } = require('chai')
 
 const diamond = require('diamond-util')
-// const { ethers } = require('ethers')
 
 let ghstDiamond
 let ghstStakingDiamond
 let account
 
-describe('GHSTStakingDiamond', function () {
+const fourBillion = '4000000000000000000000000000'
+
+describe('GHSTStakingDiamond', async function () {
   before(async function () {
     const DiamondLoupeFacetFactory = await ethers.getContractFactory('DiamondLoupeFacet')
     const diamondLoupeFacet = await DiamondLoupeFacetFactory.deploy()
@@ -46,22 +47,30 @@ describe('GHSTStakingDiamond', function () {
       otherArgs: [ghstDiamond.address, ghstDiamond.address]
     })
 
+    ghstDiamond = await ethers.getContractAt('GHSTFacet', ghstDiamond.address)
+    ghstStakingDiamond = await ethers.getContractAt('IGHSTStakingDiamond', ghstStakingDiamond.address)
 
-    const GHSTFacet = await ethers.getContractFactory('GHSTFacet')
-    const ghstFacet = ethers.getContractAt(GHSTFacet.interface, ghstDiamond.address)
-
-    await ghstFacet.mint()
+    await ghstDiamond.mint()
+    await ghstDiamond.approve(ghstStakingDiamond.address, fourBillion)
   })
 
-  it('Should have more than 30 frens', async function () {
+  // API here: https://www.chaijs.com/api/bdd/
+  it('Should stake all GHST', async function () {
+    let balance = await ghstDiamond.balanceOf(account)
+    expect(balance).to.equal(fourBillion)
+    await ghstStakingDiamond.stakeGhst(balance)
+    // eslint-disable-next-line no-unused-vars
+    const [stakedGhst, stakedUniswapTokens] = await ghstStakingDiamond.staked(account)
+    expect(stakedGhst).to.equal(fourBillion)
+    balance = await ghstDiamond.balanceOf(account)
+    expect(balance).to.equal(0)
+  })
 
-    let frens = 30
-    expect(frens === 30, "Frens should equal 30")
-
-    // const balance = await
-
-    // console.log('address: ' + ghstDiamond.address)
-
-
+  it('Should accumulate frens', async function () {
+    await ethers.provider.send('evm_increaseTime', [1]) // add 1 seconds
+    await ethers.provider.send('evm_mine') // mine the next block
+    const frens = await ghstStakingDiamond.frens(account)
+    // console.log('Frens:' + frens.toString())
+    expect(frens).to.equal(ethers.BigNumber.from('46296296296296296296296'))
   })
 })
