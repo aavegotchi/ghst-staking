@@ -28,6 +28,7 @@ contract GHSTStakingDiamond {
         
         s.ghstContract = _ghstContract;
         s.uniV2PoolContract = _uniV2PoolContract;
+        s.ticketsBaseUri = 'https://aavegotchi.com/metadata/';
 
         // used to calculate frens points from staked GHST
         // s.ghstFrensMultiplier = 1;
