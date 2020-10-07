@@ -1,4 +1,4 @@
-/* global ethers, describe, it, BigNumber, before */
+/* global ethers, describe, it, before */
 const { expect } = require('chai')
 
 const diamond = require('diamond-util')
