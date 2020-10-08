@@ -7,6 +7,23 @@ The functionality for GHSTStakingDiamond that can be used in the UI is here: htt
 
 The ABI for it is here: https://github.com/aavegotchi/ghst-staking/blob/master/artifacts/IGHSTStakingDiamond.json
 
+### Overview
+
+This repository implements `contracts/GHSTSTakingDiamond.sol`. This is a diamond that utilizes the facets found in `contracts/facets/`.
+
+`TicketsFacet.sol` implements simple ERC1155 token functionality. The ERC1155 tokens are called 'tickets'.
+
+ `StakingFacet.sol` implements functions that enable people to stake their GHST ERC20 token, or to stake Uniswap pool tokens for the GHST/ETH pair contract. Staking these earns people frens or frens points which are a non-transferable points system. The frens points are calculated with the `frens` function. The `claimTickets` function enables people to claim or mint up to six different different kinds of tokens tokens.  Each different ticket kind has a different frens price which is specified in the `ticketCost` function.
+
+ `GHSTSTakingDiamond` will be deployed as an immutable diamond, or a `single cut diamond`.  This means that all of the facets of the diamond will be added to in the constructor function of the diamond. The `diamondCut` function will not be added to the diamond and so upgrades will be impossible.
+
+ Diamonds are used to organize smart contract functionality in a modular and flexible way, and they are used for upgradeable systems and they overcome the max-contract size limitation. 
+
+ The functionality for this repository is relatively simple being 6 ERC1155 token types and staking functions and the ability to claim tickets with frens. We chose to implement this functionality as a diamond to streamline our contract development and familiarize everyone involved with diamonds, which is the primary contract architecture for the core Aavegotchi contracts in development.
+
+`GHSTSTakingDiamond` is deployed using the `scripts/deploy.js` script. The `DiamondCutFacet` contract is not added to the diamond to prevent adding the `diamondCut` external function.
+
+ 
 ### On Kovan Testnet
 
 - GHSTStakingDiamond is here: 0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd
