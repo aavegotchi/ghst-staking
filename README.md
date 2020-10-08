@@ -13,9 +13,9 @@ This repository implements `contracts/GHSTSTakingDiamond.sol`. This is a diamond
 
 `TicketsFacet.sol` implements simple ERC1155 token functionality. The ERC1155 tokens are called 'tickets'.
 
- `StakingFacet.sol` implements functions that enable people to stake their GHST ERC20 token, or to stake Uniswap pool tokens for the GHST/ETH pair contract. Staking these earns people frens or frens points which are a non-transferable points system. The frens points are calculated with the `frens` function. The `claimTickets` function enables people to claim or mint up to six different different kinds of tokens tokens.  Each different ticket kind has a different frens price which is specified in the `ticketCost` function.
+ `StakingFacet.sol` implements functions that enable people to stake their GHST ERC20 token, or to stake Uniswap pool tokens for the GHST/ETH pair contract. Staking these earns people frens or frens points which are a non-transferable points system. The frens points are calculated with the `frens` function. The `claimTickets` function enables people to claim or mint up to six different different kinds of tokens.  Each different ticket kind has a different frens price which is specified in the `ticketCost` function.
 
- `GHSTSTakingDiamond` will be deployed as an immutable diamond, or a `single cut diamond`.  This means that all of the facets of the diamond will be added to in the constructor function of the diamond. The `diamondCut` function will not be added to the diamond and so upgrades will be impossible.
+ `GHSTSTakingDiamond` will be deployed as an immutable diamond, or a `single cut diamond`.  This means that all of the facets of the diamond will be added to it in the constructor function of the diamond. The `diamondCut` function will not be added to the diamond and so upgrades will not be possible.
 
  Diamonds are used to organize smart contract functionality in a modular and flexible way, and they are used for upgradeable systems and they overcome the max-contract size limitation. 
 
@@ -23,7 +23,11 @@ This repository implements `contracts/GHSTSTakingDiamond.sol`. This is a diamond
 
 `GHSTSTakingDiamond` is deployed using the `scripts/deploy.js` script. The `DiamondCutFacet` contract is not added to the diamond to prevent adding the `diamondCut` external function.
 
- 
+This diamond is using a new kind of contract storage pattern dubbed 'AppStorage'. A single struct state variable of type `AppStorage` is defined and used in `GHSTStakingDiamond` and in the `StakingFacet` and `TicketsFacet` facets. This struct state variable is the primary mechanism to share state variables for the main application functionality.  Diamond storage is used for diamond specific functionality and for contract ownership/admin functionality.  
+
+This diamond uses a direct copy of the current diamond implementation from the [diamond-2](https://github.com/mudgen/diamond-2) repository without change.
+
+
 ### On Kovan Testnet
 
 - GHSTStakingDiamond is here: 0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd
