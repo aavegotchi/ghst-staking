@@ -15,7 +15,7 @@ This repository implements `contracts/GHSTSTakingDiamond.sol`. This is a diamond
 
  `StakingFacet.sol` implements functions that enable people to stake their GHST ERC20 tokens, or to stake Uniswap pool tokens from the GHST/ETH pair contract. Staking these earns people frens or frens points which are a non-transferable points system. The frens points are calculated with the `frens` function. The `claimTickets` function enables people to claim or mint up to six different kinds of tokens.  Each different ticket kind has a different frens price which is specified in the `ticketCost` function.
 
- `GHSTSTakingDiamond` will be deployed as an immutable diamond, or a `single cut diamond`.  This means that all of the facets of the diamond will be added to it in the constructor function of the diamond. The `diamondCut` function will not be added to the diamond and so upgrades will not be possible.
+ `GHSTSTakingDiamond` will be deployed as an immutable diamond, also known as a 'Single Cut Diamond'.  This means that all of the facets of the diamond will be added to it in the constructor function of the diamond. The `diamondCut` function will not be added to the diamond and so upgrades will not be possible.
 
  Diamonds are used to organize smart contract functionality in a modular and flexible way, and they are used for upgradeable systems and they overcome the max-contract size limitation. 
 
