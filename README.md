@@ -25,7 +25,7 @@ This repository implements `contracts/GHSTSTakingDiamond.sol`. This is a diamond
 
 This diamond is using a new kind of contract storage pattern dubbed 'AppStorage'. A single struct state variable of type `AppStorage` is defined and used in `GHSTStakingDiamond` and in the `StakingFacet` and `TicketsFacet` facets. This struct state variable is the primary mechanism to share state variables for the main application functionality.  Diamond storage is used for diamond specific functionality and for contract ownership/admin functionality.  
 
-This diamond uses a direct copy of the current diamond implementation from the [diamond-2](https://github.com/mudgen/diamond-2) repository without change.
+This diamond uses a direct copy of the current diamond implementation from the [diamond-2](https://github.com/mudgen/diamond-2) repository.
 
 
 ### On Kovan Testnet
