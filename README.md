@@ -11,9 +11,9 @@ The ABI for it is here: https://github.com/aavegotchi/ghst-staking/blob/master/a
 
 This repository implements `contracts/GHSTSTakingDiamond.sol`. This is a diamond that utilizes the facets found in `contracts/facets/`.
 
-`TicketsFacet.sol` implements simple ERC1155 token functionality. The ERC1155 tokens are called 'tickets'.
+`TicketsFacet.sol` implements simple ERC1155 token functionality. The ERC1155 tokens are called 'tickets'. There are six different kinds of 'tickets'.
 
- `StakingFacet.sol` implements functions that enable people to stake their GHST ERC20 token, or to stake Uniswap pool tokens for the GHST/ETH pair contract. Staking these earns people frens or frens points which are a non-transferable points system. The frens points are calculated with the `frens` function. The `claimTickets` function enables people to claim or mint up to six different different kinds of tokens.  Each different ticket kind has a different frens price which is specified in the `ticketCost` function.
+ `StakingFacet.sol` implements functions that enable people to stake their GHST ERC20 tokens, or to stake Uniswap pool tokens from the GHST/ETH pair contract. Staking these earns people frens or frens points which are a non-transferable points system. The frens points are calculated with the `frens` function. The `claimTickets` function enables people to claim or mint up to six different kinds of tokens.  Each different ticket kind has a different frens price which is specified in the `ticketCost` function.
 
  `GHSTSTakingDiamond` will be deployed as an immutable diamond, or a `single cut diamond`.  This means that all of the facets of the diamond will be added to it in the constructor function of the diamond. The `diamondCut` function will not be added to the diamond and so upgrades will not be possible.
 
