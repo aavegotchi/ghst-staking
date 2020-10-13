@@ -27,13 +27,13 @@ describe('GHSTStakingDiamond', async function () {
 
     ghstDiamond = await diamond.deploy({
       diamondName: 'GHSTDiamond',
-      owner: account,
       facets: [
         // 'DiamondCutFacet',
         ['DiamondLoupeFacet', diamondLoupeFacet],
         'OwnershipFacet',
         'GHSTFacet'
       ],
+      owner: account,
       otherArgs: []
     })
 
@@ -41,7 +41,6 @@ describe('GHSTStakingDiamond', async function () {
 
     ghstStakingDiamond = await diamond.deploy({
       diamondName: 'GHSTStakingDiamond',
-      owner: account,
       facets: [
         // 'DiamondCutFacet',
         ['DiamondLoupeFacet', diamondLoupeFacet],
@@ -49,6 +48,7 @@ describe('GHSTStakingDiamond', async function () {
         'StakingFacet',
         'TicketsFacet'
       ],
+      owner: account,
       otherArgs: [ghstDiamond.address, ghstDiamond.address]
     })
 

@@ -35,25 +35,10 @@ contract GHSTStakingDiamond {
         // s.uniV2PoolTokensFrensMultiplier = 100;
         
         // adding ERC165 data
-        // ERC165
-        ds.supportedInterfaces[IERC165.supportsInterface.selector] = true;
-
-        // DiamondCut
-        // ds.supportedInterfaces[IDiamondCut.diamondCut.selector] = true;
-
-       // DiamondLoupe
-        ds.supportedInterfaces[
-            IDiamondLoupe.facets.selector ^
-            IDiamondLoupe.facetFunctionSelectors.selector ^
-            IDiamondLoupe.facetAddresses.selector ^
-            IDiamondLoupe.facetAddress.selector
-        ] = true;
-        
-        // ERC173
-        ds.supportedInterfaces[
-            IERC173.transferOwnership.selector ^ 
-            IERC173.owner.selector
-        ] = true;
+        ds.supportedInterfaces[type(IERC165).interfaceId] = true;
+        //ds.supportedInterfaces[type(IDiamondCut).interfaceId] = true;        
+        ds.supportedInterfaces[type(IDiamondLoupe).interfaceId] = true;
+        ds.supportedInterfaces[type(IERC173).interfaceId] = true;              
         
         // ERC1155
         // ERC165 identifier for the main token standard.
