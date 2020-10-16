@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.1;
+pragma solidity 0.7.3;
 
 // From Open Zeppelin contracts: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Strings.sol
 
 /**
  * @dev String operations.
  */
-library Strings {
+library LibStrings {
     /**
      * @dev Converts a `uint256` to its ASCII `string` representation.
      */

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.1;
+pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "../interfaces/IERC1155.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/AppStorage.sol";
 import "../libraries/LibDiamond.sol";
-import "../libraries/Strings.sol";
+import "../libraries/LibStrings.sol";
 
 contract TicketsFacet is IERC1155 {
     AppStorage internal s;
@@ -17,13 +17,13 @@ contract TicketsFacet is IERC1155 {
         LibDiamond.enforceIsContractOwner();
         s.ticketsBaseUri = _value;
         for (uint256 i; i < 6; i++) {
-            emit URI(string(abi.encodePacked(_value, Strings.uintStr(i))), i);
+            emit URI(string(abi.encodePacked(_value, LibStrings.uintStr(i))), i);
         }
     }
 
     function uri(uint256 _id) external view returns (string memory) {
         require(_id < 6, "_id not found for  ticket");
-        return string(abi.encodePacked(s.ticketsBaseUri, Strings.uintStr(_id)));
+        return string(abi.encodePacked(s.ticketsBaseUri, LibStrings.uintStr(_id)));
     }
 
     /**

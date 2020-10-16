@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.1;
+pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 /******************************************************************************\
@@ -17,35 +17,44 @@ import "./libraries/AppStorage.sol";
 import "./interfaces/IERC1155Metadata_URI.sol";
 
 contract GHSTStakingDiamond {
-    AppStorage s;    
+    AppStorage s;
     event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
 
-    constructor(IDiamondCut.FacetCut[] memory _diamondCut, address _owner, address _ghstContract, address _uniV2PoolContract) {
+    constructor(
+        IDiamondCut.FacetCut[] memory _diamondCut,
+        address _owner,
+        address _ghstContract,
+        address _uniV2PoolContract
+    ) {
+        require(_owner != address(0), "GHSTStakingDiamond: _owner can't be address(0)");
+        require(_ghstContract != address(0), "GHSTStakingDiamond: _ghstContract can't be address(0)");
+        require(_uniV2PoolContract != address(0), "GHSTStakingDiamond: _uniV2PoolContract can't be address(0)");
+
         LibDiamond.diamondCut(_diamondCut, address(0), new bytes(0));
         LibDiamond.setContractOwner(_owner);
 
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
-        
+
         s.ghstContract = _ghstContract;
         s.uniV2PoolContract = _uniV2PoolContract;
-        s.ticketsBaseUri = 'https://aavegotchi.com/metadata/';
+        s.ticketsBaseUri = "https://aavegotchi.com/metadata/";
 
         // used to calculate frens points from staked GHST
         // s.ghstFrensMultiplier = 1;
         // s.uniV2PoolTokensFrensMultiplier = 100;
-        
+
         // adding ERC165 data
         ds.supportedInterfaces[type(IERC165).interfaceId] = true;
-        //ds.supportedInterfaces[type(IDiamondCut).interfaceId] = true;        
+        //ds.supportedInterfaces[type(IDiamondCut).interfaceId] = true;
         ds.supportedInterfaces[type(IDiamondLoupe).interfaceId] = true;
-        ds.supportedInterfaces[type(IERC173).interfaceId] = true;              
-        
+        ds.supportedInterfaces[type(IERC173).interfaceId] = true;
+
         // ERC1155
         // ERC165 identifier for the main token standard.
         ds.supportedInterfaces[0xd9b67a26] = true;
 
         // ERC1155
-        // ERC1155Metadata_URI        
+        // ERC1155Metadata_URI
         ds.supportedInterfaces[IERC1155Metadata_URI.uri.selector] = true;
 
         // create wearable tickets:
@@ -55,7 +64,6 @@ contract GHSTStakingDiamond {
         emit TransferSingle(msg.sender, address(0), address(0), 3, 0);
         emit TransferSingle(msg.sender, address(0), address(0), 4, 0);
         emit TransferSingle(msg.sender, address(0), address(0), 5, 0);
-
     }
 
     // Find facet for function that is called and execute the
@@ -83,6 +91,6 @@ contract GHSTStakingDiamond {
     }
 
     receive() external payable {
-        revert("GHSTStaking: Does not accept either");
+        revert("GHSTStaking: Does not accept ether");
     }
 }
