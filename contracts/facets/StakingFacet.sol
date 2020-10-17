@@ -78,22 +78,21 @@ contract StakingFacet {
         LibERC20.transfer(s.uniV2PoolContract, msg.sender, bal);
     }
 
-    function claimTickets(uint256[] calldata _ids) external {
+    function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
         updateFrens();
-        uint256[] memory values = new uint256[](_ids.length);
         uint256 frensBal = s.accounts[msg.sender].frens;
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
+            uint256 value = _values[i];
             require(id < 6, "Staking: Ticket not found");
-            uint256 cost = ticketCost(id);
-            values[i] = 1;
+            uint256 cost = ticketCost(id) * value;
             require(frensBal >= cost, "Staking: Not enough frens points");
             frensBal -= cost;
-            s.tickets[id].accountBalances[msg.sender] += 1;
-            s.tickets[id].totalSupply += 1;
+            s.tickets[id].accountBalances[msg.sender] += value;
+            s.tickets[id].totalSupply += uint96(value);
         }
         s.accounts[msg.sender].frens = uint104(frensBal);
-        emit TransferBatch(address(this), address(0), msg.sender, _ids, values);
+        emit TransferBatch(msg.sender, address(0), msg.sender, _ids, _values);
         uint256 size;
         address to = msg.sender;
         assembly {
@@ -102,7 +101,7 @@ contract StakingFacet {
         if (size > 0) {
             require(
                 ERC1155_BATCH_ACCEPTED ==
-                    IERC1155TokenReceiver(msg.sender).onERC1155BatchReceived(address(this), address(0), _ids, values, new bytes(0)),
+                    IERC1155TokenReceiver(msg.sender).onERC1155BatchReceived(msg.sender, address(0), _ids, _values, new bytes(0)),
                 "Staking: Ticket transfer rejected/failed"
             );
         }

@@ -36,7 +36,7 @@ interface IGHSTStakingDiamond {
     function ticketCost(uint256 _id) external pure returns (uint256 _frensCost);
 
     // ids are 0 through 5.  0 is the lowest level and 5 is the highest level
-    function claimTickets(uint256[] calldata _ids) external;
+    function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external;
 
     // get how many frens points an account has
     function frens(address _account) external view returns (uint256 frens_);

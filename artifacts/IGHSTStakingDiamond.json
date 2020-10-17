@@ -74,6 +74,11 @@
           "internalType": "uint256[]",
           "name": "_ids",
           "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "_values",
+          "type": "uint256[]"
         }
       ],
       "name": "claimTickets",

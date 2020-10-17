@@ -82,18 +82,19 @@ describe('GHSTStakingDiamond', async function () {
   })
 
   it('Should be able to claim ticket', async function () {
-    await ghstStakingDiamond.claimTickets(['0', '1', '2', '3', '4', '5'])
+    // await ghstStakingDiamond.claimTickets(['0', '1', '2', '3', '4', '5'], [1, 1, 1, 1, 1, 1])
+    await ghstStakingDiamond.claimTickets([0, 1, 2, 3, 4, 5], [1, 1, 1, 1, 1, 1])
     const totalSupply = await ghstStakingDiamond.totalSupply('0')
     await ghstStakingDiamond.frens(account)
     expect(totalSupply).to.equal('1')
   })
 
   it('Cannot claim tickets above 5', async function () {
-    await truffleAssert.reverts(ghstStakingDiamond.claimTickets(['6']))
+    await truffleAssert.reverts(ghstStakingDiamond.claimTickets(['6'], [1]))
   })
 
   it('Should not be able to purchase 5 Godlike tickets', async function () {
-    await truffleAssert.reverts(ghstStakingDiamond.claimTickets(['5', '5', '5', '5', '5']), 'Staking: Not enough frens points')
+    await truffleAssert.reverts(ghstStakingDiamond.claimTickets(['5'], [5]), 'Staking: Not enough frens points')
   })
 
   it('Total supply of tickets should be 6', async function () {
