@@ -79,6 +79,7 @@ contract StakingFacet {
     }
 
     function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
+        require(_ids.length == _values.length, "Staking: _ids not the same length as _values");
         updateFrens();
         uint256 frensBal = s.accounts[msg.sender].frens;
         for (uint256 i; i < _ids.length; i++) {
