@@ -10,7 +10,7 @@
 
 // const diamond = require('diamond-util')
 
-const diamond = require('./index.js')
+const diamond = require('diamond-util')
 // const diamond = require('./diamond-util.js')
 
 async function main () {
@@ -37,9 +37,9 @@ async function main () {
     diamondCut: [
       [
         'StakingFacet',
-        diamond.FacetCutAction.Replace,
+        diamond.FacetCutAction.Add,
         [
-          'frens(address)'
+          'claimTickets(uint256[],uint256[])'
         ]
       ]
     ]
