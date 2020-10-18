@@ -6,6 +6,8 @@ pragma experimental ABIEncoderV2;
 * Author: Nick Mudge
 *
 * Implementation of an example of a diamond.
+* Uses the diamond-2 version 1.3.4 implementation:
+* https://github.com/mudgen/diamond-2
 /******************************************************************************/
 
 import "./libraries/LibDiamond.sol";

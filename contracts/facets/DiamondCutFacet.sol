@@ -4,6 +4,8 @@ pragma experimental ABIEncoderV2;
 
 /******************************************************************************\
 * Author: Nick Mudge <nick@perfectabstractions.com> (https://twitter.com/mudgen)
+* Uses the diamond-2 version 1.3.4 implementation:
+* https://github.com/mudgen/diamond-2
 /******************************************************************************/
 
 import "../interfaces/IDiamondCut.sol";

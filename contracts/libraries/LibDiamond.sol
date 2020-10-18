@@ -6,6 +6,9 @@ pragma experimental ABIEncoderV2;
 * Author: Nick Mudge
 *
 * Implementation of Diamond facet.
+* Uses the diamond-2 version 1.3.4 implementation:
+* https://github.com/mudgen/diamond-2
+*
 * This is gas optimized by reducing storage reads and storage writes.
 * This code is as complex as it is to reduce gas costs.
 /******************************************************************************/
@@ -13,11 +16,11 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IDiamondCut.sol";
 
 library LibDiamond {
-        bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.diamond.storage");
+    bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.diamond.storage");
 
     struct DiamondStorage {
         // maps function selectors to the facets that execute the functions.
-        // and maps the selectors to their position in the selectorSlots array.        
+        // and maps the selectors to their position in the selectorSlots array.
         // func selector => address facet, selector position
         mapping(bytes4 => bytes32) facets;
         // array of slots of function selectors.
@@ -39,10 +42,10 @@ library LibDiamond {
             ds.slot := position
         }
     }
-   
-   event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-   function setContractOwner(address _newOwner) internal {
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    function setContractOwner(address _newOwner) internal {
         DiamondStorage storage ds = diamondStorage();
         address previousOwner = ds.contractOwner;
         ds.contractOwner = _newOwner;
@@ -53,7 +56,7 @@ library LibDiamond {
         contractOwner_ = diamondStorage().contractOwner;
     }
 
-    function enforceIsContractOwner() view internal {
+    function enforceIsContractOwner() internal view {
         require(msg.sender == diamondStorage().contractOwner, "LibDiamond: Must be contract owner");
     }
 
@@ -116,21 +119,19 @@ library LibDiamond {
         bytes4[] memory _selectors
     ) internal returns (uint256, bytes32) {
         DiamondStorage storage ds = diamondStorage();
-        require(_selectors.length > 0, "LibDiamondCut: No selectors in facet to cut");        
+        require(_selectors.length > 0, "LibDiamondCut: No selectors in facet to cut");
         if (_action == IDiamondCut.FacetCutAction.Add) {
             require(_newFacetAddress != address(0), "LibDiamondCut: Add facet can't be address(0)");
             enforceHasContractCode(_newFacetAddress, "LibDiamondCut: Add facet has no code");
             for (uint256 selectorIndex; selectorIndex < _selectors.length; selectorIndex++) {
                 bytes4 selector = _selectors[selectorIndex];
-                bytes32 oldFacet = ds.facets[selector];                
+                bytes32 oldFacet = ds.facets[selector];
                 require(address(bytes20(oldFacet)) == address(0), "LibDiamondCut: Can't add function that already exists");
-                // add facet for selector                                
-                ds.facets[selector] = bytes20(_newFacetAddress) | bytes32(_selectorCount);                
+                // add facet for selector
+                ds.facets[selector] = bytes20(_newFacetAddress) | bytes32(_selectorCount);
                 uint256 selectorInSlotPosition = (_selectorCount % 8) * 32;
                 // clear selector position in slot and add selector
-                _selectorSlot =
-                    (_selectorSlot & ~(CLEAR_SELECTOR_MASK >> selectorInSlotPosition)) |
-                    (bytes32(selector) >> selectorInSlotPosition);
+                _selectorSlot = (_selectorSlot & ~(CLEAR_SELECTOR_MASK >> selectorInSlotPosition)) | (bytes32(selector) >> selectorInSlotPosition);
                 // if slot is full then write it to storage
                 if (selectorInSlotPosition == 224) {
                     ds.selectorSlots[_selectorCount / 8] = _selectorSlot;
@@ -138,12 +139,12 @@ library LibDiamond {
                 }
                 _selectorCount++;
             }
-        } else if(_action == IDiamondCut.FacetCutAction.Replace) {
+        } else if (_action == IDiamondCut.FacetCutAction.Replace) {
             require(_newFacetAddress != address(0), "LibDiamondCut: Replace facet can't be address(0)");
             enforceHasContractCode(_newFacetAddress, "LibDiamondCut: Replace facet has no code");
             for (uint256 selectorIndex; selectorIndex < _selectors.length; selectorIndex++) {
                 bytes4 selector = _selectors[selectorIndex];
-                bytes32 oldFacet = ds.facets[selector];  
+                bytes32 oldFacet = ds.facets[selector];
                 address oldFacetAddress = address(bytes20(oldFacet));
                 // only useful if immutable functions exist
                 require(oldFacetAddress != address(this), "LibDiamondCut: Can't replace immutable function");
@@ -152,7 +153,7 @@ library LibDiamond {
                 // replace old facet address
                 ds.facets[selector] = (oldFacet & CLEAR_ADDRESS_MASK) | bytes20(_newFacetAddress);
             }
-        } else if(_action == IDiamondCut.FacetCutAction.Remove) {
+        } else if (_action == IDiamondCut.FacetCutAction.Remove) {
             require(_newFacetAddress == address(0), "LibDiamondCut: Remove facet address must be address(0)");
             uint256 selectorSlotCount = _selectorCount / 8;
             uint256 selectorInSlotIndex = (_selectorCount % 8) - 1;
@@ -208,7 +209,7 @@ library LibDiamond {
             _selectorCount = selectorSlotCount * 8 + selectorInSlotIndex + 1;
         } else {
             revert("LibDiamondCut: Incorrect FacetCutAction");
-        }       
+        }
         return (_selectorCount, _selectorSlot);
     }
 
