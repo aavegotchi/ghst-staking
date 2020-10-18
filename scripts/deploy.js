@@ -1,4 +1,4 @@
-/* global ethers */
+/* global ethers bre */
 // We require the Buidler Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
 // When running the script with `buidler run <script>` you'll find the Buidler
@@ -22,9 +22,16 @@ async function main () {
   console.log('Account: ' + account)
   console.log('---')
 
-  // kovan
-  const ghstContractAddress = '0xeDaA788Ee96a0749a2De48738f5dF0AA88E99ab5'
-  const uniV2PoolContractAddress = '0xed804550911e985c428537fbf8f8622e4dba4b5d'
+  let ghstContractAddress
+  let uniV2PoolContractAddress
+  if (bre.network.name === 'kovan') {
+    // kovan
+    ghstContractAddress = '0xeDaA788Ee96a0749a2De48738f5dF0AA88E99ab5'
+    uniV2PoolContractAddress = '0xed804550911e985c428537fbf8f8622e4dba4b5d'
+  } else if (bre.network.name === 'mainnet') {
+    ghstContractAddress = '0x3f382dbd960e3a9bbceae22651e88158d2791550'
+    uniV2PoolContractAddress = '0xaB659deE3030602c1aF8C29D146fAcD4aeD6EC85'
+  }
 
   // mainnet
   // const ghstContractAddress = '0x3F382DbD960E3a9bbCeaE22651E88158d2791550'
@@ -38,7 +45,7 @@ async function main () {
       'DiamondLoupeFacet',
       'OwnershipFacet',
       'StakingFacet',
-      'WearableTicketsFacet'
+      'TicketsFacet'
     ],
     otherArgs: [ghstContractAddress, uniV2PoolContractAddress]
   })
