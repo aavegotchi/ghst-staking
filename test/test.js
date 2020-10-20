@@ -1,6 +1,7 @@
 /* global ethers, describe, it, before */
 const { expect } = require('chai')
 const truffleAssert = require('truffle-assertions')
+const fs = require('fs')
 
 const diamond = require('diamond-util')
 
@@ -13,6 +14,22 @@ const oneBillion = '1000000000000000000000000000'
 const threeBillion = '3000000000000000000000000000'
 const fourBillion = '4000000000000000000000000000'
 const eightBillion = '8000000000000000000000000000'
+
+function getSelectors (contract) {
+  const signatures = Object.keys(contract.interface.functions)
+  const selectors = signatures.reduce((acc, val) => {
+    if (val !== 'init(bytes)') {
+      acc.push(contract.interface.getSighash(val))
+    }
+    return acc
+  }, [])
+  return selectors
+}
+
+function getArtifactBytecode (name) {
+  const json = JSON.parse(fs.readFileSync(`./artifacts/${name}.json`, 'utf8'))
+  return json.deployedBytecode
+}
 
 describe('GHSTStakingDiamond', async function () {
   before(async function () {
@@ -57,6 +74,80 @@ describe('GHSTStakingDiamond', async function () {
 
     await ghstDiamond.mint()
     await ghstDiamond.approve(ghstStakingDiamond.address, eightBillion)
+  })
+
+  it('Check that all functions and facets exist in the diamond', async function () {
+    const facets = await ghstStakingDiamond.facets()
+    expect(facets.length).to.equal(4)
+    const diamondLoupeFacetAddress = facets[0].facetAddress
+    const ownershipFacetAddress = facets[1].facetAddress
+    const stakingFacetAddress = facets[2].facetAddress
+    const ticketsFacetAddress = facets[3].facetAddress
+    const facetAddresses = [diamondLoupeFacetAddress, ownershipFacetAddress, stakingFacetAddress, ticketsFacetAddress]
+    // Check that facet addresses are all different
+    expect(new Set(facetAddresses).size).to.equal(4)
+    // Testing facetAddresses function
+    const facetAddressesFromDiamond = await ghstStakingDiamond.facetAddresses()
+    expect(facetAddressesFromDiamond.length).to.equal(4)
+    expect(facetAddresses).to.have.members(facetAddressesFromDiamond)
+    // Checking that each facet exists on chain.
+    expect(await ethers.provider.getCode(diamondLoupeFacetAddress)).to.equal(getArtifactBytecode('DiamondLoupeFacet'))
+    expect(await ethers.provider.getCode(ownershipFacetAddress)).to.equal(getArtifactBytecode('OwnershipFacet'))
+    expect(await ethers.provider.getCode(stakingFacetAddress)).to.equal(getArtifactBytecode('StakingFacet'))
+    expect(await ethers.provider.getCode(ticketsFacetAddress)).to.equal(getArtifactBytecode('TicketsFacet'))
+    // Check that loupe functions return the right selectors for each facet
+    expect(facets[0].functionSelectors.length).to.equal(5)
+    let selectors = getSelectors(await ethers.getContractFactory('DiamondLoupeFacet'))
+    expect(selectors.length).to.equal(5)
+    expect(facets[0].functionSelectors).to.have.members(selectors)
+    // Check that facetFunctionSelectors returns the right selectors
+    let facetSelectors = await ghstStakingDiamond.facetFunctionSelectors(diamondLoupeFacetAddress)
+    expect(facetSelectors.length).to.equal(5)
+    expect(facetSelectors).to.have.members(selectors)
+
+    expect(facets[1].functionSelectors.length).to.equal(2)
+    selectors = getSelectors(await ethers.getContractFactory('OwnershipFacet'))
+    expect(selectors.length).to.equal(2)
+    expect(facets[1].functionSelectors).to.have.members(selectors)
+    // Check that facetFunctionSelectors returns the right selectors
+    facetSelectors = await ghstStakingDiamond.facetFunctionSelectors(ownershipFacetAddress)
+    expect(facetSelectors.length).to.equal(2)
+    expect(facetSelectors).to.have.members(selectors)
+
+    expect(facets[2].functionSelectors.length).to.equal(10)
+    selectors = getSelectors(await ethers.getContractFactory('StakingFacet'))
+    expect(selectors.length).to.equal(10)
+    expect(facets[2].functionSelectors).to.have.members(selectors)
+    // Check that facetFunctionSelectors returns the right selectors
+    facetSelectors = await ghstStakingDiamond.facetFunctionSelectors(stakingFacetAddress)
+    expect(facetSelectors.length).to.equal(10)
+    expect(facetSelectors).to.have.members(selectors)
+
+    expect(facets[3].functionSelectors.length).to.equal(11)
+    selectors = getSelectors(await ethers.getContractFactory('TicketsFacet'))
+    expect(selectors.length).to.equal(11)
+    expect(facets[3].functionSelectors).to.have.members(selectors)
+    // Check that facetFunctionSelectors returns the right selectors
+    facetSelectors = await ghstStakingDiamond.facetFunctionSelectors(ticketsFacetAddress)
+    expect(facetSelectors.length).to.equal(11)
+    expect(facetSelectors).to.have.members(selectors)
+
+    // Check that the facetAddress function works
+    let factory = await ethers.getContractFactory('DiamondLoupeFacet')
+    let selector = factory.interface.getSighash(Object.keys(factory.interface.functions)[0])
+    expect(await ghstStakingDiamond.facetAddress(selector)).to.equal(diamondLoupeFacetAddress)
+
+    factory = await ethers.getContractFactory('OwnershipFacet')
+    selector = factory.interface.getSighash(Object.keys(factory.interface.functions)[0])
+    expect(await ghstStakingDiamond.facetAddress(selector)).to.equal(ownershipFacetAddress)
+
+    factory = await ethers.getContractFactory('StakingFacet')
+    selector = factory.interface.getSighash(Object.keys(factory.interface.functions)[0])
+    expect(await ghstStakingDiamond.facetAddress(selector)).to.equal(stakingFacetAddress)
+
+    factory = await ethers.getContractFactory('TicketsFacet')
+    selector = factory.interface.getSighash(Object.keys(factory.interface.functions)[0])
+    expect(await ghstStakingDiamond.facetAddress(selector)).to.equal(ticketsFacetAddress)
   })
 
   // API here: https://www.chaijs.com/api/bdd/

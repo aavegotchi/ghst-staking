@@ -1,10 +1,10 @@
-/* global ethers bre */
+/* global ethers */
 // We require the Buidler Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
 // When running the script with `buidler run <script>` you'll find the Buidler
 // Runtime Environment's members available in the global scope.
 // eslint-disable-next-line no-unused-vars
-// const bre = require('@nomiclabs/buidler')
+const bre = require('@nomiclabs/buidler')
 // const { ethers } = require('ethers')
 // import { ethers } from 'ethers'
 
@@ -31,6 +31,9 @@ async function main () {
   } else if (bre.network.name === 'mainnet') {
     ghstContractAddress = '0x3f382dbd960e3a9bbceae22651e88158d2791550'
     uniV2PoolContractAddress = '0xaB659deE3030602c1aF8C29D146fAcD4aeD6EC85'
+  } else if (bre.network.name === 'buidlerevm') {
+    ghstContractAddress = '0xeDaA788Ee96a0749a2De48738f5dF0AA88E99ab5'
+    uniV2PoolContractAddress = '0xed804550911e985c428537fbf8f8622e4dba4b5d'
   }
 
   // mainnet
@@ -39,14 +42,14 @@ async function main () {
   // eslint-disable-next-line no-unused-vars
   const deployedDiamond = await diamond.deploy({
     diamondName: 'GHSTStakingDiamond',
-    owner: account,
-    facetNames: [
+    facets: [
       // 'DiamondCutFacet',
       'DiamondLoupeFacet',
       'OwnershipFacet',
       'StakingFacet',
       'TicketsFacet'
     ],
+    owner: account,
     otherArgs: [ghstContractAddress, uniV2PoolContractAddress]
   })
 }

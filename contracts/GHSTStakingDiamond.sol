@@ -4,9 +4,11 @@ pragma experimental ABIEncoderV2;
 
 /******************************************************************************\
 * Author: Nick Mudge
-*
-* Implementation of an example of a diamond.
-* Uses the diamond-2 version 1.3.4 implementation:
+* Aavegotchi GHST Staking Diamond
+* 18 October 2020
+* 
+* 
+* Uses the diamond-2, version 1.3.4, diamond implementation:
 * https://github.com/mudgen/diamond-2
 /******************************************************************************/
 
@@ -40,10 +42,6 @@ contract GHSTStakingDiamond {
         s.ghstContract = _ghstContract;
         s.uniV2PoolContract = _uniV2PoolContract;
         s.ticketsBaseUri = "https://aavegotchi.com/metadata/";
-
-        // used to calculate frens points from staked GHST
-        // s.ghstFrensMultiplier = 1;
-        // s.uniV2PoolTokensFrensMultiplier = 100;
 
         // adding ERC165 data
         ds.supportedInterfaces[type(IERC165).interfaceId] = true;

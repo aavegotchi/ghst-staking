@@ -1,6 +1,7 @@
 /* global task usePlugin ethers */
 usePlugin('@nomiclabs/buidler-waffle')
 usePlugin('buidler-gas-reporter')
+usePlugin('@nomiclabs/buidler-etherscan')
 
 // This is a sample Buidler task. To learn how to create your own go to
 // https://buidler.dev/guides/create-task.html
@@ -21,7 +22,12 @@ const account = fs.readFileSync('.secret', 'utf8')
 // Go to https://buidler.dev/config/ to learn more
 module.exports = {
   gasReporter: {
-    enabled: true
+    enabled: false
+  },
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: 'WC4N2J9N83ZB8M337MZVCE5FC9HQIA6UGR'
   },
   networks: {
     kovan: {
