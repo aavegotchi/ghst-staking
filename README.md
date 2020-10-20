@@ -35,6 +35,14 @@ This diamond uses a direct copy of the current diamond implementation from the [
 
 GHSTStakingDiamond is deployed from the scripts/deploy.js script.
 
+### Ethereum Mainnet 
+
+- GHSTStakingDiamond deployed: 0x93eA6ec350Ace7473f7694D43dEC2726a515E31A
+- DiamondLoupeFacet deployed: 0x47195A03fC3Fc2881D084e8Dc03bD19BE8474E46
+- OwnershipFacet deployed: 0x14aB595377e4fccCa46062A9109FFAC7FA4d3F18
+- StakingFacet deployed: 0x4A271b59763D4D8A18fF55f1FAA286dE97317B15
+- TicketsFacet deployed: 0xDf36944e720cf5Af30a3C5D80d36db5FB71dDE40
+
 ### Bug Bounty
 
 Between October 2 and 8, anyone who finds a compromising fault that could lead to funds being lost or contracts being frozen in our Staking smart contracts will earn themselves a cool 10,000 DAI. We’re very confident in our work, but believe incentivizing the wider Ethereum community to examine our contracts is the right thing to do.

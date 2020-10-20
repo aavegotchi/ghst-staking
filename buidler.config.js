@@ -22,7 +22,7 @@ const account = fs.readFileSync('.secret', 'utf8')
 // Go to https://buidler.dev/config/ to learn more
 module.exports = {
   gasReporter: {
-    enabled: false
+    enabled: true
   },
   etherscan: {
     // Your API key for Etherscan
@@ -34,6 +34,11 @@ module.exports = {
       url: 'https://kovan.infura.io/v3/37b0df2bfa8d412580671665570d81dc',
       accounts: [account],
       gasPrice: 20000000000
+    },
+    mainnet: {
+      url: 'https://mainnet.infura.io/v3/4e6c7da5c0a74b4080c1083d89d16e7e',
+      accounts: [account],
+      gasPrice: 60000000000
     }
   },
   // This is a sample solc configuration that specifies which version of solc to use
