@@ -1,7 +1,7 @@
 module.exports = [
   [
     [
-      '0xDC0a0684dD2a0BDA038c3c1C3797C557bfB4fD5B',
+      '0x47195A03fC3Fc2881D084e8Dc03bD19BE8474E46',
       0,
       [
         '0xcdffacc6',
@@ -12,7 +12,7 @@ module.exports = [
       ]
     ],
     [
-      '0x5Eb313b859734B9f8Ce0C5E1528CD330fD328899',
+      '0x14aB595377e4fccCa46062A9109FFAC7FA4d3F18',
       0,
       [
         '0x8da5cb5b',
@@ -20,7 +20,7 @@ module.exports = [
       ]
     ],
     [
-      '0xE94E53A34E86D46A0304B29Adc5dA7Dc4Cc85c2b',
+      '0x4A271b59763D4D8A18fF55f1FAA286dE97317B15',
       0,
       [
         '0xaa061d09',
@@ -36,7 +36,7 @@ module.exports = [
       ]
     ],
     [
-      '0x969161F91a9938058E7cb97306B5fE39b117C99b',
+      '0xDf36944e720cf5Af30a3C5D80d36db5FB71dDE40',
       0,
       [
         '0x00fdd58e',
@@ -53,7 +53,7 @@ module.exports = [
       ]
     ]
   ],
-  '0x819C3fc356bb319035f9D2886fAc9E57DF0343F5',
-  '0xeDaA788Ee96a0749a2De48738f5dF0AA88E99ab5',
-  '0xed804550911e985c428537fbf8f8622e4dba4b5d'
+  '0x027Ffd3c119567e85998f4E6B9c3d83D5702660c',
+  '0x3f382dbd960e3a9bbceae22651e88158d2791550',
+  '0xaB659deE3030602c1aF8C29D146fAcD4aeD6EC85'
 ]
