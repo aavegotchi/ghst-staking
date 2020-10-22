@@ -222,7 +222,7 @@ describe('GHSTStakingDiamond', async function () {
     await truffleAssert.reverts(ghstStakingDiamond.claimTickets(['5'], [3000000]), 'Staking: Not enough frens points')
   })
 
-  it('Total supply of all tickets should be 45', async function () {
+  it('Total supply of all tickets should be 27', async function () {
     const totalSupplies = await ghstStakingDiamond.totalSupplies()
     let total = ethers.BigNumber.from('0')
     for (const supply of totalSupplies) {
