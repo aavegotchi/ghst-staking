@@ -121,11 +121,10 @@ contract TicketsFacet is IERC1155 {
     }
 
     function totalSupply(uint256 _id) external view returns (uint256 totalSupply_) {
-        require(_id < 6, "Vourchers:  Voucher not found");
+        require(_id < 6, "Tickets:  Ticket not found");
         totalSupply_ = s.tickets[_id].totalSupply;
     }
 
-    // returns the balance of each  voucher
     function balanceOfAll(address _owner) external view returns (uint256[] memory balances_) {
         balances_ = new uint256[](6);
         for (uint256 i; i < 6; i++) {
