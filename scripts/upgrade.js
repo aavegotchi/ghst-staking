@@ -11,6 +11,7 @@
 // const diamond = require('diamond-util')
 
 const diamond = require('diamond-util')
+// const { ethers } = require('ethers')
 // const diamond = require('./diamond-util.js')
 
 async function main () {
@@ -31,15 +32,17 @@ async function main () {
   // mainnet
   // const ghstContractAddress = '0x3F382DbD960E3a9bbCeaE22651E88158d2791550'
 
+  // const ticketsFacet = await ethers.getContractAt('TicketsFacet', '0xFCBb322e272E047853Eb600Ea85aF8596690dEb2')
+
   // eslint-disable-next-line no-unused-vars
   await diamond.upgrade({
     diamondAddress: '0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd',
     diamondCut: [
       [
-        'StakingFacet',
-        diamond.FacetCutAction.Add,
+        'TicketsFacet',
+        diamond.FacetCutAction.Replace,
         [
-          'claimTickets(uint256[],uint256[])'
+          'balanceOfAll(address)'
         ]
       ]
     ]

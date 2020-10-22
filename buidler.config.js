@@ -1,4 +1,7 @@
 /* global task usePlugin ethers */
+
+const local = require('./.local.config.js')
+
 usePlugin('@nomiclabs/buidler-waffle')
 usePlugin('buidler-gas-reporter')
 usePlugin('@nomiclabs/buidler-etherscan')
@@ -13,8 +16,7 @@ task('accounts', 'Prints the list of accounts', async () => {
   }
 })
 
-const fs = require('fs')
-const account = fs.readFileSync('.secret', 'utf8')
+const account = local.secret
 
 // You have to export an object to set up your config
 // This object can have the following optional entries:
@@ -27,16 +29,16 @@ module.exports = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    apiKey: 'WC4N2J9N83ZB8M337MZVCE5FC9HQIA6UGR'
+    apiKey: local.etherscanApiKey
   },
   networks: {
     kovan: {
-      url: 'https://kovan.infura.io/v3/37b0df2bfa8d412580671665570d81dc',
+      url: local.kovanUrl,
       accounts: [account],
       gasPrice: 20000000000
     },
     mainnet: {
-      url: 'https://mainnet.infura.io/v3/4e6c7da5c0a74b4080c1083d89d16e7e',
+      url: local.mainnetUrl,
       accounts: [account],
       gasPrice: 60000000000
     }
