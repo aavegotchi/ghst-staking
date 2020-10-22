@@ -22,7 +22,7 @@ const account = fs.readFileSync('.secret', 'utf8')
 // Go to https://buidler.dev/config/ to learn more
 module.exports = {
   gasReporter: {
-    enabled: true
+    enabled: false
   },
   etherscan: {
     // Your API key for Etherscan

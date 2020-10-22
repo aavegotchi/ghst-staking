@@ -5,15 +5,19 @@ const fs = require('fs')
 
 const diamond = require('diamond-util')
 
-let ghstDiamond
+let ghstContract
+let ethGHSTPoolContract
 let ghstStakingDiamond
+let bobsGhstStakingDiamond
 let account
-const bob = '0xC3c2e1Cf099Bc6e1fA94ce358562BCbD5cc59FE5'
+let bob
+let bobSigner
 
 const oneBillion = '1000000000000000000000000000'
 const threeBillion = '3000000000000000000000000000'
 const fourBillion = '4000000000000000000000000000'
 const eightBillion = '8000000000000000000000000000'
+const oneHundredFourBillion = '104000046296296296296296296296'
 
 function getSelectors (contract) {
   const signatures = Object.keys(contract.interface.functions)
@@ -39,22 +43,20 @@ describe('GHSTStakingDiamond', async function () {
 
     const accounts = await ethers.getSigners()
     account = await accounts[0].getAddress()
+    bobSigner = accounts[1]
+    bob = await bobSigner.getAddress()
     console.log('Account: ' + account)
     console.log('---')
 
-    ghstDiamond = await diamond.deploy({
-      diamondName: 'GHSTDiamond',
-      facets: [
-        // 'DiamondCutFacet',
-        ['DiamondLoupeFacet', diamondLoupeFacet],
-        'OwnershipFacet',
-        'GHSTFacet'
-      ],
-      owner: account,
-      otherArgs: []
-    })
+    const erc20ContractFactory = await ethers.getContractFactory('ERC20')
+    ghstContract = await erc20ContractFactory.deploy()
+    await ghstContract.deployed()
 
-    console.log('address', ghstDiamond.address)
+    // reusing ERC20 contract
+    ethGHSTPoolContract = await erc20ContractFactory.deploy()
+    await ethGHSTPoolContract.deployed()
+
+    console.log('address', ghstContract.address)
 
     ghstStakingDiamond = await diamond.deploy({
       diamondName: 'GHSTStakingDiamond',
@@ -66,14 +68,18 @@ describe('GHSTStakingDiamond', async function () {
         'TicketsFacet'
       ],
       owner: account,
-      otherArgs: [ghstDiamond.address, ghstDiamond.address]
+      otherArgs: [ghstContract.address, ethGHSTPoolContract.address]
     })
 
-    ghstDiamond = await ethers.getContractAt('GHSTFacet', ghstDiamond.address)
+    ghstContract = await ethers.getContractAt('GHSTFacet', ghstContract.address)
     ghstStakingDiamond = await ethers.getContractAt('IGHSTStakingDiamond', ghstStakingDiamond.address)
+    bobsGhstStakingDiamond = ghstStakingDiamond.connect(bobSigner)
 
-    await ghstDiamond.mint()
-    await ghstDiamond.approve(ghstStakingDiamond.address, eightBillion)
+    await ghstContract.mint()
+    await ghstContract.approve(ghstStakingDiamond.address, eightBillion)
+
+    await ethGHSTPoolContract.mint()
+    await ethGHSTPoolContract.approve(ghstStakingDiamond.address, eightBillion)
   })
 
   it('Check that all functions and facets exist in the diamond', async function () {
@@ -150,63 +156,95 @@ describe('GHSTStakingDiamond', async function () {
     expect(await ghstStakingDiamond.facetAddress(selector)).to.equal(ticketsFacetAddress)
   })
 
+  // Do not need to test upgrades because this is a single cut, immutable diamond.
+  // So do not need to test replacing or removing functions and facets.
+  // But tests for upgrades are here https://github.com/mudgen/diamond-2/blob/master/test/diamondTest.js
+  // Here I test that upgrades are not possible in this diamond.
+  it('Check that diamond upgrades are not possible', async function () {
+    const FacetCutAction = {
+      Add: 0,
+      Replace: 1,
+      Remove: 2
+    }
+    // 0x618ddf52 == "myTestFunc()"
+    const diamondCutFacet = await ethers.getContractAt('DiamondCutFacet', ghstStakingDiamond.address)
+    await truffleAssert.reverts(
+      diamondCutFacet.diamondCut([
+        [ghstContract.address, FacetCutAction.Add, ['0x618ddf52']]
+      ], ethers.constants.AddressZero, '0x'),
+      'GHSTSTaking: Function does not exist')
+  })
+
   // API here: https://www.chaijs.com/api/bdd/
   it('Should stake all GHST', async function () {
-    let balance = await ghstDiamond.balanceOf(account)
+    let balance = await ghstContract.balanceOf(account)
     expect(balance).to.equal(fourBillion)
     await ghstStakingDiamond.stakeGhst(balance)
     // eslint-disable-next-line no-unused-vars
     const [stakedGhst, stakedUniswapTokens] = await ghstStakingDiamond.staked(account)
     expect(stakedGhst).to.equal(fourBillion)
-    balance = await ghstDiamond.balanceOf(account)
+    balance = await ghstContract.balanceOf(account)
     expect(balance).to.equal(0)
   })
 
-  it('Should accumulate frens', async function () {
-    // Commented this out bc the test was failing (2 seconds elapsed)
-    //  await ethers.provider.send('evm_increaseTime', [1]) // add 1 seconds
+  it('Should stake GHST-ETH pool tokens', async function () {
+    await ghstStakingDiamond.stakeUniV2PoolTokens(oneBillion)
+    // eslint-disable-next-line no-unused-vars
+    const [ghst, stakedUniswapTokens] = await ghstStakingDiamond.staked(account)
+    expect(stakedUniswapTokens).to.equal(oneBillion)
+  })
+
+  it('Should accumulate frens from staked GHST and staked GHST-ETH pool tokens', async function () {
+    await ethers.provider.send('evm_increaseTime', [86400]) // add 1 day
 
     await ethers.provider.send('evm_mine') // mine the next block
+    // 1 fren per staked GHST per day
+    // 1 day (plus one second) of 4 billion staked GHST equals 4 billion frens
+    // 100 frens per GHST-ETH pool token per day
+    // 1 day of 1 billion staked GHST-ETH pool tokens equals 100 billion frens
+    // total frens is 104 billion frens
     const frens = await ghstStakingDiamond.frens(account)
-    // console.log('Frens:' + frens / Math.pow(10, 18))
-    expect(frens).to.equal(ethers.BigNumber.from('46296296296296296296296'))
+    expect(frens).to.equal(oneHundredFourBillion)
   })
 
   it('Should be able to claim ticket', async function () {
-    // await ghstStakingDiamond.claimTickets(['0', '1', '2', '3', '4', '5'], [1, 1, 1, 1, 1, 1])
-    await ghstStakingDiamond.claimTickets([0, 1, 2, 3, 4, 5], [1, 1, 1, 1, 1, 1])
+    await ghstStakingDiamond.claimTickets([0, 1, 2, 3, 4, 5], [10, 6, 5, 3, 2, 1])
     const totalSupply = await ghstStakingDiamond.totalSupply('0')
     await ghstStakingDiamond.frens(account)
-    expect(totalSupply).to.equal('1')
+    expect(totalSupply).to.equal('10')
   })
 
   it('Cannot claim tickets above 5', async function () {
     await truffleAssert.reverts(ghstStakingDiamond.claimTickets(['6'], [1]))
   })
 
-  it('Should not be able to purchase 5 Godlike tickets', async function () {
-    await truffleAssert.reverts(ghstStakingDiamond.claimTickets(['5'], [5]), 'Staking: Not enough frens points')
+  it('Should not be able to purchase 3 million Godlike tickets', async function () {
+    await truffleAssert.reverts(ghstStakingDiamond.claimTickets(['5'], [3000000]), 'Staking: Not enough frens points')
   })
 
-  it('Total supply of tickets should be 6', async function () {
-    const totalSupply = await ghstStakingDiamond.totalSupplies()
-    expect(totalSupply.length).to.equal(6)
+  it('Total supply of all tickets should be 45', async function () {
+    const totalSupplies = await ghstStakingDiamond.totalSupplies()
+    let total = ethers.BigNumber.from('0')
+    for (const supply of totalSupplies) {
+      total = total.add(supply)
+    }
+    expect(total).to.equal(27)
   })
 
-  it('Balance of second item should be 1', async function () {
+  it('Balance of second item should be 6', async function () {
     const balance = await ghstStakingDiamond.balanceOf(account, '1')
-    expect(balance).to.equal('1')
+    expect(balance).to.equal('6')
   })
 
-  it('Balance of third item should be 1', async function () {
+  it('Balance of third item should be 5', async function () {
     const balance = await ghstStakingDiamond.balanceOfAll(account)
-    expect(balance[2]).to.equal('1')
+    expect(balance[2]).to.equal('5')
   })
 
   it('Can transfer own ticket', async function () {
-    await ghstStakingDiamond.safeTransferFrom(account, bob, '0', '1', [])
+    await ghstStakingDiamond.safeTransferFrom(account, bob, '0', '3', [])
     const bobTicketBalance = await ghstStakingDiamond.balanceOf(bob, '0')
-    expect(bobTicketBalance).to.equal('1')
+    expect(bobTicketBalance).to.equal(3)
   })
 
   it("Cannot transfer someone else's ticket", async function () {
@@ -214,10 +252,10 @@ describe('GHSTStakingDiamond', async function () {
   })
 
   it('Can batch transfer own tickets', async function () {
-    await ghstStakingDiamond.safeBatchTransferFrom(account, bob, ['1', '2'], ['1', '1'], [])
+    await ghstStakingDiamond.safeBatchTransferFrom(account, bob, ['1', '2'], ['2', '1'], [])
     const bobTicketBalance1 = await ghstStakingDiamond.balanceOf(bob, '1')
     const bobTicketBalance2 = await ghstStakingDiamond.balanceOf(bob, '2')
-    expect(bobTicketBalance1).to.equal('1')
+    expect(bobTicketBalance1).to.equal(2)
     expect(bobTicketBalance2).to.equal(1)
   })
 
@@ -225,31 +263,103 @@ describe('GHSTStakingDiamond', async function () {
     await truffleAssert.reverts(ghstStakingDiamond.safeBatchTransferFrom(bob, account, ['3', '4'], ['1', '1'], []), 'Tickets: Not approved to transfer')
   })
 
+  it('Can get balance of batch', async function () {
+    const result = await ghstStakingDiamond.balanceOfBatch([account, account, bob, bob, bob, bob], [0, 3, 5, 1, 0, 2])
+    expect(result[0]).to.equal(7)
+    expect(result[1]).to.equal(3)
+    expect(result[2]).to.equal(0)
+    expect(result[3]).to.equal(2)
+    expect(result[4]).to.equal(3)
+    expect(result[5]).to.equal(1)
+  })
+
   it('Cannot transfer more tickets than one owns', async function () {
     await truffleAssert.reverts(ghstStakingDiamond.safeTransferFrom(account, bob, '3', '5', []), 'Tickets: _value greater than balance')
     await truffleAssert.reverts(ghstStakingDiamond.safeBatchTransferFrom(account, bob, ['3', '4'], ['5', '5'], []), 'Tickets: _value greater than balance')
   })
 
-  it('Should stake GHST-ETH', async function () {
-    await ghstDiamond.mint()
-    await ghstStakingDiamond.stakeUniV2PoolTokens(oneBillion)
-    const [ghst, uniswap] = await ghstStakingDiamond.staked(account)
-    expect(uniswap).to.equal(oneBillion)
+  it('Can approve transfers', async function () {
+    expect(await ghstStakingDiamond.isApprovedForAll(account, bob)).to.equal(false)
+    await ghstStakingDiamond.setApprovalForAll(bob, true)
+    expect(await ghstStakingDiamond.isApprovedForAll(account, bob)).to.equal(true)
+  })
+
+  it('Can transfer approved transfers', async function () {
+    bobsGhstStakingDiamond.safeTransferFrom(account, bob, '0', '5', [])
+    let balance = await ghstStakingDiamond.balanceOf(bob, '0')
+    expect(balance).to.equal(8)
+    balance = await ghstStakingDiamond.balanceOf(account, '0')
+    expect(balance).to.equal(2)
+
+    bobsGhstStakingDiamond.safeBatchTransferFrom(account, bob, ['0', '3'], ['1', '2'], [])
+    balance = await ghstStakingDiamond.balanceOf(bob, '0')
+    expect(balance).to.equal(9)
+    balance = await ghstStakingDiamond.balanceOf(account, '0')
+    expect(balance).to.equal(1)
+
+    balance = await ghstStakingDiamond.balanceOf(bob, '3')
+    expect(balance).to.equal(2)
+    balance = await ghstStakingDiamond.balanceOf(account, '3')
+    expect(balance).to.equal(1)
   })
 
   it('Can withdraw staked GHST', async function () {
-    const initialBalance = await ghstDiamond.balanceOf(account)
-    expect(initialBalance).to.equal(threeBillion)
+    const initialBalance = await ghstContract.balanceOf(account)
+    expect(initialBalance).to.equal(0)
     // eslint-disable-next-line no-unused-vars
     const [stakedGhst, stakedUniswapTokens] = await ghstStakingDiamond.staked(account)
 
     const withdrawAmount = (10 * Math.pow(10, 18)).toString()
     await ghstStakingDiamond['withdrawGhstStake(uint256)'](withdrawAmount)
-    let balance = await ghstDiamond.balanceOf(account)
+    let balance = await ghstContract.balanceOf(account)
     expect(balance).to.equal(initialBalance.add(withdrawAmount))
 
     await ghstStakingDiamond['withdrawGhstStake()']()
-    balance = await ghstDiamond.balanceOf(account)
+    balance = await ghstContract.balanceOf(account)
     expect(balance).to.equal(initialBalance.add(stakedGhst))
+  })
+
+  it('Can withdraw staked GHST-ETH pool tokens', async function () {
+    const initialBalance = await ethGHSTPoolContract.balanceOf(account)
+    expect(initialBalance).to.equal(threeBillion)
+    // eslint-disable-next-line no-unused-vars
+    const [stakedGhst, stakedUniswapTokens] = await ghstStakingDiamond.staked(account)
+
+    const withdrawAmount = (10 * Math.pow(10, 18)).toString()
+    await ghstStakingDiamond['withdrawUniV2PoolStake(uint256)'](withdrawAmount)
+    let balance = await ethGHSTPoolContract.balanceOf(account)
+    expect(balance).to.equal(initialBalance.add(withdrawAmount))
+
+    await ghstStakingDiamond['withdrawUniV2PoolStake()']()
+    balance = await ethGHSTPoolContract.balanceOf(account)
+    expect(balance).to.equal(initialBalance.add(stakedUniswapTokens))
+  })
+
+  it('Cannot withdraw more than staked', async function () {
+    const withdrawAmount = (10 * Math.pow(10, 18)).toString()
+    await truffleAssert.reverts(ghstStakingDiamond['withdrawGhstStake(uint256)'](withdrawAmount), "Staking: Can't withdraw more than staked")
+    await truffleAssert.reverts(ghstStakingDiamond['withdrawUniV2PoolStake(uint256)'](withdrawAmount), "Staking: Can't withdraw more than staked")
+  })
+
+  it('Can set setBaseURI', async function () {
+    let url = await ghstStakingDiamond.uri(2)
+    expect(url).to.equal('https://aavegotchi.com/metadata/2')
+    await ghstStakingDiamond.setBaseURI('something_else/')
+    url = await ghstStakingDiamond.uri(2)
+    expect(url).to.equal('something_else/2')
+  })
+
+  it('Set contract owner', async function () {
+    let owner = await ghstStakingDiamond.owner()
+    expect(owner).to.equal(account)
+    await ghstStakingDiamond.transferOwnership(bob)
+    owner = await ghstStakingDiamond.owner()
+    expect(owner).to.equal(bob)
+    // wrong owner can't transfer ownership
+    await truffleAssert.reverts(ghstStakingDiamond.transferOwnership(account), 'LibDiamond: Must be contract owner')
+    // transfer ownership back
+    await bobsGhstStakingDiamond.transferOwnership(account)
+    owner = await ghstStakingDiamond.owner()
+    expect(owner).to.equal(account)
   })
 })

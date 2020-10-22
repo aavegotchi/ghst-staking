@@ -2,10 +2,9 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "../../libraries/LibDiamond.sol";
 import "./AppStorage.sol";
 
-contract GHSTFacet {
+contract ERC20 {
     AppStorage s;
 
     uint256 constant MAX_UINT = uint256(-1);
@@ -14,11 +13,11 @@ contract GHSTFacet {
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
 
     function name() external pure returns (string memory) {
-        return "GHST";
+        return "ERC20";
     }
 
     function symbol() external pure returns (string memory) {
-        return "GHST";
+        return "ERC20";
     }
 
     function decimals() external pure returns (uint8) {
@@ -40,27 +39,6 @@ contract GHSTFacet {
         s.balances[_to] += _value;
         emit Transfer(msg.sender, _to, _value);
         success = true;
-    }
-
-    function addApprovedContract(address _contract) external {
-        LibDiamond.enforceIsContractOwner();
-        require(s.approvedContractIndexes[_contract] == 0, "GHSTFacet: Approved contract already exists");
-        s.approvedContracts.push(_contract);
-        s.approvedContractIndexes[_contract] = s.approvedContracts.length;
-    }
-
-    function removeApprovedContract(address _contract) external {
-        LibDiamond.enforceIsContractOwner();
-        uint256 index = s.approvedContractIndexes[_contract];
-        require(index > 0, "GHSTFacet: Approved contract does not exist");
-        uint256 lastIndex = s.approvedContracts.length;
-        if (index != lastIndex) {
-            address lastContract = s.approvedContracts[lastIndex - 1];
-            s.approvedContracts[index - 1] = lastContract;
-            s.approvedContractIndexes[lastContract] = index;
-        }
-        s.approvedContracts.pop();
-        delete s.approvedContractIndexes[_contract];
     }
 
     function approvedContracts() external view returns (address[] memory contracts_) {
