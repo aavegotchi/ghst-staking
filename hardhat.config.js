@@ -34,6 +34,15 @@ module.exports = {
     apiKey: local.etherscanApiKey
   },
   networks: {
+    mumbai: {
+      url: 'https://rpc-mumbai.matic.today',
+      accounts: [account],
+      blockGasLimit: 20000000,
+      gasPrice: 1000000000
+    },
+    hardhat: {
+      blockGasLimit: 20000000
+    },
     kovan: {
       url: local.kovanUrl,
       accounts: [account],

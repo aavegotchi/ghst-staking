@@ -25,10 +25,27 @@ contract StakingFacet {
         frens_ += (account.ghst * timePeriod) / 86400;
     }
 
+    function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
+        frens_ = new uint256[](_accounts.length);
+        for (uint256 i; i < _accounts.length; i++) {
+            frens_[i] = frens(_accounts[i]);
+        }
+    }
+
     function updateFrens() internal {
         Account storage account = s.accounts[msg.sender];
         account.frens = uint104(frens(msg.sender));
         account.lastUpdate = uint40(block.timestamp);
+    }
+
+    function migrateFrens(address[] calldata _stakers, uint256[] calldata _frens) external {
+        LibDiamond.enforceIsContractOwner();
+        require(_stakers.length == _frens.length, "StakingFacet: stakers not same length as frens");
+        for (uint256 i; i < _stakers.length; i++) {
+            Account storage account = s.accounts[_stakers[i]];
+            account.frens = uint104(_frens[i]);
+            account.lastUpdate = uint40(block.timestamp);
+        }
     }
 
     function stakeGhst(uint256 _ghstValue) external {

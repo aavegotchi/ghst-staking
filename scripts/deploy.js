@@ -35,7 +35,7 @@ async function main () {
     ghstContractAddress = '0x3f382dbd960e3a9bbceae22651e88158d2791550'
     uniV2PoolContractAddress = '0xaB659deE3030602c1aF8C29D146fAcD4aeD6EC85'
     owner = '0x027Ffd3c119567e85998f4E6B9c3d83D5702660c'
-  } else if (hre.network.name === 'buidlerevm') {
+  } else if (hre.network.name === 'hardhat') {
     ghstContractAddress = '0xeDaA788Ee96a0749a2De48738f5dF0AA88E99ab5'
     uniV2PoolContractAddress = '0xed804550911e985c428537fbf8f8622e4dba4b5d'
     owner = '0x027Ffd3c119567e85998f4E6B9c3d83D5702660c'
