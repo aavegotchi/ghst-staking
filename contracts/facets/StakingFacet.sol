@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.3;
+pragma solidity 0.7.6;
 
 import "../libraries/AppStorage.sol";
 import "../libraries/LibDiamond.sol";
@@ -14,13 +14,13 @@ contract StakingFacet {
     event TransferBatch(address indexed _operator, address indexed _from, address indexed _to, uint256[] _ids, uint256[] _values);
 
     function frens(address _account) public view returns (uint256 frens_) {
-        Account memory account = s.accounts[_account];
+        Account storage account = s.accounts[_account];
         // this cannot underflow or overflow
-        uint256 timePeriod = block.timestamp - account.lastUpdate;
+        uint256 timePeriod = block.timestamp - account.lastFrensUpdate;
         frens_ = account.frens;
         // 86400 the number of seconds in 1 day
         // 100 frens are generated for each LP token over 24 hours
-        frens_ += ((uint256(account.uniV2PoolTokens) * 100) * timePeriod) / 86400;
+        frens_ += ((uint256(account.poolTokens) * 100) * timePeriod) / 86400;
         // 1 fren is generated for each GHST over 24 hours
         frens_ += (account.ghst * timePeriod) / 86400;
     }
@@ -34,8 +34,8 @@ contract StakingFacet {
 
     function updateFrens() internal {
         Account storage account = s.accounts[msg.sender];
-        account.frens = uint104(frens(msg.sender));
-        account.lastUpdate = uint40(block.timestamp);
+        account.frens = frens(msg.sender);
+        account.lastFrensUpdate = uint40(block.timestamp);
     }
 
     function migrateFrens(address[] calldata _stakers, uint256[] calldata _frens) external {
@@ -44,7 +44,7 @@ contract StakingFacet {
         for (uint256 i; i < _stakers.length; i++) {
             Account storage account = s.accounts[_stakers[i]];
             account.frens = uint104(_frens[i]);
-            account.lastUpdate = uint40(block.timestamp);
+            account.lastFrensUpdate = uint40(block.timestamp);
         }
     }
 
@@ -56,13 +56,13 @@ contract StakingFacet {
 
     function stakeUniV2PoolTokens(uint256 _uniV2PoolTokens) external {
         updateFrens();
-        s.accounts[msg.sender].uniV2PoolTokens += uint96(_uniV2PoolTokens);
-        LibERC20.transferFrom(s.uniV2PoolContract, msg.sender, address(this), _uniV2PoolTokens);
+        s.accounts[msg.sender].poolTokens += uint96(_uniV2PoolTokens);
+        LibERC20.transferFrom(s.poolContract, msg.sender, address(this), _uniV2PoolTokens);
     }
 
     function staked(address _account) external view returns (uint256 ghst_, uint256 uniV2PoolTokens_) {
         ghst_ = s.accounts[_account].ghst;
-        uniV2PoolTokens_ = s.accounts[_account].uniV2PoolTokens;
+        uniV2PoolTokens_ = s.accounts[_account].poolTokens;
     }
 
     function withdrawGhstStake(uint256 _ghstValue) external {
@@ -75,10 +75,10 @@ contract StakingFacet {
 
     function withdrawUniV2PoolStake(uint256 _uniV2PoolTokens) external {
         updateFrens();
-        uint256 bal = s.accounts[msg.sender].uniV2PoolTokens;
+        uint256 bal = s.accounts[msg.sender].poolTokens;
         require(bal >= _uniV2PoolTokens, "Staking: Can't withdraw more than staked");
-        s.accounts[msg.sender].uniV2PoolTokens = uint96(bal - _uniV2PoolTokens);
-        LibERC20.transfer(s.uniV2PoolContract, msg.sender, _uniV2PoolTokens);
+        s.accounts[msg.sender].poolTokens = uint96(bal - _uniV2PoolTokens);
+        LibERC20.transfer(s.poolContract, msg.sender, _uniV2PoolTokens);
     }
 
     function withdrawGhstStake() external {
@@ -90,9 +90,9 @@ contract StakingFacet {
 
     function withdrawUniV2PoolStake() external {
         updateFrens();
-        uint256 bal = s.accounts[msg.sender].uniV2PoolTokens;
-        s.accounts[msg.sender].uniV2PoolTokens = uint96(0);
-        LibERC20.transfer(s.uniV2PoolContract, msg.sender, bal);
+        uint256 bal = s.accounts[msg.sender].poolTokens;
+        s.accounts[msg.sender].poolTokens = uint96(0);
+        LibERC20.transfer(s.poolContract, msg.sender, bal);
     }
 
     function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external {

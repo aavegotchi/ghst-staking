@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.3;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "./AppStorage.sol";
@@ -54,11 +54,11 @@ contract ERC20 {
         if (msg.sender == _from || s.approvedContractIndexes[msg.sender] > 0) {
             // pass
         } else {
-            uint256 allowance = s.allowances[_from][msg.sender];
-            require(allowance >= _value, "GHST: Not allowed to transfer");
-            if (allowance != MAX_UINT) {
-                s.allowances[_from][msg.sender] = allowance - _value;
-                emit Approval(_from, msg.sender, allowance - _value);
+            uint256 l_allowance = s.allowances[_from][msg.sender];
+            require(l_allowance >= _value, "GHST: Not allowed to transfer");
+            if (l_allowance != MAX_UINT) {
+                s.allowances[_from][msg.sender] = l_allowance - _value;
+                emit Approval(_from, msg.sender, l_allowance - _value);
             }
         }
         require(fromBalance >= _value, "GHST: Not enough GHST to transfer");
@@ -75,20 +75,20 @@ contract ERC20 {
     }
 
     function increaseAllowance(address _spender, uint256 _value) external returns (bool success) {
-        uint256 allowance = s.allowances[msg.sender][_spender];
-        uint256 newAllowance = allowance + _value;
-        require(newAllowance >= allowance, "GHSTFacet: Allowance increase overflowed");
+        uint256 l_allowance = s.allowances[msg.sender][_spender];
+        uint256 newAllowance = l_allowance + _value;
+        require(newAllowance >= l_allowance, "GHSTFacet: Allowance increase overflowed");
         s.allowances[msg.sender][_spender] = newAllowance;
         emit Approval(msg.sender, _spender, newAllowance);
         success = true;
     }
 
     function decreaseAllowance(address _spender, uint256 _value) external returns (bool success) {
-        uint256 allowance = s.allowances[msg.sender][_spender];
-        require(allowance >= _value, "GHSTFacet: Allowance decreased below 0");
-        allowance -= _value;
-        s.allowances[msg.sender][_spender] = allowance;
-        emit Approval(msg.sender, _spender, allowance);
+        uint256 l_allowance = s.allowances[msg.sender][_spender];
+        require(l_allowance >= _value, "GHSTFacet: Allowance decreased below 0");
+        l_allowance -= _value;
+        s.allowances[msg.sender][_spender] = l_allowance;
+        emit Approval(msg.sender, _spender, l_allowance);
         success = true;
     }
 

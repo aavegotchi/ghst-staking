@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.3;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 /******************************************************************************\
@@ -41,7 +41,7 @@ contract GHSTStakingDiamond {
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
 
         s.ghstContract = _args.ghstContract;
-        s.uniV2PoolContract = _args.uniV2PoolContract;
+        s.poolContract = _args.uniV2PoolContract;
         s.ticketsBaseUri = "https://aavegotchi.com/metadata/";
 
         // adding ERC165 data

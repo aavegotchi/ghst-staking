@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.3;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../interfaces/IERC1155.sol";
@@ -48,7 +48,7 @@ contract TicketsFacet is IERC1155 {
         bytes calldata _data
     ) external override {
         require(_to != address(0), "Tickets: Can't transfer to 0 address");
-        require(_from == msg.sender || s.approved[_from][msg.sender], "Tickets: Not approved to transfer");
+        require(_from == msg.sender || s.accounts[_from].ticketsApproved[msg.sender], "Tickets: Not approved to transfer");
         uint256 bal = s.tickets[_id].accountBalances[_from];
         require(bal >= _value, "Tickets: _value greater than balance");
         s.tickets[_id].accountBalances[_from] = bal - _value;
@@ -91,7 +91,7 @@ contract TicketsFacet is IERC1155 {
     ) external override {
         require(_to != address(0), "Tickets: Can't transfer to 0 address");
         require(_ids.length == _values.length, "Tickets: _ids not the same length as _values");
-        require(_from == msg.sender || s.approved[_from][msg.sender], "Tickets: Not approved to transfer");
+        require(_from == msg.sender || s.accounts[_from].ticketsApproved[msg.sender], "Tickets: Not approved to transfer");
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
             uint256 value = _values[i];
@@ -138,7 +138,7 @@ contract TicketsFacet is IERC1155 {
         @param _id       ID of the token
         @return balance_ The _owner's balance of the token type requested
      */
-    function balanceOf(address _owner, uint256 _id) external override view returns (uint256 balance_) {
+    function balanceOf(address _owner, uint256 _id) external view override returns (uint256 balance_) {
         balance_ = s.tickets[_id].accountBalances[_owner];
     }
 
@@ -148,7 +148,7 @@ contract TicketsFacet is IERC1155 {
         @param _ids       ID of the tokens
         @return balances_ The _owner's balance of the token types requested (i.e. balance for each (owner, id) pair)
      */
-    function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids) external override view returns (uint256[] memory balances_) {
+    function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids) external view override returns (uint256[] memory balances_) {
         require(_owners.length == _ids.length, "Tickets: _owners not same length as _ids");
         balances_ = new uint256[](_owners.length);
         for (uint256 i; i < _owners.length; i++) {
@@ -163,7 +163,7 @@ contract TicketsFacet is IERC1155 {
         @param _approved  True if the operator is approved, false to revoke approval
     */
     function setApprovalForAll(address _operator, bool _approved) external override {
-        s.approved[msg.sender][_operator] = _approved;
+        s.accounts[msg.sender].ticketsApproved[_operator] = _approved;
         emit ApprovalForAll(msg.sender, _operator, _approved);
     }
 
@@ -173,7 +173,27 @@ contract TicketsFacet is IERC1155 {
         @param _operator  Address of authorized operator
         @return           True if the operator is approved, false if not
     */
-    function isApprovedForAll(address _owner, address _operator) external override view returns (bool) {
-        return s.approved[_owner][_operator];
+    function isApprovedForAll(address _owner, address _operator) external view override returns (bool) {
+        return s.accounts[_owner].ticketsApproved[_operator];
+    }
+
+    struct TicketOwner {
+        address owner;
+        uint256[] ids;
+        uint256[] values;
+    }
+
+    function migrateTickets(TicketOwner[] calldata _ticketOwners) external {
+        for (uint256 i; i < _ticketOwners.length; i++) {
+            TicketOwner calldata ticketOwner = _ticketOwners[i];
+            require(ticketOwner.ids.length == ticketOwner.values.length, "TicketFacet: ids and values not the same length");
+            for (uint256 j; j < ticketOwner.ids.length; j++) {
+                uint256 id = ticketOwner.ids[j];
+                uint256 value = ticketOwner.values[j];
+                s.tickets[id].accountBalances[ticketOwner.owner] += value;
+                s.tickets[id].totalSupply += uint96(value);
+            }
+            emit TransferBatch(msg.sender, address(0), ticketOwner.owner, ticketOwner.ids, ticketOwner.values);
+        }
     }
 }

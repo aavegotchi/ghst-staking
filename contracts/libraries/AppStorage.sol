@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.3;
+pragma solidity 0.7.6;
 
 struct Account {
+    // spender => amount
+    mapping(address => uint256) ghstStakingTokensAllowances;
+    mapping(address => bool) ticketsApproved;
     uint96 ghst;
-    uint96 uniV2PoolTokens;
-    uint40 lastUpdate;
-    uint104 frens;
+    uint40 lastFrensUpdate;
+    uint256 ghstStakingTokens;
+    uint256 poolTokens;
+    uint256 frens;
 }
 
 struct Ticket {
@@ -15,10 +19,10 @@ struct Ticket {
 }
 
 struct AppStorage {
-    mapping(address => mapping(address => bool)) approved;
     mapping(address => Account) accounts;
     mapping(uint256 => Ticket) tickets;
     address ghstContract;
-    address uniV2PoolContract;
+    address poolContract;
     string ticketsBaseUri;
+    uint128 totalSupply;
 }
