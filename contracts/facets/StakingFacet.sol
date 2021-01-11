@@ -74,7 +74,7 @@ contract StakingFacet {
     function withdrawGhstStake(uint256 _ghstValue) external {
         updateFrens();
         uint256 bal = s.accounts[msg.sender].ghst;
-        require(bal >= _ghstValue, "Staking: Can't withdraw more than staked");
+        require(bal >= _ghstValue, "Can't withdraw more GHST than staked");
         s.accounts[msg.sender].ghst = uint96(bal - _ghstValue);
         LibERC20.transfer(s.ghstContract, msg.sender, _ghstValue);
     }

@@ -427,8 +427,8 @@ describe('GHSTStakingDiamond', async function () {
 
   it('Cannot withdraw more than staked', async function () {
     const withdrawAmount = (10 * Math.pow(10, 18)).toString()
-    await truffleAssert.reverts(ghstStakingDiamond['withdrawGhstStake(uint256)'](withdrawAmount), "Staking: Can't withdraw more than staked")
-    await truffleAssert.reverts(ghstStakingDiamond['withdrawPoolStake(uint256)'](withdrawAmount), "Staking: Can't withdraw more than staked")
+    await truffleAssert.reverts(ghstStakingDiamond['withdrawGhstStake(uint256)'](withdrawAmount), "Can't withdraw more GHST than staked")
+    await truffleAssert.reverts(ghstStakingDiamond['withdrawPoolStake(uint256)'](withdrawAmount), "Can't withdraw more ghstStakingToken than in account")
   })
 
   it('Can set setBaseURI', async function () {
