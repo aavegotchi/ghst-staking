@@ -8,6 +8,7 @@ struct Account {
     uint96 ghst;
     uint40 lastFrensUpdate;
     uint256 ghstStakingTokens;
+    uint256 poolTokens;
     uint256 frens;
 }
 

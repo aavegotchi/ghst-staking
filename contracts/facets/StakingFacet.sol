@@ -22,7 +22,7 @@ contract StakingFacet {
         frens_ = account.frens;
         // 86400 the number of seconds in 1 day
         // 100 frens are generated for each LP token over 24 hours
-        frens_ += ((account.ghstStakingTokens * 100) * timePeriod) / 24 hours;
+        frens_ += ((account.poolTokens * 100) * timePeriod) / 24 hours;
         // 1 fren is generated for each GHST over 24 hours
         frens_ += (account.ghst * timePeriod) / 24 hours;
     }
@@ -60,6 +60,7 @@ contract StakingFacet {
         updateFrens();
         Account storage account = s.accounts[msg.sender];
         account.ghstStakingTokens += _poolTokens;
+        account.poolTokens += _poolTokens;
         s.ghstStakingTokensTotalSupply += _poolTokens;
         emit Transfer(address(0), msg.sender, _poolTokens);
         LibERC20.transferFrom(s.poolContract, msg.sender, address(this), _poolTokens);
@@ -67,7 +68,7 @@ contract StakingFacet {
 
     function staked(address _account) external view returns (uint256 ghst_, uint256 poolTokens_) {
         ghst_ = s.accounts[_account].ghst;
-        poolTokens_ = s.accounts[_account].ghstStakingTokens;
+        poolTokens_ = s.accounts[_account].poolTokens;
     }
 
     function withdrawGhstStake(uint256 _ghstValue) external {
@@ -81,9 +82,12 @@ contract StakingFacet {
     function withdrawPoolStake(uint256 _poolTokens) external {
         updateFrens();
         uint256 bal = s.accounts[msg.sender].ghstStakingTokens;
-        require(bal >= _poolTokens, "Staking: Can't withdraw more than staked");
+        require(bal >= _poolTokens, "Can't withdraw more ghstStakingToken than in account");
         s.accounts[msg.sender].ghstStakingTokens = bal - _poolTokens;
         s.ghstStakingTokensTotalSupply -= _poolTokens;
+        uint256 accountPoolTokens = s.accounts[msg.sender].poolTokens;
+        require(accountPoolTokens >= _poolTokens, "Can't withdraw more poolTokens than in account");
+        s.accounts[msg.sender].poolTokens = accountPoolTokens - _poolTokens;
         emit Transfer(msg.sender, address(0), _poolTokens);
         LibERC20.transfer(s.poolContract, msg.sender, _poolTokens);
     }
@@ -100,6 +104,9 @@ contract StakingFacet {
         uint256 bal = s.accounts[msg.sender].ghstStakingTokens;
         require(bal != 0, "Cannot withdraw zero pool stake balance");
         s.accounts[msg.sender].ghstStakingTokens = 0;
+        uint256 accountPoolTokens = s.accounts[msg.sender].poolTokens;
+        require(accountPoolTokens >= bal, "Can't withdraw more poolTokens than in account");
+        s.accounts[msg.sender].poolTokens = accountPoolTokens - bal;
         emit Transfer(msg.sender, address(0), bal);
         LibERC20.transfer(s.poolContract, msg.sender, bal);
     }
@@ -118,7 +125,7 @@ contract StakingFacet {
             s.tickets[id].accountBalances[msg.sender] += value;
             s.tickets[id].totalSupply += uint96(value);
         }
-        s.accounts[msg.sender].frens = uint104(frensBal);
+        s.accounts[msg.sender].frens = frensBal;
         emit TransferBatch(msg.sender, address(0), msg.sender, _ids, _values);
         uint256 size;
         address to = msg.sender;
