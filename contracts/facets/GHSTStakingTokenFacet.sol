@@ -25,7 +25,7 @@ contract GHSTStakingTokenFacet {
     }
 
     function totalSupply() public view returns (uint256) {
-        return s.totalSupply;
+        return s.ghstStakingTokensTotalSupply;
     }
 
     function balanceOf(address _owner) public view returns (uint256 balance_) {

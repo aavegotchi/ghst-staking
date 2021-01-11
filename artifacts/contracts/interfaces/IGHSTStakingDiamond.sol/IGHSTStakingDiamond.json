@@ -338,7 +338,7 @@
           "type": "uint256"
         }
       ],
-      "name": "stakeUniV2PoolTokens",
+      "name": "stakePoolTokens",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -472,7 +472,7 @@
     },
     {
       "inputs": [],
-      "name": "withdrawUniV2PoolStake",
+      "name": "withdrawPoolStake",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -485,7 +485,7 @@
           "type": "uint256"
         }
       ],
-      "name": "withdrawUniV2PoolStake",
+      "name": "withdrawPoolStake",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

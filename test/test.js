@@ -278,7 +278,7 @@ describe('GHSTStakingDiamond', async function () {
   })
 
   it('Should stake GHST-ETH pool tokens', async function () {
-    await ghstStakingDiamond.stakeUniV2PoolTokens(oneBillion)
+    await ghstStakingDiamond.stakePoolTokens(oneBillion)
     // eslint-disable-next-line no-unused-vars
     const [ghst, stakedUniswapTokens] = await ghstStakingDiamond.staked(account)
     expect(stakedUniswapTokens.toString()).to.equal(oneBillion)
@@ -416,11 +416,11 @@ describe('GHSTStakingDiamond', async function () {
     const [stakedGhst, stakedUniswapTokens] = await ghstStakingDiamond.staked(account)
 
     const withdrawAmount = (10 * Math.pow(10, 18)).toString()
-    await ghstStakingDiamond['withdrawUniV2PoolStake(uint256)'](withdrawAmount)
+    await ghstStakingDiamond['withdrawPoolStake(uint256)'](withdrawAmount)
     let balance = await ethGHSTPoolContract.balanceOf(account)
     expect(balance.toString()).to.equal(initialBalance.add(withdrawAmount).toString())
 
-    await ghstStakingDiamond['withdrawUniV2PoolStake()']()
+    await ghstStakingDiamond['withdrawPoolStake()']()
     balance = await ethGHSTPoolContract.balanceOf(account)
     expect(balance.toString()).to.equal(initialBalance.add(stakedUniswapTokens).toString())
   })
@@ -428,7 +428,7 @@ describe('GHSTStakingDiamond', async function () {
   it('Cannot withdraw more than staked', async function () {
     const withdrawAmount = (10 * Math.pow(10, 18)).toString()
     await truffleAssert.reverts(ghstStakingDiamond['withdrawGhstStake(uint256)'](withdrawAmount), "Staking: Can't withdraw more than staked")
-    await truffleAssert.reverts(ghstStakingDiamond['withdrawUniV2PoolStake(uint256)'](withdrawAmount), "Staking: Can't withdraw more than staked")
+    await truffleAssert.reverts(ghstStakingDiamond['withdrawPoolStake(uint256)'](withdrawAmount), "Staking: Can't withdraw more than staked")
   })
 
   it('Can set setBaseURI', async function () {

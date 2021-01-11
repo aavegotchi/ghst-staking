@@ -43,17 +43,17 @@ interface IGHSTStakingDiamond {
 
     function stakeGhst(uint256 _ghstValue) external;
 
-    function stakeUniV2PoolTokens(uint256 _uniV2PoolTokens) external;
+    function stakePoolTokens(uint256 _uniV2PoolTokens) external;
 
     function staked(address _account) external view returns (uint256 ghst_, uint256 uniV2PoolTokens_);
 
     function withdrawGhstStake(uint256 _ghstValue) external;
 
-    function withdrawUniV2PoolStake(uint256 _uniV2PoolTokens) external;
+    function withdrawPoolStake(uint256 _uniV2PoolTokens) external;
 
     function withdrawGhstStake() external;
 
-    function withdrawUniV2PoolStake() external;
+    function withdrawPoolStake() external;
 
     // set URIs for the six different  tickets
     function setBaseURI(string memory _value) external;

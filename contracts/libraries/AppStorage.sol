@@ -8,7 +8,6 @@ struct Account {
     uint96 ghst;
     uint40 lastFrensUpdate;
     uint256 ghstStakingTokens;
-    uint256 poolTokens;
     uint256 frens;
 }
 
@@ -24,5 +23,5 @@ struct AppStorage {
     address ghstContract;
     address poolContract;
     string ticketsBaseUri;
-    uint128 totalSupply;
+    uint256 ghstStakingTokensTotalSupply;
 }
