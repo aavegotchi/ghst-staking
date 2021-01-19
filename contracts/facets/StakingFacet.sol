@@ -14,6 +14,7 @@ contract StakingFacet {
     bytes4 internal constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
     event TransferBatch(address indexed _operator, address indexed _from, address indexed _to, uint256[] _ids, uint256[] _values);
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event PoolTokensRate(uint256 _newRate);
 
     function frens(address _account) public view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
@@ -22,7 +23,7 @@ contract StakingFacet {
         frens_ = account.frens;
         // 86400 the number of seconds in 1 day
         // 100 frens are generated for each LP token over 24 hours
-        frens_ += ((account.poolTokens * 100) * timePeriod) / 24 hours;
+        frens_ += ((account.poolTokens * s.poolTokensRate) * timePeriod) / 24 hours;
         // 1 fren is generated for each GHST over 24 hours
         frens_ += (account.ghst * timePeriod) / 24 hours;
     }
@@ -38,6 +39,26 @@ contract StakingFacet {
         Account storage account = s.accounts[msg.sender];
         account.frens = frens(msg.sender);
         account.lastFrensUpdate = uint40(block.timestamp);
+    }
+
+    function updateAccounts(address[] calldata _accounts) external {
+        LibDiamond.enforceIsContractOwner();
+        for (uint256 i; i < _accounts.length; i++) {
+            address accountAddress = _accounts[i];
+            Account storage account = s.accounts[accountAddress];
+            account.frens = frens(accountAddress);
+            account.lastFrensUpdate = uint40(block.timestamp);
+        }
+    }
+
+    function updatePoolTokensRate(uint256 _newRate) external {
+        LibDiamond.enforceIsContractOwner();
+        s.poolTokensRate = _newRate;
+        emit PoolTokensRate(_newRate);
+    }
+
+    function poolTokensRate() external view returns (uint256) {
+        return s.poolTokensRate;
     }
 
     function migrateFrens(address[] calldata _stakers, uint256[] calldata _frens) external {

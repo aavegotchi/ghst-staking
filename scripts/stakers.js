@@ -80,7 +80,7 @@ async function main () {
   // const ghstContract = '0x658809Bb08595D15a59991d640Ed5f2c658eA284'
   // matic mainnet
   const ghstContract = '0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7'
-  const poolContract = '0x658809Bb08595D15a59991d640Ed5f2c658eA284'
+  const poolContract = '0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9'
 
   // eslint-disable-next-line no-unused-vars
   const ghstStakingDiamondDiamond = await diamond.deploy({
@@ -97,6 +97,8 @@ async function main () {
     overrides: { gasLimit: 20000000 }
   })
   console.log('GHSTStaking diamond address:' + ghstStakingDiamondDiamond.address)
+
+  throw ('done for now')
 
   let tx = ghstStakingDiamondDiamond.deployTransaction
   let receipt = await tx.wait()

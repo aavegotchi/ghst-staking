@@ -25,4 +25,5 @@ struct AppStorage {
     address poolContract;
     string ticketsBaseUri;
     uint256 ghstStakingTokensTotalSupply;
+    uint256 poolTokensRate;
 }

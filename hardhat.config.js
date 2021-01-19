@@ -34,6 +34,12 @@ module.exports = {
     apiKey: local.etherscanApiKey
   },
   networks: {
+    matic: {
+      url: 'https://rpc-mainnet.matic.network',
+      accounts: [account],
+      blockGasLimit: 20000000,
+      gasPrice: 1000000000
+    },
     mumbai: {
       url: 'https://rpc-mumbai.matic.today',
       accounts: [account],
