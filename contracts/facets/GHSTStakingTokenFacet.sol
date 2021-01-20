@@ -13,11 +13,11 @@ contract GHSTStakingTokenFacet {
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
 
     function name() external pure returns (string memory) {
-        return "GHSTStakingToken";
+        return "Staked GHST-QUICK LP";
     }
 
     function symbol() external pure returns (string memory) {
-        return "GHSTS";
+        return "stkGHST-QUICK";
     }
 
     function decimals() external pure returns (uint8) {
