@@ -45,8 +45,8 @@ contract GHSTStakingDiamond {
         s.poolContract = _args.uniV2PoolContract;
         s.ticketsBaseUri = "https://aavegotchi.com/metadata/";
 
-        s.poolTokensRate = 100;
-        emit PoolTokensRate(100);
+        s.poolTokensRate = 14;
+        emit PoolTokensRate(14);
 
         // adding ERC165 data
         ds.supportedInterfaces[type(IERC165).interfaceId] = true;

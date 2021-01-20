@@ -71,6 +71,15 @@ contract StakingFacet {
         }
     }
 
+    function switchFrens(address _old, address _new) external {
+        LibDiamond.enforceIsContractOwner();
+        Account storage oldAccount = s.accounts[_old];
+        Account storage newAccount = s.accounts[_new];
+        (oldAccount.frens, newAccount.frens) = (newAccount.frens, oldAccount.frens);
+        oldAccount.lastFrensUpdate = uint40(block.timestamp);
+        newAccount.lastFrensUpdate = uint40(block.timestamp);
+    }
+
     function stakeGhst(uint256 _ghstValue) external {
         updateFrens();
         s.accounts[msg.sender].ghst += uint96(_ghstValue);

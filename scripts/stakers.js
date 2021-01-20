@@ -1,6 +1,7 @@
 /* global ethers */
 
 const diamond = require('diamond-util')
+const { ethers } = require('hardhat')
 const local = require('../.local.config.js')
 
 const abi = [
@@ -151,6 +152,11 @@ async function main () {
     console.log(i, end)
     tx = await stakingFacet.migrateFrens(stakers.slice(i, end), frens.slice(i, end))
     receipt = await tx.wait()
+    if (receipt.status) {
+      console.log('Transaction is good')
+    } else {
+      throw Error('Frens migration transaction failed')
+    }
     console.log('Frens migration gas used:' + strDisplay(receipt.gasUsed))
     totalGasUsed = totalGasUsed.add(receipt.gasUsed)
   }
@@ -229,11 +235,26 @@ async function main () {
     console.log(i, end)
     tx = await ticketsFacet.migrateTickets(owners.slice(i, end))
     receipt = await tx.wait()
+    if (receipt.status) {
+      console.log('Transaction is good')
+    } else {
+      throw Error('Ticket migration failed')
+    }
     console.log('Tickets  migration gas used:' + strDisplay(receipt.gasUsed))
     totalGasUsed = totalGasUsed.add(receipt.gasUsed)
   }
 
   console.log('Total gas used:' + strDisplay(totalGasUsed))
+
+  ownershipFacet = await ethers.getContractAt('OwnershipFacet', ghstStakingDiamondDiamond.address)
+  tx = await ownershipFacet.transferOwnership('0x258cC4C495Aef8D809944aD94C6722ef41216ef3')
+  console.log('Transferring ownership: ' + tx.hash)
+  receipt = await tx.wait()
+  if (receipt.status) {
+    console.log('Transaction is good')
+  } else {
+    throw Error('Ticket migration failed')
+  }
 }
 
 // We recommend this pattern to be able to use async/await everywhere
