@@ -99,7 +99,7 @@ async function main () {
   })
   console.log('GHSTStaking diamond address:' + ghstStakingDiamondDiamond.address)
 
-  // throw ('done for now')
+  throw ('done for now')
 
   let tx = ghstStakingDiamondDiamond.deployTransaction
   let receipt = await tx.wait()
