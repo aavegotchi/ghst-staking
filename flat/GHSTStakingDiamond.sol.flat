@@ -33,9 +33,7 @@ interface IDiamondCut {
 }
 
 
-// File contracts/libraries/LibDiamond.sol
 
-pragma solidity 0.7.6;
 
 /******************************************************************************\
 * Author: Nick Mudge
@@ -278,7 +276,6 @@ library LibDiamond {
 
 // File contracts/interfaces/IDiamondLoupe.sol
 
-pragma solidity 0.7.6;
 
 // A loupe is a small magnifying glass used to look at diamonds.
 // These functions look at diamonds
@@ -314,7 +311,6 @@ interface IDiamondLoupe {
 
 // File contracts/interfaces/IERC173.sol
 
-pragma solidity 0.7.6;
 
 /// @title ERC-173 Contract Ownership Standard
 ///  Note: the ERC-165 identifier for this interface is 0x7f5828d0
@@ -336,7 +332,6 @@ interface IERC173 {
 
 // File contracts/interfaces/IERC165.sol
 
-pragma solidity 0.7.6;
 
 interface IERC165 {
     /// @notice Query if a contract implements an interface
@@ -351,7 +346,6 @@ interface IERC165 {
 
 // File contracts/libraries/AppStorage.sol
 
-pragma solidity 0.7.6;
 
 struct Account {
     // spender => amount
@@ -383,7 +377,6 @@ struct AppStorage {
 
 // File contracts/interfaces/IERC1155Metadata_URI.sol
 
-pragma solidity 0.7.6;
 
 /**
     Note: The ERC-165 identifier for this interface is 0x0e89341c.
@@ -401,7 +394,6 @@ interface IERC1155Metadata_URI {
 
 // File contracts/GHSTStakingDiamond.sol
 
-pragma solidity 0.7.6;
 
 /******************************************************************************\
 * Author: Nick Mudge
