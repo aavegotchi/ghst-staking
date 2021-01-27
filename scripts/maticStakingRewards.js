@@ -111,7 +111,7 @@ async function main (rewardTokenAddress, totalRewardAmount, trackedTokenAddress,
     const reward = totalRewardAmount.mul(balance).div(snapShotTotal)
     const userAddress = info[0]
     if (rewardTokenAddress === 'Matic') {
-      // tx = signer.sendTransaction({ value: reward })
+      // tx = signer.sendTransaction({ to: userAddress  value: reward })
     } else {
     // tx = rewardToken.transfer(userAddress, reward)
     }
