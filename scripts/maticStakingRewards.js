@@ -110,11 +110,11 @@ async function main (rewardTokenAddress, totalRewardAmount, trackedTokenAddress,
     const balance = info[1].snapShotTotal
     const reward = totalRewardAmount.mul(balance).div(snapShotTotal)
     const userAddress = info[0]
-    if (rewardTokenAddress === 'Matic') {
-      // tx = signer.sendTransaction({ to: userAddress  value: reward })
-    } else {
-    // tx = rewardToken.transfer(userAddress, reward)
-    }
+    // if (rewardTokenAddress === 'Matic') {
+    //   tx = await signer.sendTransaction({ to: userAddress, value: reward })
+    // } else {
+    //   tx = await rewardToken.transfer(userAddress, reward)
+    // }
     // console.log(`Sending ${ethers.utils.formatEther(reward)} to `, userAddress)
     // receipt = await tx.wait()
     // if (!receipt.status)
