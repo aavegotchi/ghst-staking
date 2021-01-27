@@ -25,6 +25,8 @@ function strDisplay (str) {
 }
 
 async function main (rewardTokenAddress, totalRewardAmount, trackedTokenAddress, startingBlock, endingBlock) {
+  const signers = await ethers.getSigners()
+  const signer = signers[0]
   const diamondCreationBlock = 9833113
   const oneHour = 1800 // 2 second blocks
   const trackedToken = await ethers.getContractAt('IERC20', trackedTokenAddress)
@@ -96,8 +98,10 @@ async function main (rewardTokenAddress, totalRewardAmount, trackedTokenAddress,
   const snapShotTotal = [...stakerInfo].reduce((acc, info) => {
     return acc.add(info[1].snapShotTotal)
   }, ethers.BigNumber.from('0'))
-
-  const rewardToken = await ethers.getContractAt('IERC20', rewardTokenAddress)
+  let rewardToken
+  if (rewardTokenAddress !== 'Matic') {
+    rewardToken = await ethers.getContractAt('IERC20', rewardTokenAddress)
+  }
   let tx
   let receipt
   // console.log(ethers.utils.formatEther(snapShotTotal))
@@ -106,7 +110,11 @@ async function main (rewardTokenAddress, totalRewardAmount, trackedTokenAddress,
     const balance = info[1].snapShotTotal
     const reward = totalRewardAmount.mul(balance).div(snapShotTotal)
     const userAddress = info[0]
+    if (rewardTokenAddress === 'Matic') {
+      // tx = signer.sendTransaction({ value: reward })
+    } else {
     // tx = rewardToken.transfer(userAddress, reward)
+    }
     // console.log(`Sending ${ethers.utils.formatEther(reward)} to `, userAddress)
     // receipt = await tx.wait()
     // if (!receipt.status)
@@ -129,6 +137,8 @@ const trackedTokenAddress = '0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9'
 
 // ghst
 const rewardTokenAddress = '0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7'
+// matic
+// const rewardTokenAddress = 'Matic'
 
 const startingBlock = 9839405
 // const endingBlock = 10033242
