@@ -70,21 +70,26 @@ async function main (rewardTokenAddress, totalRewardAmount, trackedTokenAddress,
   }
 
   let nextSnapShot = startingBlock
-  for (const transfer of transfers) {
-    let info
-    let newBalance
-    if (transfer.args[1] === ghstStakingDiamondAddress) {
-      const stakerAddress = transfer.args[0]
-      info = stakerInfo.get(stakerAddress)
-      newBalance = info.currentBalance.add(transfer.args[2])
+  let transferIndex = 0
+  for (let currentBlockNumber = diamondCreationBlock; currentBlockNumber < endingBlock; currentBlockNumber++) {
+    const transfer = transfers[transferIndex]
+    if (transferIndex < transfers.length && transfer.blockNumber === currentBlockNumber) {
+      let info
+      let newBalance
+      if (transfer.args[1] === ghstStakingDiamondAddress) {
+        const stakerAddress = transfer.args[0]
+        info = stakerInfo.get(stakerAddress)
+        newBalance = info.currentBalance.add(transfer.args[2])
+      }
+      if (transfer.args[0] === ghstStakingDiamondAddress) {
+        const stakerAddress = transfer.args[1]
+        info = stakerInfo.get(stakerAddress)
+        newBalance = info.currentBalance.sub(transfer.args[2])
+      }
+      info.currentBalance = newBalance
+      transferIndex++
     }
-    if (transfer.args[0] === ghstStakingDiamondAddress) {
-      const stakerAddress = transfer.args[1]
-      info = stakerInfo.get(stakerAddress)
-      newBalance = info.currentBalance.sub(transfer.args[2])
-    }
-    info.currentBalance = newBalance
-    if (transfer.blockNumber >= nextSnapShot) {
+    if (currentBlockNumber === nextSnapShot) {
       for (const info of stakerInfo) {
         info[1].snapShotTotal = info[1].snapShotTotal.add(info[1].currentBalance)
       }
@@ -95,9 +100,11 @@ async function main (rewardTokenAddress, totalRewardAmount, trackedTokenAddress,
   // for (const info of stakerInfo) {
   //   console.log(info[0], ethers.utils.formatEther(info[1].currentBalance), ethers.utils.formatEther(info[1].snapShotTotal))
   // }
+
   const snapShotTotal = [...stakerInfo].reduce((acc, info) => {
     return acc.add(info[1].snapShotTotal)
   }, ethers.BigNumber.from('0'))
+  // console.log(snapShotTotal)
   let rewardToken
   if (rewardTokenAddress !== 'Matic') {
     rewardToken = await ethers.getContractAt('IERC20', rewardTokenAddress)
