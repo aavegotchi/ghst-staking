@@ -53,11 +53,9 @@ async function main (rewardTokenAddress, totalRewardAmount, trackedTokenAddress,
 
   const transfers = JSON.parse(fs.readFileSync(filePath))
   console.log('Total poolTransfers:', transfers.length)
-  // console.log(transfers[50].blockNumber)
-  // console.log(transfers[transfers.length - 50].blockNumber)
 
-  // console.log(transfers[44].args)
-  // console.log(transfers)
+
+  // get the set of all staker addresses
   const stakers = new Set()
   for (const transfer of transfers) {
     if (transfer.args[1] === ghstStakingDiamondAddress) {
