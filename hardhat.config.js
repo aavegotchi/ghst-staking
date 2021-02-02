@@ -35,8 +35,8 @@ module.exports = {
   },
   networks: {
     matic: {
-      url: 'https://rpc-mainnet.matic.network',
-      // url: 'https://rpc-mainnet.maticvigil.com/',
+      // url: 'https://rpc-mainnet.matic.network',
+      url: 'https://rpc-mainnet.maticvigil.com/',
       accounts: [account],
       blockGasLimit: 20000000,
       gasPrice: 1000000000
