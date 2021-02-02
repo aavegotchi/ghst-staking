@@ -31,6 +31,7 @@ async function main () {
     if (endingBlock == null) {
       endingBlock = await ethers.provider.getBlockNumber()
     }
+    console.log('endingBlog:', endingBlock)
     const signers = await ethers.getSigners()
     const signer = signers[0]
     const oneHour = 1800 // 2 second blocks
@@ -38,11 +39,11 @@ async function main () {
     console.log('Getting pool transfers in')
     let trackedTokenFilter = trackedToken.filters.Transfer(null, ghstStakingDiamondAddress)
     const trackedTokenTransfersIn = await trackedToken.queryFilter(trackedTokenFilter, diamondCreationBlock, endingBlock)
-    console.log(`Got pool ${trackedTokenTransfersIn.length} transfers in`)
+    console.log(`Got ${trackedTokenTransfersIn.length} transfers in`)
     trackedTokenFilter = trackedToken.filters.Transfer(ghstStakingDiamondAddress, null)
-    console.log('Getting pool transfers out')
+    console.log('Getting transfers out')
     const trackedTokenTransfersOut = await trackedToken.queryFilter(trackedTokenFilter, diamondCreationBlock, endingBlock)
-    console.log(`Got ${trackedTokenTransfersOut.length} pool transfers out`)
+    console.log(`Got ${trackedTokenTransfersOut.length} transfers out`)
 
     // get the set of all staker addresses
     const stakers = new Set()
@@ -142,21 +143,21 @@ async function main () {
         throw (Error('Balance is off'))
       }
 
-      // if (snapShot.eq(0)) {
-      //   console.log('Address:', stakerAddress)
-      //   console.log('Balance:', ethers.utils.formatEther(balance))
-      //   console.log('SnapShotTotal:', ethers.utils.formatEther(snapShot))
-      //   console.log('added:', ethers.utils.formatEther(added))
-      //   console.log('removed:', ethers.utils.formatEther(removed))
-      //   console.log('')
-      // }
+      if (snapShot.eq(0)) {
+        console.log('Address:', stakerAddress)
+        console.log('Balance:', ethers.utils.formatEther(balance))
+        console.log('SnapShotTotal:', ethers.utils.formatEther(snapShot))
+        console.log('added:', ethers.utils.formatEther(added))
+        console.log('removed:', ethers.utils.formatEther(removed))
+        console.log('')
+      }
 
-      console.log('---------------', stakerAddress, '--------------')
-      console.log('Balance:', ethers.utils.formatEther(balance))
-      console.log('SnapShotTotal:', ethers.utils.formatEther(snapShot))
-      console.log('added:', ethers.utils.formatEther(added))
-      console.log('removed:', ethers.utils.formatEther(removed))
-      console.log('')
+      // console.log('---------------', stakerAddress, '--------------')
+      // console.log('Balance:', ethers.utils.formatEther(balance))
+      // console.log('SnapShotTotal:', ethers.utils.formatEther(snapShot))
+      // console.log('added:', ethers.utils.formatEther(added))
+      // console.log('removed:', ethers.utils.formatEther(removed))
+      // console.log('')
     }
 
     const snapShotTotal = [...stakerInfo].reduce((acc, info) => {
@@ -174,6 +175,9 @@ async function main () {
     for (const info of stakerInfo) {
       const balance = info[1].snapShotTotal
       const reward = totalRewardAmount.mul(balance).div(snapShotTotal)
+      if (reward.eq(0)) {
+        continue
+      }
       const userAddress = info[0]
       // if (rewardTokenAddress === 'Matic') {
       //   tx = await signer.sendTransaction({ to: userAddress, value: reward })
@@ -186,6 +190,9 @@ async function main () {
       //   throw Error(`Transaction sending ${ethers.utils.formatEther(reward)} to ${userAddress} failed, tx hash: ${tx.hash}`)
       // }
       count = count.add(reward)
+      // if (reward.gt(ethers.utils.parseEther('1'))) {
+      //   console.log(userAddress, ethers.utils.formatEther(reward))
+      // }
       console.log(userAddress, ethers.utils.formatEther(reward))
     // console.log(userAddress, reward.toString())
     }
@@ -196,24 +203,24 @@ async function main () {
     console.log()
   }
   // ghst
-  // const trackedTokenAddress = '0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7'
+  const trackedTokenAddress = '0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7'
   // ghstQuickPair
-  const trackedTokenAddress = '0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9'
+  // const trackedTokenAddress = '0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9'
 
   // ghst
   const rewardTokenAddress = '0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7'
   // matic
   // const rewardTokenAddress = 'Matic'
 
-  const startingBlock = 10192094
+  const startingBlock = 10190000
   // const endingBlock = 10033242
   // const endingBlock = 10292727
   const endingBlock = null
 
   const totalRewardAmount = ethers.utils.parseEther('100')
-  await sendRewards(rewardTokenAddress, totalRewardAmount, trackedTokenAddress, startingBlock, endingBlock)
-  // const accountAddress = '0xc0893fA01108f50fa2A04e2ccEE815376EC56233'
-  // await accountTransfers(accountAddress, trackedTokenAddress, endingBlock)
+  // await sendRewards(rewardTokenAddress, totalRewardAmount, trackedTokenAddress, startingBlock, endingBlock)
+  const accountAddress = '0x3C8876aEC0345c1c9EFc46138bD54A2D593fc676'
+  await accountTransfers(accountAddress, trackedTokenAddress, endingBlock)
 
   async function accountTransfers (accountAddress, trackedTokenAddress, endingBlock) {
     if (endingBlock == null) {
