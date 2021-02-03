@@ -203,9 +203,9 @@ async function main () {
     console.log()
   }
   // ghst
-  const trackedTokenAddress = '0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7'
+  // const trackedTokenAddress = '0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7'
   // ghstQuickPair
-  // const trackedTokenAddress = '0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9'
+  const trackedTokenAddress = '0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9'
 
   // ghst
   const rewardTokenAddress = '0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7'
@@ -218,9 +218,9 @@ async function main () {
   const endingBlock = null
 
   const totalRewardAmount = ethers.utils.parseEther('100')
-  // await sendRewards(rewardTokenAddress, totalRewardAmount, trackedTokenAddress, startingBlock, endingBlock)
-  const accountAddress = '0x3C8876aEC0345c1c9EFc46138bD54A2D593fc676'
-  await accountTransfers(accountAddress, trackedTokenAddress, endingBlock)
+  await sendRewards(rewardTokenAddress, totalRewardAmount, trackedTokenAddress, startingBlock, endingBlock)
+  // const accountAddress = '0x3C8876aEC0345c1c9EFc46138bD54A2D593fc676'
+  // await accountTransfers(accountAddress, trackedTokenAddress, endingBlock)
 
   async function accountTransfers (accountAddress, trackedTokenAddress, endingBlock) {
     if (endingBlock == null) {
