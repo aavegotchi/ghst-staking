@@ -68,12 +68,12 @@ async function main () {
   // Matic / USDC pair: 0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827
 
   // const tokenA = '0xA02d547512Bb90002807499F05495Fe9C4C3943f'
-  // const tokenB = ''
-  // 0xA02d547512Bb90002807499F05495Fe9C/ pair:
+  // const tokenB = '0x831753DD7087CaC61aB5644b308642cc1c33Dc13'
+  // stkQUICK-0xA02d547512Bb90002807499F05495Fe9C/ QUICK pair:
 
   // const tokenA = ''
   // const tokenB = ''
-  // / pair:
+  // GHST / USDCpair:
 
   // const tokenA = ''
   // const tokenB = ''

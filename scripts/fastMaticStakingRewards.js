@@ -1,40 +1,35 @@
 /* global ethers */
 
-const fs = require('fs')
-
-const abi = [
-  'event Transfer(address indexed src, address indexed dst, uint val)'
-]
-
 const ghstStakingDiamondAddress = '0xA02d547512Bb90002807499F05495Fe9C4C3943f'
 const diamondCreationBlock = 9833113
 
-function addCommas (nStr) {
-  nStr += ''
-  const x = nStr.split('.')
-  let x1 = x[0]
-  const x2 = x.length > 1 ? '.' + x[1] : ''
-  var rgx = /(\d+)(\d{3})/
-  while (rgx.test(x1)) {
-    x1 = x1.replace(rgx, '$1' + ',' + '$2')
-  }
-  return x1 + x2
-}
-
-function strDisplay (str) {
-  return addCommas(str.toString())
-}
-// rewardTokenAddress, totalRewardAmount, trackedTokenAddress, startingBlock, endingBlock
-
 async function main () {
+  const airdrop = await ethers.getContractAt('Airdrop', '0x3D429DbB062A195a42A113D61FeC687b398b4a6e')
+
   async function sendRewards (rewardTokenAddress, totalRewardAmount, trackedTokenAddress, startingBlock, endingBlock) {
+    let erc20
+    if (rewardTokenAddress !== 'Matic') {
+      erc20 = await ethers.getContractAt('IERC20', rewardTokenAddress)
+      const accounts = await ethers.getSigners()
+      const accountAddress = await accounts[0].getAddress()
+      const allowance = await erc20.allowance(accountAddress, airdrop.address)
+      if (allowance.lt(totalRewardAmount)) {
+        console.log('Does not have allowance. Getting approval')
+        const tx = await erc20.approve(airdrop.address, ethers.constants.MaxUint256)
+        const receipt = await tx.wait()
+        if (!receipt.status) {
+          throw Error(`Transaction approving airdrop ${airdrop.address} to transfer funds failed: ${tx.hash}`)
+        }
+        console.log('Got token approcal to send')
+      } else {
+        console.log('Already has token approval to send')
+      }
+    }
     if (endingBlock == null) {
       endingBlock = await ethers.provider.getBlockNumber()
     }
     console.log('startingBlock:', startingBlock)
     console.log('endingBlock:', endingBlock)
-    const signers = await ethers.getSigners()
-    const signer = signers[0]
     const oneHour = 1800 // 2 second blocks
     const trackedToken = await ethers.getContractAt('IERC20', trackedTokenAddress)
     console.log('Getting pool transfers in')
@@ -81,24 +76,18 @@ async function main () {
       while (indexIn < trackedTokenTransfersIn.length && trackedTokenTransfersIn[indexIn].blockNumber <= transfer.blockNumber) {
         transfers.push(trackedTokenTransfersIn[indexIn])
         indexIn++
-      } // -- missing last transfers
+      }
       transfers.push(transfer)
     }
     for (; indexIn < trackedTokenTransfersIn.length; indexIn++) {
       transfers.push(trackedTokenTransfersIn[indexIn])
     }
-    // console.log(transfers[transfers.length - 1])
 
     if (transfers.length !== trackedTokenTransfersIn.length + trackedTokenTransfersOut.length) {
       throw Error('Wrong number of transfers in transfers variable')
     }
 
-    // const filePath = `./saved/transfers.${trackedTokenAddress}.json`
-    // fs.writeFileSync(filePath, JSON.stringify(poolTransfers))
-
-    // const transfers = JSON.parse(fs.readFileSync(filePath))
-    // console.log('Total poolTransfers:', transfers.length)
-
+    // get snapshots
     let nextSnapShot = startingBlock
     let transferIndex = 0
     for (let currentBlockNumber = diamondCreationBlock; currentBlockNumber <= endingBlock; currentBlockNumber++) {
@@ -128,6 +117,7 @@ async function main () {
       }
     }
 
+    // Check that balances match adds and removes of token
     for (const info of stakerInfo) {
       const stakerAddress = info[0]
       const balance = info[1].currentBalance
@@ -166,49 +156,51 @@ async function main () {
     const snapShotTotal = [...stakerInfo].reduce((acc, info) => {
       return acc.add(info[1].snapShotTotal)
     }, ethers.BigNumber.from('0'))
-    // console.log(snapShotTotal)
-    let rewardToken
-    if (rewardTokenAddress !== 'Matic') {
-      rewardToken = await ethers.getContractAt('IERC20', rewardTokenAddress)
-    }
+
     let tx
     let receipt
     // console.log(ethers.utils.formatEther(snapShotTotal))
     let count = ethers.BigNumber.from('0')
-    let start = false
+    // let start = false
+
+    // send rewards in batches
+    let batchAddresses = []
+    let batchAmounts = []
+    let index = 0
     for (const info of stakerInfo) {
+      index++
       const balance = info[1].snapShotTotal
       const reward = totalRewardAmount.mul(balance).div(snapShotTotal)
-      if (reward.eq(0)) {
-        continue
-      }
+
       const userAddress = info[0]
       count = count.add(reward)
-      stakersThatEarnRewards++
-      if (userAddress === '0x7939F22785BD4cd6FB05ae2A96BC8cC984Ab5683') {
-        start = true
-        continue
-      }
-      if (!start) {
-        continue
-      }
-      if (rewardTokenAddress === 'Matic') {
-        tx = await signer.sendTransaction({ to: userAddress, value: reward })
-      } else {
-        tx = await rewardToken.transfer(userAddress, reward)
-      }
-      console.log(`Sending ${ethers.utils.formatEther(reward)} to `, userAddress)
-      receipt = await tx.wait()
-      if (!receipt.status) {
-        throw Error(`Transaction sending ${ethers.utils.formatEther(reward)} to ${userAddress} failed, tx hash: ${tx.hash}`)
+      if (reward.gt(0)) {
+        batchAddresses.push(userAddress)
+        batchAmounts.push(reward)
+        stakersThatEarnRewards++
       }
 
-      // if (reward.gt(ethers.utils.parseEther('1'))) {
-      //   console.log(userAddress, ethers.utils.formatEther(reward))
-      // }
-
-      // console.log(userAddress, ethers.utils.formatEther(reward))
-    // console.log(userAddress, reward.toString())
+      if (batchAddresses.length === 200 || (index === stakerInfo.size && batchAddresses.length > 0)) {
+        console.log('--------------Sending Batch--------------------')
+        if (rewardTokenAddress === 'Matic') {
+          const totalBatchAmount = batchAmounts.reduce((acc, value) => {
+            return acc.add(value)
+          })
+          tx = await airdrop.airdropMatic(batchAddresses, batchAmounts, { value: totalBatchAmount })
+        } else {
+          tx = await airdrop.airdropToken(rewardTokenAddress, batchAddresses, batchAmounts)
+        }
+        receipt = await tx.wait()
+        if (!receipt.status) {
+          throw Error(`Transaction sending batch failed, tx hash: ${tx.hash}`)
+        }
+        for (const [index, address] of batchAddresses.entries()) {
+          const amount = batchAmounts[index]
+          console.log(`Sent ${ethers.utils.formatEther(amount)} to `, address)
+        }
+        batchAddresses = []
+        batchAmounts = []
+      }
     }
     console.log('Reward count: ', ethers.utils.formatEther(count))
 
@@ -217,21 +209,22 @@ async function main () {
     console.log()
   }
   // ghst
-  const trackedTokenAddress = '0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7'
+  // const trackedTokenAddress = '0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7'
   // ghstQuickPair
-  // const trackedTokenAddress = '0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9'
+  const trackedTokenAddress = '0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9'
 
   // ghst
-  // const rewardTokenAddress = '0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7'
+  const rewardTokenAddress = '0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7'
   // matic
-  const rewardTokenAddress = 'Matic'
+  // const rewardTokenAddress = 'Matic'
 
   const startingBlock = 10478371
   // const endingBlock = 10033242
   // const endingBlock = 10292727
   const endingBlock = 10771677
-  // '23734.2'
-  const totalRewardAmount = ethers.utils.parseEther('56700')
+  // total: 28278
+  // 30 percent of that is:
+  const totalRewardAmount = ethers.utils.parseEther('19794.6')
   await sendRewards(rewardTokenAddress, totalRewardAmount, trackedTokenAddress, startingBlock, endingBlock)
   // const accountAddress = '0x9fB3847872B3694139d4C19ffffB914520E926Aa'
   // await accountTransfers(accountAddress, trackedTokenAddress, endingBlock)
