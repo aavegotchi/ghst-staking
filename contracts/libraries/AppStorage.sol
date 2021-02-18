@@ -10,6 +10,7 @@ struct Account {
     uint256 ghstStakingTokens;
     uint256 poolTokens;
     uint256 frens;
+    uint256 ghstUsdcPoolTokens;
 }
 
 struct Ticket {
@@ -26,4 +27,7 @@ struct AppStorage {
     string ticketsBaseUri;
     uint256 ghstStakingTokensTotalSupply;
     uint256 poolTokensRate;
+    uint256 ghstUsdcRate;
+    address ghstUsdcPoolToken;
+    address stkGhstUsdcToken;
 }

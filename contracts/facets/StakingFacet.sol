@@ -9,12 +9,19 @@ import "../interfaces/IERC1155TokenReceiver.sol";
 
 // import "../interfaces/IUniswapV2Pair.sol";
 
+interface IERC20Mintable {
+    function mint(address _to, uint256 _amount) external;
+
+    function burn(address _to, uint256 _amount) external;
+}
+
 contract StakingFacet {
     AppStorage internal s;
     bytes4 internal constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
     event TransferBatch(address indexed _operator, address indexed _from, address indexed _to, uint256[] _ids, uint256[] _values);
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event PoolTokensRate(uint256 _newRate);
+    event GhstUsdcRate(uint256 _newRate);
 
     function frens(address _account) public view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
@@ -24,6 +31,8 @@ contract StakingFacet {
         // 86400 the number of seconds in 1 day
         // 100 frens are generated for each LP token over 24 hours
         frens_ += ((account.poolTokens * s.poolTokensRate) * timePeriod) / 24 hours;
+
+        frens_ += ((account.ghstUsdcPoolTokens * s.ghstUsdcRate) * timePeriod) / 24 hours;
         // 1 fren is generated for each GHST over 24 hours
         frens_ += (account.ghst * timePeriod) / 24 hours;
     }
@@ -96,9 +105,55 @@ contract StakingFacet {
         LibERC20.transferFrom(s.poolContract, msg.sender, address(this), _poolTokens);
     }
 
-    function staked(address _account) external view returns (uint256 ghst_, uint256 poolTokens_) {
+    function getGhstUsdcPoolToken() external view returns (address) {
+        return s.ghstUsdcPoolToken;
+    }
+
+    function getStkGhstUsdcToken() external view returns (address) {
+        return s.stkGhstUsdcToken;
+    }
+
+    function setGhstUsdcToken(
+        address _ghstUsdcPoolToken,
+        address _stkGhstUsdcToken,
+        uint256 _ghstUsdcRate
+    ) external {
+        LibDiamond.enforceIsContractOwner();
+        s.ghstUsdcPoolToken = _ghstUsdcPoolToken;
+        s.stkGhstUsdcToken = _stkGhstUsdcToken;
+        s.ghstUsdcRate = _ghstUsdcRate;
+    }
+
+    function updateGhstUsdcRate(uint256 _newRate) external {
+        LibDiamond.enforceIsContractOwner();
+        s.ghstUsdcRate = _newRate;
+        emit GhstUsdcRate(_newRate);
+    }
+
+    function ghstUsdcRate() external view returns (uint256) {
+        return s.ghstUsdcRate;
+    }
+
+    function stakeGhstUsdcPoolTokens(uint256 _poolTokens) external {
+        updateFrens();
+        Account storage account = s.accounts[msg.sender];
+        account.ghstUsdcPoolTokens += _poolTokens;
+        IERC20Mintable(s.stkGhstUsdcToken).mint(msg.sender, _poolTokens);
+        LibERC20.transferFrom(s.ghstUsdcPoolToken, msg.sender, address(this), _poolTokens);
+    }
+
+    function staked(address _account)
+        external
+        view
+        returns (
+            uint256 ghst_,
+            uint256 poolTokens_,
+            uint256 ghstUsdcPoolToken_
+        )
+    {
         ghst_ = s.accounts[_account].ghst;
         poolTokens_ = s.accounts[_account].poolTokens;
+        ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
     }
 
     function withdrawGhstStake(uint256 _ghstValue) external {
@@ -122,23 +177,15 @@ contract StakingFacet {
         LibERC20.transfer(s.poolContract, msg.sender, _poolTokens);
     }
 
-    function withdrawGhstStake() external {
+    function withdrawGhstUsdcPoolStake(uint256 _poolTokens) external {
         updateFrens();
-        uint256 bal = s.accounts[msg.sender].ghst;
-        s.accounts[msg.sender].ghst = uint96(0);
-        LibERC20.transfer(s.ghstContract, msg.sender, bal);
-    }
-
-    function withdrawPoolStake() external {
-        updateFrens();
-        uint256 bal = s.accounts[msg.sender].ghstStakingTokens;
-        require(bal != 0, "Cannot withdraw zero pool stake balance");
-        s.accounts[msg.sender].ghstStakingTokens = 0;
-        uint256 accountPoolTokens = s.accounts[msg.sender].poolTokens;
-        require(accountPoolTokens >= bal, "Can't withdraw more poolTokens than in account");
-        s.accounts[msg.sender].poolTokens = accountPoolTokens - bal;
-        emit Transfer(msg.sender, address(0), bal);
-        LibERC20.transfer(s.poolContract, msg.sender, bal);
+        uint256 bal = IERC20(s.stkGhstUsdcToken).balanceOf(msg.sender);
+        require(bal >= _poolTokens, "Must have enough stkGhstUsdcTokens");
+        IERC20Mintable(s.stkGhstUsdcToken).burn(msg.sender, _poolTokens);
+        uint256 accountPoolTokens = s.accounts[msg.sender].ghstUsdcPoolTokens;
+        require(accountPoolTokens >= _poolTokens, "Can't withdraw more poolTokens than in account");
+        s.accounts[msg.sender].ghstUsdcPoolTokens = accountPoolTokens - _poolTokens;
+        LibERC20.transfer(s.ghstUsdcPoolToken, msg.sender, _poolTokens);
     }
 
     function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
