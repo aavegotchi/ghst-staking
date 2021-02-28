@@ -7,11 +7,31 @@ import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/AppStorage.sol";
 import "../libraries/LibDiamond.sol";
 import "../libraries/LibStrings.sol";
+import "../libraries/LibMeta.sol";
+
+interface IERC1155Marketplace {
+    function updateERC1155Listing(
+        address _erc1155TokenAddress,
+        uint256 _erc1155TypeId,
+        address _owner
+    ) external;
+
+    function updateBatchERC1155Listing(
+        address _erc1155TokenAddress,
+        uint256[] calldata _erc1155TypeIds,
+        address _owner
+    ) external;
+}
 
 contract TicketsFacet is IERC1155 {
     AppStorage internal s;
     bytes4 internal constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
     bytes4 internal constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
+
+    function setAavegotchiDiamond(address _aavegotchiDiamond) external {
+        LibDiamond.enforceIsContractOwner();
+        s.aavegotchiDiamond = _aavegotchiDiamond;
+    }
 
     function setBaseURI(string memory _value) external {
         LibDiamond.enforceIsContractOwner();
@@ -48,19 +68,24 @@ contract TicketsFacet is IERC1155 {
         bytes calldata _data
     ) external override {
         require(_to != address(0), "Tickets: Can't transfer to 0 address");
-        require(_from == msg.sender || s.accounts[_from].ticketsApproved[msg.sender], "Tickets: Not approved to transfer");
+        address sender = LibMeta.msgSender();
+        require(_from == sender || s.accounts[_from].ticketsApproved[sender], "Tickets: Not approved to transfer");
         uint256 bal = s.tickets[_id].accountBalances[_from];
         require(bal >= _value, "Tickets: _value greater than balance");
         s.tickets[_id].accountBalances[_from] = bal - _value;
         s.tickets[_id].accountBalances[_to] += _value;
-        emit TransferSingle(msg.sender, _from, _to, _id, _value);
+        emit TransferSingle(sender, _from, _to, _id, _value);
+        address aavegotchiDiamond = s.aavegotchiDiamond;
+        if (aavegotchiDiamond != address(0)) {
+            IERC1155Marketplace(aavegotchiDiamond).updateERC1155Listing(address(this), _id, _from);
+        }
         uint256 size;
         assembly {
             size := extcodesize(_to)
         }
         if (size > 0) {
             require(
-                ERC1155_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155Received(msg.sender, _from, _id, _value, _data),
+                ERC1155_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155Received(sender, _from, _id, _value, _data),
                 "Tickets: Transfer rejected/failed by _to"
             );
         }
@@ -91,7 +116,8 @@ contract TicketsFacet is IERC1155 {
     ) external override {
         require(_to != address(0), "Tickets: Can't transfer to 0 address");
         require(_ids.length == _values.length, "Tickets: _ids not the same length as _values");
-        require(_from == msg.sender || s.accounts[_from].ticketsApproved[msg.sender], "Tickets: Not approved to transfer");
+        address sender = LibMeta.msgSender();
+        require(_from == sender || s.accounts[_from].ticketsApproved[sender], "Tickets: Not approved to transfer");
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
             uint256 value = _values[i];
@@ -100,14 +126,18 @@ contract TicketsFacet is IERC1155 {
             s.tickets[id].accountBalances[_from] = bal - value;
             s.tickets[id].accountBalances[_to] += value;
         }
-        emit TransferBatch(msg.sender, _from, _to, _ids, _values);
+        emit TransferBatch(sender, _from, _to, _ids, _values);
+        address aavegotchiDiamond = s.aavegotchiDiamond;
+        if (aavegotchiDiamond != address(0)) {
+            IERC1155Marketplace(aavegotchiDiamond).updateBatchERC1155Listing(address(this), _ids, _from);
+        }
         uint256 size;
         assembly {
             size := extcodesize(_to)
         }
         if (size > 0) {
             require(
-                ERC1155_BATCH_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155BatchReceived(msg.sender, _from, _ids, _values, _data),
+                ERC1155_BATCH_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155BatchReceived(sender, _from, _ids, _values, _data),
                 "Tickets: Transfer rejected/failed by _to"
             );
         }
@@ -163,8 +193,9 @@ contract TicketsFacet is IERC1155 {
         @param _approved  True if the operator is approved, false to revoke approval
     */
     function setApprovalForAll(address _operator, bool _approved) external override {
-        s.accounts[msg.sender].ticketsApproved[_operator] = _approved;
-        emit ApprovalForAll(msg.sender, _operator, _approved);
+        address sender = LibMeta.msgSender();
+        s.accounts[sender].ticketsApproved[_operator] = _approved;
+        emit ApprovalForAll(sender, _operator, _approved);
     }
 
     /**
@@ -184,6 +215,7 @@ contract TicketsFacet is IERC1155 {
     }
 
     function migrateTickets(TicketOwner[] calldata _ticketOwners) external {
+        address sender = LibMeta.msgSender();
         for (uint256 i; i < _ticketOwners.length; i++) {
             TicketOwner calldata ticketOwner = _ticketOwners[i];
             require(ticketOwner.ids.length == ticketOwner.values.length, "TicketFacet: ids and values not the same length");
@@ -193,7 +225,7 @@ contract TicketsFacet is IERC1155 {
                 s.tickets[id].accountBalances[ticketOwner.owner] += value;
                 s.tickets[id].totalSupply += uint96(value);
             }
-            emit TransferBatch(msg.sender, address(0), ticketOwner.owner, ticketOwner.ids, ticketOwner.values);
+            emit TransferBatch(sender, address(0), ticketOwner.owner, ticketOwner.ids, ticketOwner.values);
         }
     }
 }

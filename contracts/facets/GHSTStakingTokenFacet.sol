@@ -3,6 +3,7 @@ pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../libraries/AppStorage.sol";
+import "../libraries/LibMeta.sol";
 
 contract GHSTStakingTokenFacet {
     AppStorage s;
@@ -33,11 +34,12 @@ contract GHSTStakingTokenFacet {
     }
 
     function transfer(address _to, uint256 _value) public returns (bool success) {
-        uint256 frombalance = s.accounts[msg.sender].ghstStakingTokens;
+        address sender = LibMeta.msgSender();
+        uint256 frombalance = s.accounts[sender].ghstStakingTokens;
         require(frombalance >= _value, "Not enough GHSTStakingToken to transfer");
-        s.accounts[msg.sender].ghstStakingTokens = frombalance - _value;
+        s.accounts[sender].ghstStakingTokens = frombalance - _value;
         s.accounts[_to].ghstStakingTokens += _value;
-        emit Transfer(msg.sender, _to, _value);
+        emit Transfer(sender, _to, _value);
         success = true;
     }
 
@@ -46,13 +48,14 @@ contract GHSTStakingTokenFacet {
         address _to,
         uint256 _value
     ) public returns (bool success) {
+        address sender = LibMeta.msgSender();
         uint256 fromBalance = s.accounts[_from].ghstStakingTokens;
-        if (msg.sender != _from) {
-            uint256 l_allowance = s.accounts[_from].ghstStakingTokensAllowances[msg.sender];
+        if (sender != _from) {
+            uint256 l_allowance = s.accounts[_from].ghstStakingTokensAllowances[sender];
             require(l_allowance >= _value, "Allowance not great enough to transfer GHSTStakingToken");
             if (l_allowance != MAX_UINT) {
-                s.accounts[_from].ghstStakingTokensAllowances[msg.sender] = l_allowance - _value;
-                emit Approval(_from, msg.sender, l_allowance - _value);
+                s.accounts[_from].ghstStakingTokensAllowances[sender] = l_allowance - _value;
+                emit Approval(_from, sender, l_allowance - _value);
             }
         }
         require(fromBalance >= _value, "Not enough GHSTStakingToken to transfer");
@@ -63,37 +66,33 @@ contract GHSTStakingTokenFacet {
     }
 
     function approve(address _spender, uint256 _value) public returns (bool success_) {
-        s.accounts[msg.sender].ghstStakingTokensAllowances[_spender] = _value;
-        emit Approval(msg.sender, _spender, _value);
+        address sender = LibMeta.msgSender();
+        s.accounts[sender].ghstStakingTokensAllowances[_spender] = _value;
+        emit Approval(sender, _spender, _value);
         success_ = true;
     }
 
     function increaseAllowance(address _spender, uint256 _value) external returns (bool success) {
-        uint256 l_allowance = s.accounts[msg.sender].ghstStakingTokensAllowances[_spender];
+        address sender = LibMeta.msgSender();
+        uint256 l_allowance = s.accounts[sender].ghstStakingTokensAllowances[_spender];
         uint256 newAllowance = l_allowance + _value;
         require(newAllowance >= l_allowance, "GHSTStakingToken allowance increase overflowed");
-        s.accounts[msg.sender].ghstStakingTokensAllowances[_spender] = newAllowance;
-        emit Approval(msg.sender, _spender, newAllowance);
+        s.accounts[sender].ghstStakingTokensAllowances[_spender] = newAllowance;
+        emit Approval(sender, _spender, newAllowance);
         success = true;
     }
 
     function decreaseAllowance(address _spender, uint256 _value) external returns (bool success) {
-        uint256 l_allowance = s.accounts[msg.sender].ghstStakingTokensAllowances[_spender];
+        address sender = LibMeta.msgSender();
+        uint256 l_allowance = s.accounts[sender].ghstStakingTokensAllowances[_spender];
         require(l_allowance >= _value, "GHSTStakingToken allowance decreased below 0");
         l_allowance -= _value;
-        s.accounts[msg.sender].ghstStakingTokensAllowances[_spender] = l_allowance;
-        emit Approval(msg.sender, _spender, l_allowance);
+        s.accounts[sender].ghstStakingTokensAllowances[_spender] = l_allowance;
+        emit Approval(sender, _spender, l_allowance);
         success = true;
     }
 
     function allowance(address _owner, address _spender) public view returns (uint256 remaining_) {
         remaining_ = s.accounts[_owner].ghstStakingTokensAllowances[_spender];
     }
-
-    // function mint() external {
-    //     uint256 amount = 4_000_000_000e18;
-    //     s.balances[msg.sender] += amount;
-    //     s.totalSupply += uint96(amount);
-    //     emit Transfer(address(0), msg.sender, amount);
-    // }
 }

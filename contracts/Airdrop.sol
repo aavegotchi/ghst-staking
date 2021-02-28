@@ -22,7 +22,7 @@ contract Airdrop {
         require(_receivers.length <= 200, "Too many transfers");
         for (uint256 i; i < _receivers.length; i++) {
             (bool success, bytes memory data) = _receivers[i].call{value: _amounts[i]}("");
-            if (!success) {
+            if (success == false) {
                 if (data.length > 0) {
                     // bubble up any reason for revert
                     revert(string(data));

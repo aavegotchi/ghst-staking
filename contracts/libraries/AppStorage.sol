@@ -30,4 +30,7 @@ struct AppStorage {
     uint256 ghstUsdcRate;
     address ghstUsdcPoolToken;
     address stkGhstUsdcToken;
+    bytes32 domainSeparator;
+    mapping(address => uint256) metaNonces;
+    address aavegotchiDiamond;
 }

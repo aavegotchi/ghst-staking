@@ -6,6 +6,7 @@ import "../libraries/LibDiamond.sol";
 import "../libraries/LibERC20.sol";
 import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
+import "../libraries/LibMeta.sol";
 
 // import "../interfaces/IUniswapV2Pair.sol";
 
@@ -45,8 +46,9 @@ contract StakingFacet {
     }
 
     function updateFrens() internal {
-        Account storage account = s.accounts[msg.sender];
-        account.frens = frens(msg.sender);
+        address sender = LibMeta.msgSender();
+        Account storage account = s.accounts[sender];
+        account.frens = frens(sender);
         account.lastFrensUpdate = uint40(block.timestamp);
     }
 
@@ -91,18 +93,20 @@ contract StakingFacet {
 
     function stakeGhst(uint256 _ghstValue) external {
         updateFrens();
-        s.accounts[msg.sender].ghst += uint96(_ghstValue);
-        LibERC20.transferFrom(s.ghstContract, msg.sender, address(this), _ghstValue);
+        address sender = LibMeta.msgSender();
+        s.accounts[sender].ghst += uint96(_ghstValue);
+        LibERC20.transferFrom(s.ghstContract, sender, address(this), _ghstValue);
     }
 
     function stakePoolTokens(uint256 _poolTokens) external {
         updateFrens();
-        Account storage account = s.accounts[msg.sender];
+        address sender = LibMeta.msgSender();
+        Account storage account = s.accounts[sender];
         account.ghstStakingTokens += _poolTokens;
         account.poolTokens += _poolTokens;
         s.ghstStakingTokensTotalSupply += _poolTokens;
-        emit Transfer(address(0), msg.sender, _poolTokens);
-        LibERC20.transferFrom(s.poolContract, msg.sender, address(this), _poolTokens);
+        emit Transfer(address(0), sender, _poolTokens);
+        LibERC20.transferFrom(s.poolContract, sender, address(this), _poolTokens);
     }
 
     function getGhstUsdcPoolToken() external view returns (address) {
@@ -136,10 +140,11 @@ contract StakingFacet {
 
     function stakeGhstUsdcPoolTokens(uint256 _poolTokens) external {
         updateFrens();
-        Account storage account = s.accounts[msg.sender];
+        address sender = LibMeta.msgSender();
+        Account storage account = s.accounts[sender];
         account.ghstUsdcPoolTokens += _poolTokens;
-        IERC20Mintable(s.stkGhstUsdcToken).mint(msg.sender, _poolTokens);
-        LibERC20.transferFrom(s.ghstUsdcPoolToken, msg.sender, address(this), _poolTokens);
+        IERC20Mintable(s.stkGhstUsdcToken).mint(sender, _poolTokens);
+        LibERC20.transferFrom(s.ghstUsdcPoolToken, sender, address(this), _poolTokens);
     }
 
     function staked(address _account)
@@ -158,61 +163,65 @@ contract StakingFacet {
 
     function withdrawGhstStake(uint256 _ghstValue) external {
         updateFrens();
-        uint256 bal = s.accounts[msg.sender].ghst;
+        address sender = LibMeta.msgSender();
+        uint256 bal = s.accounts[sender].ghst;
         require(bal >= _ghstValue, "Can't withdraw more GHST than staked");
-        s.accounts[msg.sender].ghst = uint96(bal - _ghstValue);
-        LibERC20.transfer(s.ghstContract, msg.sender, _ghstValue);
+        s.accounts[sender].ghst = uint96(bal - _ghstValue);
+        LibERC20.transfer(s.ghstContract, sender, _ghstValue);
     }
 
     function withdrawPoolStake(uint256 _poolTokens) external {
         updateFrens();
-        uint256 bal = s.accounts[msg.sender].ghstStakingTokens;
+        address sender = LibMeta.msgSender();
+        uint256 bal = s.accounts[sender].ghstStakingTokens;
         require(bal >= _poolTokens, "Can't withdraw more ghstStakingToken than in account");
-        s.accounts[msg.sender].ghstStakingTokens = bal - _poolTokens;
+        s.accounts[sender].ghstStakingTokens = bal - _poolTokens;
         s.ghstStakingTokensTotalSupply -= _poolTokens;
-        uint256 accountPoolTokens = s.accounts[msg.sender].poolTokens;
+        uint256 accountPoolTokens = s.accounts[sender].poolTokens;
         require(accountPoolTokens >= _poolTokens, "Can't withdraw more poolTokens than in account");
-        s.accounts[msg.sender].poolTokens = accountPoolTokens - _poolTokens;
-        emit Transfer(msg.sender, address(0), _poolTokens);
-        LibERC20.transfer(s.poolContract, msg.sender, _poolTokens);
+        s.accounts[sender].poolTokens = accountPoolTokens - _poolTokens;
+        emit Transfer(sender, address(0), _poolTokens);
+        LibERC20.transfer(s.poolContract, sender, _poolTokens);
     }
 
     function withdrawGhstUsdcPoolStake(uint256 _poolTokens) external {
         updateFrens();
-        uint256 bal = IERC20(s.stkGhstUsdcToken).balanceOf(msg.sender);
+        address sender = LibMeta.msgSender();
+        uint256 bal = IERC20(s.stkGhstUsdcToken).balanceOf(sender);
         require(bal >= _poolTokens, "Must have enough stkGhstUsdcTokens");
-        IERC20Mintable(s.stkGhstUsdcToken).burn(msg.sender, _poolTokens);
-        uint256 accountPoolTokens = s.accounts[msg.sender].ghstUsdcPoolTokens;
+        IERC20Mintable(s.stkGhstUsdcToken).burn(sender, _poolTokens);
+        uint256 accountPoolTokens = s.accounts[sender].ghstUsdcPoolTokens;
         require(accountPoolTokens >= _poolTokens, "Can't withdraw more poolTokens than in account");
-        s.accounts[msg.sender].ghstUsdcPoolTokens = accountPoolTokens - _poolTokens;
-        LibERC20.transfer(s.ghstUsdcPoolToken, msg.sender, _poolTokens);
+        s.accounts[sender].ghstUsdcPoolTokens = accountPoolTokens - _poolTokens;
+        LibERC20.transfer(s.ghstUsdcPoolToken, sender, _poolTokens);
     }
 
     function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
         require(_ids.length == _values.length, "Staking: _ids not the same length as _values");
         updateFrens();
-        uint256 frensBal = s.accounts[msg.sender].frens;
+        address sender = LibMeta.msgSender();
+        uint256 frensBal = s.accounts[sender].frens;
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
             uint256 value = _values[i];
             require(id < 6, "Staking: Ticket not found");
-            uint256 cost = ticketCost(id) * value;
+            uint256 l_ticketCost = ticketCost(id);
+            uint256 cost = l_ticketCost * value;
+            require(cost / l_ticketCost == value, "Staking: multiplication overflow");
             require(frensBal >= cost, "Staking: Not enough frens points");
             frensBal -= cost;
-            s.tickets[id].accountBalances[msg.sender] += value;
+            s.tickets[id].accountBalances[sender] += value;
             s.tickets[id].totalSupply += uint96(value);
         }
-        s.accounts[msg.sender].frens = frensBal;
-        emit TransferBatch(msg.sender, address(0), msg.sender, _ids, _values);
+        s.accounts[sender].frens = frensBal;
+        emit TransferBatch(sender, address(0), sender, _ids, _values);
         uint256 size;
-        address to = msg.sender;
         assembly {
-            size := extcodesize(to)
+            size := extcodesize(sender)
         }
         if (size > 0) {
             require(
-                ERC1155_BATCH_ACCEPTED ==
-                    IERC1155TokenReceiver(msg.sender).onERC1155BatchReceived(msg.sender, address(0), _ids, _values, new bytes(0)),
+                ERC1155_BATCH_ACCEPTED == IERC1155TokenReceiver(sender).onERC1155BatchReceived(sender, address(0), _ids, _values, new bytes(0)),
                 "Staking: Ticket transfer rejected/failed"
             );
         }
