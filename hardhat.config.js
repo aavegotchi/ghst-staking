@@ -17,8 +17,9 @@ task('accounts', 'Prints the list of accounts', async () => {
     console.log(await account.getAddress())
   }
 })
-
+// console.log(local)
 const account = local.secret
+// console.log(account)
 
 // You have to export an object to set up your config
 // This object can have the following optional entries:
@@ -31,35 +32,36 @@ module.exports = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    apiKey: local.etherscanApiKey
+    // apiKey: local.etherscanApiKey
   },
   networks: {
     matic: {
-      url: 'https://rpc-mainnet.matic.network',
+      url: local.maticUrl, // 'https://rpc-mainnet.matic.network',
       // url: 'https://rpc-mainnet.maticvigil.com/',
+      timeout: 90000,
       accounts: [account],
       blockGasLimit: 20000000,
       gasPrice: 1000000000
     },
     mumbai: {
       url: 'https://rpc-mumbai.matic.today',
-      accounts: [account],
+      // accounts: [account],
       blockGasLimit: 20000000,
       gasPrice: 1000000000
     },
     hardhat: {
       blockGasLimit: 20000000
-    },
-    kovan: {
-      url: local.kovanUrl,
-      accounts: [account],
-      gasPrice: 20000000000
-    },
-    mainnet: {
-      url: local.mainnetUrl,
-      accounts: [account],
-      gasPrice: 60000000000
     }
+    // kovan: {
+    //   // url: local.kovanUrl,
+    //   // accounts: [account],
+    //   gasPrice: 20000000000
+    // },
+    // mainnet: {
+    //   // url: local.mainnetUrl,
+    //   // accounts: [account],
+    //   gasPrice: 60000000000
+    // }
   },
   // This is a sample solc configuration that specifies which version of solc to use
   solidity: {

@@ -1,20 +1,31 @@
 /* global ethers */
+/* eslint prefer-const: "off" */
 
-const { ethers } = require('hardhat')
+const { LedgerSigner } = require('../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets')
 
 async function main () {
-  const accounts = await ethers.getSigners()
-  const account = await accounts[0].getAddress()
+  const signer = new LedgerSigner(ethers.provider)
+  // const accounts = await ethers.getSigners()
+  // const account = await accounts[0].getAddress()
 
-  const diamondAddress = '0x187DffAef821d03055aC5eAa1524c53EBB36eA97'
-  const stakingFacet = await ethers.getContractAt('StakingFacet', diamondAddress)
-  const result = await stakingFacet.poolTokensRate()
-  console.log(result.toString())
-//   const ownershipFacet = await ethers.getContractAt('OwnershipFacet', diamondAddress)
-//   const owner = await ownershipFacet.owner()
-//   console.log(owner)
-  // const tx = await ownershipFacet.transferOwnership('0x258cC4C495Aef8D809944aD94C6722ef41216ef3')
-  // console.log(tx)
+  const diamondAddress = '0xA02d547512Bb90002807499F05495Fe9C4C3943f'
+  // 0x258cC4C495Aef8D809944aD94C6722ef41216ef3
+  const newOwner = '0x258cC4C495Aef8D809944aD94C6722ef41216ef3'
+  // const stakingFacet = await ethers.getContractAt('StakingFacet', diamondAddress)
+  // const result = await stakingFacet.poolTokensRate()
+  // console.log(result.toString())
+  const ownershipFacet = await ethers.getContractAt('OwnershipFacet', diamondAddress, signer)
+  const owner = await ownershipFacet.owner()
+  console.log(owner)
+  const tx = await ownershipFacet.transferOwnership(newOwner)
+  console.log('Transferring to new owner. Hash:', tx.hash)
+  const receipt = await tx.wait()
+  if (!receipt.status) {
+    throw Error(`Transaction failed: ${tx.hash}`)
+  }
+  console.log('Accounts updated successfully')
+  console.log(tx)
+  console.log('New owner:', await ownershipFacet.owner())
 }
 
 // We recommend this pattern to be able to use async/await everywhere
