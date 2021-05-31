@@ -35,6 +35,10 @@ This diamond uses a direct copy of the current diamond implementation from the [
 
 GHSTStakingDiamond is deployed from the scripts/deploy.js script.
 
+### Polygon 
+
+-GHSTStakingDiamond: 0xA02d547512Bb90002807499F05495Fe9C4C3943f
+
 ### Ethereum Mainnet 
 
 - GHSTStakingDiamond deployed: 0x93eA6ec350Ace7473f7694D43dEC2726a515E31A
