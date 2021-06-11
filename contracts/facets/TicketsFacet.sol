@@ -36,13 +36,13 @@ contract TicketsFacet is IERC1155 {
     function setBaseURI(string memory _value) external {
         LibDiamond.enforceIsContractOwner();
         s.ticketsBaseUri = _value;
-        for (uint256 i; i < 6; i++) {
+        for (uint256 i; i < 7; i++) {
             emit URI(string(abi.encodePacked(_value, LibStrings.uintStr(i))), i);
         }
     }
 
     function uri(uint256 _id) external view returns (string memory) {
-        require(_id < 6, "_id not found for  ticket");
+        require(_id < 7, "_id not found for  ticket");
         return string(abi.encodePacked(s.ticketsBaseUri, LibStrings.uintStr(_id)));
     }
 
@@ -144,20 +144,20 @@ contract TicketsFacet is IERC1155 {
     }
 
     function totalSupplies() external view returns (uint256[] memory totalSupplies_) {
-        totalSupplies_ = new uint256[](6);
-        for (uint256 i; i < 6; i++) {
+        totalSupplies_ = new uint256[](7);
+        for (uint256 i; i < 7; i++) {
             totalSupplies_[i] = s.tickets[i].totalSupply;
         }
     }
 
     function totalSupply(uint256 _id) external view returns (uint256 totalSupply_) {
-        require(_id < 6, "Tickets:  Ticket not found");
+        require(_id < 7, "Tickets:  Ticket not found");
         totalSupply_ = s.tickets[_id].totalSupply;
     }
 
     function balanceOfAll(address _owner) external view returns (uint256[] memory balances_) {
-        balances_ = new uint256[](6);
-        for (uint256 i; i < 6; i++) {
+        balances_ = new uint256[](7);
+        for (uint256 i; i < 7; i++) {
             balances_[i] = s.tickets[i].accountBalances[_owner];
         }
     }

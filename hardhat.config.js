@@ -35,23 +35,31 @@ module.exports = {
     // apiKey: local.etherscanApiKey
   },
   networks: {
-    matic: {
-      url: local.maticUrl, // 'https://rpc-mainnet.matic.network',
-      // url: 'https://rpc-mainnet.maticvigil.com/',
-      timeout: 90000,
-      accounts: [account],
-      blockGasLimit: 20000000,
-      gasPrice: 1000000000
-    },
-    mumbai: {
-      url: 'https://rpc-mumbai.matic.today',
-      // accounts: [account],
-      blockGasLimit: 20000000,
-      gasPrice: 1000000000
-    },
     hardhat: {
-      blockGasLimit: 20000000
-    }
+      forking: {
+        url: local.maticUrl,
+        timeout: 120000
+        // blockNumber: 12552123
+        // blockNumber: 13024371
+      },
+      blockGasLimit: 20000000,
+      timeout: 120000,
+      gas: 'auto'
+    },
+    // matic: {
+    //   url: local.maticUrl, // 'https://rpc-mainnet.matic.network',
+    //   // url: 'https://rpc-mainnet.maticvigil.com/',
+    //   timeout: 90000,
+    //   accounts: [account],
+    //   blockGasLimit: 20000000,
+    //   gasPrice: 1000000000
+    // },
+    // mumbai: {
+    //   url: 'https://rpc-mumbai.matic.today',
+    //   // accounts: [account],
+    //   blockGasLimit: 20000000,
+    //   gasPrice: 1000000000
+    // },
     // kovan: {
     //   // url: local.kovanUrl,
     //   // accounts: [account],
