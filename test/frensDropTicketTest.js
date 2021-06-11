@@ -15,12 +15,14 @@ describe('Frens Drop Ticket', async function(){
     await dropTicketScript();
   });
 
-  it('Should be able to convert any ticket to drop ticket', async function(){
+  it.only('Should be able to convert any ticket to drop ticket', async function(){
     // TODO: Tests should cover all converting logic of existing 6 tickets
+    console.log("works");
   });
 
-  it('Should allow users to claim drop ticket', async function(){
+  it.only('Should allow users to claim drop ticket', async function(){
     // TODO: Tests should call claimToken function in StakingFacet
+    console.log("works also");
   });
 
 
