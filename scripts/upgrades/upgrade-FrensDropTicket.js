@@ -23,6 +23,7 @@ const getSelector = (func) => {
 async function main () {
 // TODO: get new functions and function upgrades from ghst staking contract
 const ghstStakingDiamondAddress = '0xA02d547512Bb90002807499F05495Fe9C4C3943f';
+const diamondAddress = '0x86935F11C86623deC8a25696E1C19a8659CbF95d';
 
 let signer,
     stakingFacet,
@@ -44,11 +45,11 @@ if (testing) {
   throw Error('Incorrect network selected')
 }
 
-const StakingFacet = await ethers.getContractFactory('contract/facets/StakingFacet.sol:StakingFacet');
+const StakingFacet = await ethers.getContractFactory('StakingFacet');
 stakingFacet = await StakingFacet.deploy();
 console.log("Deployed facet: ", stakingFacet.address);
 
-const TicketsFacet = await ethers.getContractFactory('contract/facets/TicketsFacet.sol:TicketsFacet');
+const TicketsFacet = await ethers.getContractFactory('TicketsFacet');
 ticketsFacet = await TicketsFacet.deploy();
 console.log("Deployed facet: ", ticketsFacet.address);
 
@@ -100,12 +101,12 @@ const cut = [
   {
     facetAddress: ticketsFacet.address,
     action: FacetCutAction.Add,
-    functionSelectors: newTicketsFuns
+    functionSelectors: newTicketsFuncs
   },
   {
     facetAddress: ticketsFacet.address,
     action: FacetCutAction.Replace,
-    functionSelectors: existingERC1155Funcs
+    functionSelectors: existingTicketsFuncs
   }
 ]
 console.log(cut);
