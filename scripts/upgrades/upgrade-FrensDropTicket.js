@@ -29,7 +29,7 @@ let signer,
     stakingFacet,
     ticketsFacet;
 
-let owner = await (await ethers.getContractAt('OwnershipFacet', diamondAddress)).owner();
+let owner = await (await ethers.getContractAt('OwnershipFacet', ghstStakingDiamondAddress)).owner();
 
 const testing = ['hardhat', 'localhost'].includes(hre.network.name);
 
@@ -56,7 +56,7 @@ console.log("Deployed facet: ", ticketsFacet.address);
 const newStakingFuncs = [
   getSelector('function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external',
               'function convertTickets(uint256[] calldata _ids, uint256[] calldata  _values) external',
-              'function ticketCost(uint256 _id) public pure returns')
+              'function ticketCost(uint256 _id) public pure returns (uint256 _frensCost)')
 ]
 
 let existingStakingFuncs = getSelectors(stakingFacet);
