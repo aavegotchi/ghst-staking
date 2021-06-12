@@ -4,7 +4,7 @@ require('@nomiclabs/hardhat-ethers')
 require('hardhat-contract-sizer')
 require('dotenv').config()
 require('solidity-coverage')
-require('./tasks/generateDiamondABI.js')
+// require('./tasks/generateDiamondABI.js')
 
 // This is a sample Buidler task. To learn how to create your own go to
 // https://buidler.dev/guides/create-task.html
