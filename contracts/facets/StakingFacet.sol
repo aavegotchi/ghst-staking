@@ -227,7 +227,7 @@ contract StakingFacet {
         }
     }
 
-    function convertTickets(uint256[] calldata _ids, uint256[] calldata  _values) external {
+    function convertTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
         require(_ids.length == _values.length, "Staking: _ids not the same length as _values");
         updateFrens();
         address sender = LibMeta.msgSender();
@@ -238,7 +238,7 @@ contract StakingFacet {
             uint256 id = _ids[i];
             uint256 value = _values[i];
             // Can't convert drop ticket itself to another drop ticket
-            require(id < 6, "Staking: Ticket not found");
+            require(id < 6, "Staking: Cannot convert Drop Ticket");
             uint256 l_ticketCost = ticketCost(id);
             uint256 cost = l_ticketCost * value;
             require(cost / l_ticketCost == value, "Staking: multiplication overflow");
@@ -271,7 +271,8 @@ contract StakingFacet {
         }
         if (size > 0) {
             require(
-                ERC1155_BATCH_ACCEPTED == IERC1155TokenReceiver(sender).onERC1155BatchReceived(sender, address(0), eventTicketIds, eventTicketValues, new bytes(0)),
+                ERC1155_BATCH_ACCEPTED ==
+                    IERC1155TokenReceiver(sender).onERC1155BatchReceived(sender, address(0), eventTicketIds, eventTicketValues, new bytes(0)),
                 "Staking: Ticket transfer rejected/failed"
             );
         }
