@@ -43,9 +43,7 @@ async function main () {
   console.log('Deployed stakingFacet:', stakingFacet.address)
 
   const newStakingFuncs = [
-    getSelector('function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external'),
-    getSelector('function convertTickets(uint256[] calldata _ids, uint256[] calldata  _values) external'),
-    getSelector('function ticketCost(uint256 _id) public pure')
+    getSelector('function convertTickets(uint256[] calldata _ids, uint256[] calldata  _values) external')
   ]
 
   let existingStakingFuncs = getSelectors(stakingFacet)
@@ -72,26 +70,13 @@ async function main () {
   await ticketsFacet.deployed()
   console.log('Deployed ticketsFacet:', ticketsFacet.address)
 
-  const newTicketsFuncs = [
-    getSelector('function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external'),
-    getSelector('function convertTickets(uint256[] calldata _ids, uint256[] calldata  _values) external'),
-    getSelector('function ticketCost(uint256 _id) public pure')
-  ]
-
   let existingTicketsFuncs = getSelectors(ticketsFacet)
-
-  existingTicketsFuncs = existingTicketsFuncs.filter(selector => !newTicketsFuncs.includes(selector))
 
   const ticketsCut = [
     {
       facetAddress: ticketsFacet.address,
-      action: FacetCutAction.Add,
-      functionSelectors: newStakingFuncs
-    },
-    {
-      facetAddress: ticketsFacet.address,
       action: FacetCutAction.Replace,
-      functionSelectors: existingStakingFuncs
+      functionSelectors: existingTicketsFuncs
     }
   ]
   const diamondCut = (await ethers.getContractAt('IDiamondCut', diamondAddress)).connect(signer)
