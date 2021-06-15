@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { dropTicketScript } = require('../scripts/upgrades/upgrade-FrensDropTicket.js');
+const { DropTicket } = require('../scripts/upgrades/upgrade-DropTicket.js');
 
 
 describe('Frens Drop Ticket', async function(){
@@ -12,7 +12,7 @@ describe('Frens Drop Ticket', async function(){
   before(async function(){
     ghstStkAddress = 0xA02d547512Bb90002807499F05495Fe9C4C3943f;
 
-    await dropTicketScript();
+    await DropTicket();
   });
 
   it.only('Should be able to convert any ticket to drop ticket', async function(){
