@@ -31,7 +31,6 @@ async function main () {
       params: [owner]
     })
     signer = await ethers.getSigner(owner)
-    console.log('testing', signer);
   } else if (hre.network.name === 'matic') {
     signer = new LedgerSigner(ethers.provider)
   } else {
