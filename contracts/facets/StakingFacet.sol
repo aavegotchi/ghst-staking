@@ -232,7 +232,7 @@ contract StakingFacet {
         updateFrens();
         address sender = LibMeta.msgSender();
         uint256 totalCost;
-        uint256 dropTicketId = 7;
+        uint256 dropTicketId = 6;
         uint256 dropTicketCost = ticketCost(dropTicketId);
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
