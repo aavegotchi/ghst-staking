@@ -37,9 +37,13 @@ describe('Frens Drop Ticket', async function(){
     console.log("Frens Balance: ", frensBalance.toString());
     console.log("Ticket Balance: ", ticketBalance.toString());
 
-    await stakingFacet.convertTickets([0], [1]);
+    await stakingFacet.claimTickets([0], [1000]);
     let newTicketBalance = await ticketsFacet.balanceOfAll(ticketHolder);
-    console.log("New Ticket Balance: ", ticketBalance.toString());
+    console.log("New Ticket Balance: ", newTicketBalance.toString());
+
+    await stakingFacet.convertTickets([0], [1000]);
+    newTicketBalance = await ticketsFacet.balanceOfAll(ticketHolder);
+    console.log("Updated Ticket Balance: ", newTicketBalance.toString());
   });
 
   it('Should allow users to claim drop ticket', async function(){
