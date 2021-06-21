@@ -1,54 +1,50 @@
 const { expect } = require('chai');
+const { ethers } = require('hardhat')
 const { DropTicket } = require('../scripts/upgrades/upgrade-DropTicket.js');
 
+const eightBillion = '8000000000000000000000000000'
 
 describe('Frens Drop Ticket', async function(){
-  this.timeout(300000);
-
-  let ghstStkAddress,
-      onwer,
-      ghstWhale,
-      ticketHolder,
-      stakingFacet,
-      ticketsFacet;
+  const diamondAddress = '0xA02d547512Bb90002807499F05495Fe9C4C3943f';
+  const dropTicketId = 6;
+  let txData, owner, signer, ticketHolder, stakingFacet, holderStakingFacet, ownerStakingFacet, ticketsFacet;
 
   before(async function(){
-    ghstStkAddress = '0xA02d547512Bb90002807499F05495Fe9C4C3943f';
-    ghstWhale = '0xBC67F26c2b87e16e304218459D2BB60Dac5C80bC';
-    ticketHolder = '0xA1B9F1AF06134A93FB474E38726D92d171047c07';
-
+    this.timeout(1000000);
     await DropTicket();
 
-    owner = await ethers.getSigner(ticketHolder);
-
-    stakingFacet = await ethers.getContractAt('StakingFacet', ghstStkAddress, owner);
-    ticketsFacet = await ethers.getContractAt('TicketsFacet', ghstStkAddress, owner);
+    stakingFacet = await ethers.getContractAt('StakingFacet', diamondAddress)
+    owner = await (await ethers.getContractAt('OwnershipFacet', diamondAddress)).owner();
+    signer = await ethers.provider.getSigner(owner);
+    ticketsFacet = await (await ethers.getContractAt('TicketsFacet', diamondAddress)).connect(signer);
+    [ticketHolder] = await ethers.getSigners();
+    ownerStakingFacet = await stakingFacet.connect(signer);
+    holderStakingFacet = await stakingFacet.connect(ticketHolder);
   });
 
-  it.only('Should be able to convert any ticket to drop ticket', async function(){
-    // TODO: Tests should cover all converting logic of existing 6 tickets
-    await hre.network.provider.request({
-      method: 'hardhat_impersonateAccount',
-      params: [ticketHolder]
-    });
-
-    let frensBalance = await stakingFacet.frens(ticketHolder);
-    let ticketBalance = await ticketsFacet.balanceOfAll(ticketHolder);
-    console.log("Frens Balance: ", frensBalance.toString());
-    console.log("Ticket Balance: ", ticketBalance.toString());
-
-    await stakingFacet.claimTickets([0], [1000]);
-    let newTicketBalance = await ticketsFacet.balanceOfAll(ticketHolder);
-    console.log("New Ticket Balance: ", newTicketBalance.toString());
-
-    await stakingFacet.convertTickets([0], [1000]);
-    newTicketBalance = await ticketsFacet.balanceOfAll(ticketHolder);
-    console.log("Updated Ticket Balance: ", newTicketBalance.toString());
+  it('cant claim tickets if user balance is not enough', async function() {
+    await expect(holderStakingFacet.claimTickets([dropTicketId], [1])).to.be.revertedWith('Not enough frens points');
   });
 
-  it('Should allow users to claim drop ticket', async function(){
-    // TODO: Tests should call claimToken function in StakingFacet
+  it('should claim tickets', async function() {
+    await ownerStakingFacet.migrateFrens([ticketHolder.address], [eightBillion]);
+    const totalSupplyBefore = await ticketsFacet.totalSupply(dropTicketId)
+    await holderStakingFacet.claimTickets([0, 1, 2, 3, 4, 5, 6], [100, 100, 100, 100, 1, 1, 1])
+    expect(await ticketsFacet.totalSupply(dropTicketId)).to.equal(totalSupplyBefore + 1)
+  }).timeout(50000);
+
+  it('should convert tickets to drop ticket', async function(){
+    await expect(holderStakingFacet.convertTickets([dropTicketId], [1])).to.be.revertedWith('Cannot convert Drop Ticket');
+
+    const totalSupplyBefore = await ticketsFacet.totalSupply(dropTicketId)
+    const secondSupplyBefore = await ticketsFacet.totalSupply(2)
+
+    // Convert 7 drop tickets
+    await holderStakingFacet.convertTickets([2, 3, 4, 5], [5, 3, 1, 1])
+    expect(await ticketsFacet.totalSupply(dropTicketId)).to.equal((parseInt(totalSupplyBefore) + 7))
+    expect(await ticketsFacet.totalSupply('2')).to.equal((parseInt(secondSupplyBefore) - 5))
+
+    // Invalid number of tickets
+    await expect(holderStakingFacet.convertTickets([2, 3], [5, 2])).to.be.revertedWith('Staking: Total cost doesnt match to convert drop tickets');
   });
-
-
 });

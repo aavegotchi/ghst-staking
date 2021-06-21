@@ -238,7 +238,7 @@ contract StakingFacet {
             uint256 id = _ids[i];
             uint256 value = _values[i];
             // Can't convert drop ticket itself to another drop ticket
-            require(id < 6, "Staking: Cannot convert Drop Ticket");
+            require(id != dropTicketId, "Staking: Cannot convert Drop Ticket");
             uint256 l_ticketCost = ticketCost(id);
             uint256 cost = l_ticketCost * value;
             require(cost / l_ticketCost == value, "Staking: multiplication overflow");
@@ -256,9 +256,10 @@ contract StakingFacet {
         emit TransferBatch(sender, sender, address(0), _ids, _values);
 
         uint256 newDropTickets = totalCost / dropTicketCost;
-        uint256[] memory eventTicketIds;
+        uint256[] memory eventTicketIds = new uint256[](1);
         eventTicketIds[0] = dropTicketId;
-        uint256[] memory eventTicketValues;
+
+        uint256[] memory eventTicketValues = new uint256[](1);
         eventTicketValues[0] = newDropTickets;
 
         s.tickets[dropTicketId].accountBalances[sender] += newDropTickets;
