@@ -244,15 +244,18 @@ contract StakingFacet {
             require(cost / l_ticketCost == value, "Staking: multiplication overflow");
             require(s.tickets[id].accountBalances[sender] >= value, "Staking: Not enough Ticket balance");
             totalCost += cost;
+
+            s.tickets[id].accountBalances[sender] -= value;
+            s.tickets[id].totalSupply -= uint96(value);
         }
         require(totalCost > 0, "Staking: Invalid Ticket Ids and Values");
         require(totalCost % dropTicketCost == 0, "Staking: Total cost doesnt match to convert drop tickets");
-        for (uint256 i; i < _ids.length; i++) {
+        /* for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
             uint256 value = _values[i];
             s.tickets[id].accountBalances[sender] -= value;
             s.tickets[id].totalSupply -= uint96(value);
-        }
+        } */
         emit TransferBatch(sender, sender, address(0), _ids, _values);
 
         uint256 newDropTickets = totalCost / dropTicketCost;
