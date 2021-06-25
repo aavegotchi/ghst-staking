@@ -22,27 +22,34 @@ describe('Frens Drop Ticket', async function(){
     holderStakingFacet = await stakingFacet.connect(ticketHolder);
   });
 
-  it('cant claim tickets if user balance is not enough', async function() {
+  it.only('cant claim tickets if user balance is not enough', async function() {
     await expect(holderStakingFacet.claimTickets([dropTicketId], [1])).to.be.revertedWith('Not enough frens points');
   });
 
-  it('should claim tickets', async function() {
+  it.only('should claim tickets', async function() {
     await ownerStakingFacet.migrateFrens([ticketHolder.address], [eightBillion]);
     const totalSupplyBefore = await ticketsFacet.totalSupply(dropTicketId)
     await holderStakingFacet.claimTickets([0, 1, 2, 3, 4, 5, 6], [100, 100, 100, 100, 1, 1, 1])
     expect(await ticketsFacet.totalSupply(dropTicketId)).to.equal(totalSupplyBefore + 1)
   }).timeout(50000);
 
-  it('should convert tickets to drop ticket', async function(){
+  it.only('should convert tickets to drop ticket', async function(){
     await expect(holderStakingFacet.convertTickets([dropTicketId], [1])).to.be.revertedWith('Cannot convert Drop Ticket');
 
     const totalSupplyBefore = await ticketsFacet.totalSupply(dropTicketId)
     const secondSupplyBefore = await ticketsFacet.totalSupply(2)
 
+    const ownerDropTicketBefore = await ticketsFacet.balanceOf(ticketHolder.address, dropTicketId)
+    const ownerTicketBefore = await ticketsFacet.balanceOf(ticketHolder.address, 2)
+
     // Convert 7 drop tickets
     await holderStakingFacet.convertTickets([2, 3, 4, 5], [5, 3, 1, 1])
     expect(await ticketsFacet.totalSupply(dropTicketId)).to.equal((parseInt(totalSupplyBefore) + 7))
     expect(await ticketsFacet.totalSupply('2')).to.equal((parseInt(secondSupplyBefore) - 5))
+
+    expect(await ticketsFacet.balanceOf(ticketHolder.address, 6)).to.equal((parseInt(ownerDropTicketBefore) + 7))
+    expect(await ticketsFacet.balanceOf(ticketHolder.address, 2)).to.equal((parseInt(ownerTicketBefore) - 5))
+
 
     // Invalid number of tickets
     await expect(holderStakingFacet.convertTickets([2, 3], [5, 2])).to.be.revertedWith('Staking: Total cost doesnt match to convert drop tickets');
