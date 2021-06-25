@@ -229,7 +229,6 @@ contract StakingFacet {
 
     function convertTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
         require(_ids.length == _values.length, "Staking: _ids not the same length as _values");
-        updateFrens();
         address sender = LibMeta.msgSender();
         uint256 totalCost;
         uint256 dropTicketId = 6;
