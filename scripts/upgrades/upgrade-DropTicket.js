@@ -46,7 +46,13 @@ async function main () {
     getSelector('function convertTickets(uint256[] calldata _ids, uint256[] calldata  _values) external')
   ]
 
-  let existingStakingFuncs = getSelectors(stakingFacet)
+  let existingStakingFuncs = getSelectors(stackingFacet);
+
+  for (const selector of newStakingFuncs) {
+    if (!existingStakingFuncs.includes(selector)) {
+      throw Error(`Selector ${selector} not found`);
+    }
+  }
 
   existingStakingFuncs = existingStakingFuncs.filter(selector => !newStakingFuncs.includes(selector))
 
