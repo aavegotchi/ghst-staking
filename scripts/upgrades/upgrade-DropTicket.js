@@ -110,16 +110,15 @@ async function main () {
     console.log('Diamond cut')
     tx = await diamondCut.populateTransaction.diamondCut(stakingCut, ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
     await sendToMultisig(process.env.DIAMOND_UPGRADER, signer, tx)
-    tx = await diamondCut.populateTransaction.diamondCut(ticketsCut, ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
-    await sendToMultisig(process.env.DIAMOND_UPGRADER, signer, tx)
+   
   }
 }
 
-// main()
-//   .then(() => console.log('upgrade completed') /* process.exit(0) */)
-//   .catch(error => {
-//     console.error(error)
-//     process.exit(1)
-//   })
+main()
+  .then(() => console.log('upgrade completed') /* process.exit(0) */)
+  .catch(error => {
+    console.error(error)
+    process.exit(1)
+  })
 
 exports.DropTicket = main

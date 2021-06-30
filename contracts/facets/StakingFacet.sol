@@ -248,7 +248,7 @@ contract StakingFacet {
             s.tickets[id].totalSupply -= uint96(value);
         }
         require(totalCost > 0, "Staking: Invalid Ticket Ids and Values");
-        require(totalCost % dropTicketCost == 0, "Staking: Total cost doesnt match to convert drop tickets");
+        require(totalCost % dropTicketCost == 0, "Staking: Cannot partially convert Drop Tickets");
 
         emit TransferBatch(sender, sender, address(0), _ids, _values);
 
