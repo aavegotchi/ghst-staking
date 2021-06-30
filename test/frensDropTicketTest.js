@@ -51,7 +51,18 @@ describe('Frens Drop Ticket', async function(){
     expect(await ticketsFacet.balanceOf(ticketHolder.address, 2)).to.equal((parseInt(ownerTicketBefore) - 5))
 
 
-    // Invalid number of tickets
-    await expect(holderStakingFacet.convertTickets([2, 3], [5, 2])).to.be.revertedWith('Staking: Total cost doesnt match to convert drop tickets');
+    /* Invalid number of tickets */
+
+
+    //0 values for tickets
+    await expect(holderStakingFacet.convertTickets([2,3],[0,0])).to.be.revertedWith('Staking: Invalid Ticket Ids and Values')
+    
+
+    //Partially converted 
+    await expect(holderStakingFacet.convertTickets([2, 3], [5, 2])).to.be.revertedWith('Staking: Cannot partially convert Drop Tickets');
+
+    //Too many tickets
+    await expect(holderStakingFacet.convertTickets([2,3],[1000,1000])).to.be.revertedWith('Staking: Not enough Ticket balance')
   });
+
 });
