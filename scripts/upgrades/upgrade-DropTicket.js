@@ -56,9 +56,21 @@ async function main () {
 
   existingStakingFuncs = existingStakingFuncs.filter(selector => !newStakingFuncs.includes(selector))
 
+
+  const ticketFacet = await ethers.getContractFactory('contracts/facets/TicketsFacet.sol:TicketsFacet')
+  ticketsFacet = await ticketFacet.deploy()
+  await ticketsFacet.deployed()
+  console.log('Deployed ticketsFacet:', ticketsFacet.address)
+
+  let existingTicketsFuncs = getSelectors(ticketsFacet)
+
   const FacetCutAction = { Add: 0, Replace: 1, Remove: 2 }
 
-  const stakingCut = [
+  const diamondCut = (await ethers.getContractAt('IDiamondCut', diamondAddress)).connect(signer)
+  let tx
+  let receipt
+
+  const cut = [
     {
       facetAddress: stakingFacet.address,
       action: FacetCutAction.Add,
@@ -68,57 +80,38 @@ async function main () {
       facetAddress: stakingFacet.address,
       action: FacetCutAction.Replace,
       functionSelectors: existingStakingFuncs
-    }
-  ]
-
-  const ticketFacet = await ethers.getContractFactory('contracts/facets/TicketsFacet.sol:TicketsFacet')
-  ticketsFacet = await ticketFacet.deploy()
-  await ticketsFacet.deployed()
-  console.log('Deployed ticketsFacet:', ticketsFacet.address)
-
-  let existingTicketsFuncs = getSelectors(ticketsFacet)
-
-  const ticketsCut = [
+    },
     {
       facetAddress: ticketsFacet.address,
       action: FacetCutAction.Replace,
       functionSelectors: existingTicketsFuncs
     }
+    
   ]
-  const diamondCut = (await ethers.getContractAt('IDiamondCut', diamondAddress)).connect(signer)
-  let tx
-  let receipt
 
   if (testing) {
     console.log('Diamond cut')
-    tx = await diamondCut.diamondCut(stakingCut, ethers.constants.AddressZero, '0x', { gasLimit: 8000000 })
+    tx = await diamondCut.diamondCut(cut, ethers.constants.AddressZero, '0x', { gasLimit: 8000000 })
     receipt = await tx.wait()
     if (!receipt.status) {
       throw Error(`Staking Diamond upgrade failed: ${tx.hash}`)
     }
 
-    console.log('Completed Staking Diamond cut: ', tx.hash)
+    console.log('Completed Diamond cut: ', tx.hash)
 
-    tx = await diamondCut.diamondCut(ticketsCut, ethers.constants.AddressZero, '0x', { gasLimit: 8000000 })
-    receipt = await tx.wait()
-    if (!receipt.status) {
-      throw Error(`Tickets Diamond upgrade failed: ${tx.hash}`)
-    }
-
-    console.log('Completed Tickets Diamond cut: ', tx.hash)
   } else {
-    console.log('Diamond cut')
-    tx = await diamondCut.populateTransaction.diamondCut(stakingCut, ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
+    console.log('Staking Cut cut')
+    tx = await diamondCut.populateTransaction.diamondCut(cut, ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
     await sendToMultisig(process.env.DIAMOND_UPGRADER, signer, tx)
    
   }
 }
 
-main()
-  .then(() => console.log('upgrade completed') /* process.exit(0) */)
-  .catch(error => {
-    console.error(error)
-    process.exit(1)
-  })
+// main()
+  // .then(() => console.log('upgrade completed') /* process.exit(0) */)
+  // .catch(error => {
+    // console.error(error)
+    // process.exit(1)
+  // })
 
 exports.DropTicket = main
