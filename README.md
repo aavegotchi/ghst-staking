@@ -38,6 +38,8 @@ GHSTStakingDiamond is deployed from the scripts/deploy.js script.
 ### Polygon 
 
 -GHSTStakingDiamond: 0xA02d547512Bb90002807499F05495Fe9C4C3943f
+-StakingFacet: 0x1D47Bb646fF33C6B2457996319124a19F2EE2b69
+-TicketsFacet: 0x86ab2f8483d5089a3d917167fE1f04829C6C9fEf
 
 ### Ethereum Mainnet 
 
