@@ -38,7 +38,7 @@ async function main () {
   }
 
   const stackingFacet = await ethers.getContractFactory('contracts/facets/StakingFacet.sol:StakingFacet')
-  stakingFacet = await stackingFacet.deploy()
+  stakingFacet = await stackingFacet.deploy({gasPrice:5000000000})
   await stakingFacet.deployed()
   console.log('Deployed stakingFacet:', stakingFacet.address)
 
@@ -58,7 +58,7 @@ async function main () {
 
 
   const ticketFacet = await ethers.getContractFactory('contracts/facets/TicketsFacet.sol:TicketsFacet')
-  ticketsFacet = await ticketFacet.deploy()
+  ticketsFacet = await ticketFacet.deploy({gasPrice:5000000000})
   await ticketsFacet.deployed()
   console.log('Deployed ticketsFacet:', ticketsFacet.address)
 
@@ -107,11 +107,11 @@ async function main () {
   }
 }
 
-// main()
-  // .then(() => console.log('upgrade completed') /* process.exit(0) */)
-  // .catch(error => {
-    // console.error(error)
-    // process.exit(1)
-  // })
+main()
+  .then(() => console.log('upgrade completed') /* process.exit(0) */)
+  .catch(error => {
+    console.error(error)
+    process.exit(1)
+  })
 
 exports.DropTicket = main
