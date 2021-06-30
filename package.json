@@ -35,5 +35,8 @@
   "bugs": {
     "url": "https://github.com/aavegotchi/ghst-staking/issues"
   },
-  "homepage": "https://github.com/aavegotchi/ghst-staking#readme"
+  "homepage": "https://github.com/aavegotchi/ghst-staking#readme",
+  "dependencies": {
+    "@ledgerhq/hw-transport-node-hid-noevents": "^6.0.2"
+  }
 }

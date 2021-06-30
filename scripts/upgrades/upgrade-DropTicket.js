@@ -1,5 +1,8 @@
-const { LedgerSigner } = require('@ethersproject/hardware-wallets')
+// const { LedgerSigner } = require('@ethersproject/hardware-wallets')
+const { LedgerSigner } = require('../../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets')
 const { sendToMultisig } = require('../libraries/multisig/multisig.js')
+
+let gasPrice = 20000000000
 
 function getSelectors (contract) {
   const signatures = Object.keys(contract.interface.functions)
@@ -37,8 +40,9 @@ async function main () {
     throw Error('Incorrect network selected')
   }
 
+  console.log('Deploying Staking facet')
   const stackingFacet = await ethers.getContractFactory('contracts/facets/StakingFacet.sol:StakingFacet')
-  stakingFacet = await stackingFacet.deploy({gasPrice:5000000000})
+  stakingFacet = await stackingFacet.deploy({gasPrice:gasPrice})
   await stakingFacet.deployed()
   console.log('Deployed stakingFacet:', stakingFacet.address)
 
@@ -57,8 +61,10 @@ async function main () {
   existingStakingFuncs = existingStakingFuncs.filter(selector => !newStakingFuncs.includes(selector))
 
 
+
+  console.log('Deploying Ticket facet')
   const ticketFacet = await ethers.getContractFactory('contracts/facets/TicketsFacet.sol:TicketsFacet')
-  ticketsFacet = await ticketFacet.deploy({gasPrice:5000000000})
+  ticketsFacet = await ticketFacet.deploy({gasPrice:gasPrice})
   await ticketsFacet.deployed()
   console.log('Deployed ticketsFacet:', ticketsFacet.address)
 
@@ -100,7 +106,7 @@ async function main () {
     console.log('Completed Diamond cut: ', tx.hash)
 
   } else {
-    console.log('Staking Cut cut')
+    console.log('Diamond Cut')
     tx = await diamondCut.populateTransaction.diamondCut(cut, ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
     await sendToMultisig(process.env.DIAMOND_UPGRADER, signer, tx)
    
