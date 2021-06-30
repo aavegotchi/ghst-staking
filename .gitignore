@@ -7,3 +7,4 @@ bin
 .secret
 .vscode
 .local.config.js
+.env
