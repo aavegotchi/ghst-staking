@@ -204,7 +204,7 @@ contract StakingFacet {
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
             uint256 value = _values[i];
-            require(id < 6, "Staking: Ticket not found");
+            require(id < 7, "Staking: Ticket not found");
             uint256 l_ticketCost = ticketCost(id);
             uint256 cost = l_ticketCost * value;
             require(cost / l_ticketCost == value, "Staking: multiplication overflow");
@@ -227,6 +227,55 @@ contract StakingFacet {
         }
     }
 
+    function convertTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
+        require(_ids.length == _values.length, "Staking: _ids not the same length as _values");
+        address sender = LibMeta.msgSender();
+        uint256 totalCost;
+        uint256 dropTicketId = 6;
+        uint256 dropTicketCost = ticketCost(dropTicketId);
+        for (uint256 i; i < _ids.length; i++) {
+            uint256 id = _ids[i];
+            uint256 value = _values[i];
+            // Can't convert drop ticket itself to another drop ticket
+            require(id != dropTicketId, "Staking: Cannot convert Drop Ticket");
+            uint256 l_ticketCost = ticketCost(id);
+            uint256 cost = l_ticketCost * value;
+            require(cost / l_ticketCost == value, "Staking: multiplication overflow");
+            require(s.tickets[id].accountBalances[sender] >= value, "Staking: Not enough Ticket balance");
+            totalCost += cost;
+
+            s.tickets[id].accountBalances[sender] -= value;
+            s.tickets[id].totalSupply -= uint96(value);
+        }
+        require(totalCost > 0, "Staking: Invalid Ticket Ids and Values");
+        require(totalCost % dropTicketCost == 0, "Staking: Cannot partially convert Drop Tickets");
+
+        emit TransferBatch(sender, sender, address(0), _ids, _values);
+
+        uint256 newDropTickets = totalCost / dropTicketCost;
+        uint256[] memory eventTicketIds = new uint256[](1);
+        eventTicketIds[0] = dropTicketId;
+
+        uint256[] memory eventTicketValues = new uint256[](1);
+        eventTicketValues[0] = newDropTickets;
+
+        s.tickets[dropTicketId].accountBalances[sender] += newDropTickets;
+        s.tickets[dropTicketId].totalSupply += uint96(newDropTickets);
+        emit TransferBatch(sender, address(0), sender, eventTicketIds, eventTicketValues);
+
+        uint256 size;
+        assembly {
+            size := extcodesize(sender)
+        }
+        if (size > 0) {
+            require(
+                ERC1155_BATCH_ACCEPTED ==
+                    IERC1155TokenReceiver(sender).onERC1155BatchReceived(sender, address(0), eventTicketIds, eventTicketValues, new bytes(0)),
+                "Staking: Ticket transfer rejected/failed"
+            );
+        }
+    }
+
     function ticketCost(uint256 _id) public pure returns (uint256 _frensCost) {
         if (_id == 0) {
             _frensCost = 50e18;
@@ -240,6 +289,8 @@ contract StakingFacet {
             _frensCost = 10_000e18;
         } else if (_id == 5) {
             _frensCost = 50_000e18;
+        } else if (_id == 6) {
+            _frensCost = 10_000e18;
         } else {
             revert("Staking: _id does not exist");
         }

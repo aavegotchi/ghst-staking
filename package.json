@@ -12,7 +12,7 @@
     "dotenv": "^8.2.0",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.1.0",
-    "hardhat": "^2.1.2",
+    "hardhat": "^2.3.3",
     "hardhat-contract-sizer": "^2.0.3",
     "husky": "^4.3.8",
     "node-hid": "^2.1.1",
