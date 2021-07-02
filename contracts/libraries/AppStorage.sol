@@ -33,4 +33,5 @@ struct AppStorage {
     bytes32 domainSeparator;
     mapping(address => uint256) metaNonces;
     address aavegotchiDiamond;
+    mapping(address => bool) rateManagers;
 }

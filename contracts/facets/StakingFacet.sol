@@ -62,8 +62,7 @@ contract StakingFacet {
         }
     }
 
-    function updatePoolTokensRate(uint256 _newRate) external {
-        LibDiamond.enforceIsContractOwner();
+    function updatePoolTokensRate(uint256 _newRate) external onlyRateManager {
         s.poolTokensRate = _newRate;
         emit PoolTokensRate(_newRate);
     }
@@ -128,8 +127,7 @@ contract StakingFacet {
         s.ghstUsdcRate = _ghstUsdcRate;
     }
 
-    function updateGhstUsdcRate(uint256 _newRate) external {
-        LibDiamond.enforceIsContractOwner();
+    function updateGhstUsdcRate(uint256 _newRate) external onlyRateManager {
         s.ghstUsdcRate = _newRate;
         emit GhstUsdcRate(_newRate);
     }
@@ -293,6 +291,29 @@ contract StakingFacet {
             _frensCost = 10_000e18;
         } else {
             revert("Staking: _id does not exist");
+        }
+    }
+
+    modifier onlyRateManager {
+        require(isRateManager(msg.sender), "StakingFacet: Must be rate manager");
+        _;
+    }
+
+    function isRateManager(address account) public view returns (bool) {
+        return s.rateManagers[account];
+    }
+
+    function addRateManagers(address[] calldata rateManagers_) external {
+        LibDiamond.enforceIsContractOwner();
+        for (uint256 index = 0; index < rateManagers_.length; index++) {
+            s.rateManagers[rateManagers_[index]] = true;
+        }
+    }
+
+    function removeRateManagers(address[] calldata rateManagers_) external {
+        LibDiamond.enforceIsContractOwner();
+        for (uint256 index = 0; index < rateManagers_.length; index++) {
+            s.rateManagers[rateManagers_[index]] = false;
         }
     }
 }
