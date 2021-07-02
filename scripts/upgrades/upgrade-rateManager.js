@@ -71,7 +71,7 @@ async function main () {
   let receipt
 
   if (testing) {
-    console.log('Diamond cut111')
+    console.log('Diamond cut')
     tx = await diamondCut.diamondCut(cut, ethers.constants.AddressZero, '0x', { gasLimit: 8000000 })
     console.log('Diamond cut tx:', tx.hash)
     receipt = await tx.wait()
@@ -84,13 +84,16 @@ async function main () {
     tx = await diamondCut.populateTransaction.diamondCut(cut, ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
     await sendToMultisig(process.env.DIAMOND_UPGRADER, signer, tx)
   }
+  console.log('upgrade completed')
 }
 
-main()
-  .then(() => console.log('upgrade completed') /* process.exit(0) */)
-  .catch(error => {
-    console.error(error)
-    process.exit(1)
-  })
-
+if (require.main === module) {
+  main()
+    .then(() => process.exit(0))
+    // .then(() => console.log('upgrade completed') /* process.exit(0) */)
+    .catch(error => {
+      console.error(error)
+      process.exit(1)
+    })
+}
 exports.deployRateManager = main
