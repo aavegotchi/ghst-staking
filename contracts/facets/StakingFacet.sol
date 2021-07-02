@@ -23,6 +23,8 @@ contract StakingFacet {
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event PoolTokensRate(uint256 _newRate);
     event GhstUsdcRate(uint256 _newRate);
+    event RateManagerAdded(address indexed rateManager_);
+    event RateManagerRemoved(address indexed rateManager_);
 
     function frens(address _account) public view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
@@ -307,6 +309,7 @@ contract StakingFacet {
         LibDiamond.enforceIsContractOwner();
         for (uint256 index = 0; index < rateManagers_.length; index++) {
             s.rateManagers[rateManagers_[index]] = true;
+            emit RateManagerAdded(rateManagers_[index]);
         }
     }
 
@@ -314,6 +317,7 @@ contract StakingFacet {
         LibDiamond.enforceIsContractOwner();
         for (uint256 index = 0; index < rateManagers_.length; index++) {
             s.rateManagers[rateManagers_[index]] = false;
+            emit RateManagerRemoved(rateManagers_[index]);
         }
     }
 }

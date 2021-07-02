@@ -31,7 +31,7 @@ describe('Deploying', async function () {
     await expect(generalUserStakingFacet.removeRateManagers([rateManager.address])).to.be.revertedWith('LibDiamond: Must be contract owner')
   })
 
-  it('Should allow only owner to add or remove a rate manager', async function () {
+  it('Should allow only owner to add or remove a rate manager and trigger event', async function () {
     // Check add and view function works
     let isManager = await ownerStakingFacet.isRateManager(rateManager.address)
     expect(isManager).to.equal(false)
@@ -40,6 +40,12 @@ describe('Deploying', async function () {
     let addTx = await ownerStakingFacet.addRateManagers([rateManager.address])
     txData = await addTx.wait()
 
+    // Check Event dispatched
+    const addedEvents = txData.events
+    expect(addedEvents[0].event).to.equal('RateManagerAdded')
+    const addedAddr = ((addedEvents[0].args).rateManager_)
+    expect(addedAddr).to.equal(rateManager.address)
+
     // Check view function works
     isManager = await ownerStakingFacet.isRateManager(rateManager.address)
     expect(isManager).to.equal(true)
@@ -47,6 +53,12 @@ describe('Deploying', async function () {
     // Remove Rate Manager
     let removeTx = await ownerStakingFacet.removeRateManagers([rateManager.address])
     txData = await removeTx.wait()
+
+    // Check Event dispatched
+    const removedEvents = txData.events
+    expect(removedEvents[0].event).to.equal('RateManagerRemoved')
+    const removedAddr = ((removedEvents[0].args).rateManager_)
+    expect(removedAddr).to.equal(rateManager.address)
 
     // Check remove and view function works
     isManager = await ownerStakingFacet.isRateManager(rateManager.address)
