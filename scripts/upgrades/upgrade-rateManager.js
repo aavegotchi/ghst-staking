@@ -48,6 +48,11 @@ async function main () {
   ]
 
   let existingFuncs = getSelectors(facet)
+  for (const selector of newFuncs) {
+    if (!existingFuncs.includes(selector)) {
+      throw Error('Selector', selector, 'not found')
+    }
+  }
   existingFuncs = existingFuncs.filter(selector => !newFuncs.includes(selector))
 
   const FacetCutAction = { Add: 0, Replace: 1, Remove: 2 }
