@@ -10,6 +10,20 @@ import "../libraries/LibMeta.sol";
 
 // import "../interfaces/IUniswapV2Pair.sol";
 
+interface IERC1155Marketplace {
+    function updateERC1155Listing(
+        address _erc1155TokenAddress,
+        uint256 _erc1155TypeId,
+        address _owner
+    ) external;
+
+    function updateBatchERC1155Listing(
+        address _erc1155TokenAddress,
+        uint256[] calldata _erc1155TypeIds,
+        address _owner
+    ) external;
+}
+
 interface IERC20Mintable {
     function mint(address _to, uint256 _amount) external;
 
@@ -233,6 +247,8 @@ contract StakingFacet {
         uint256 totalCost;
         uint256 dropTicketId = 6;
         uint256 dropTicketCost = ticketCost(dropTicketId);
+        address aavegotchiDiamond = s.aavegotchiDiamond;
+
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
             uint256 value = _values[i];
@@ -246,6 +262,10 @@ contract StakingFacet {
 
             s.tickets[id].accountBalances[sender] -= value;
             s.tickets[id].totalSupply -= uint96(value);
+
+            if (aavegotchiDiamond != address(0)) {
+                IERC1155Marketplace(aavegotchiDiamond).updateERC1155Listing(address(this), id, sender);
+            }
         }
         require(totalCost > 0, "Staking: Invalid Ticket Ids and Values");
         require(totalCost % dropTicketCost == 0, "Staking: Cannot partially convert Drop Tickets");
@@ -261,6 +281,10 @@ contract StakingFacet {
 
         s.tickets[dropTicketId].accountBalances[sender] += newDropTickets;
         s.tickets[dropTicketId].totalSupply += uint96(newDropTickets);
+
+        if (aavegotchiDiamond != address(0)) {
+            IERC1155Marketplace(aavegotchiDiamond).updateERC1155Listing(address(this), dropTicketId, sender);
+        }
         emit TransferBatch(sender, address(0), sender, eventTicketIds, eventTicketValues);
 
         uint256 size;

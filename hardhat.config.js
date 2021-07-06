@@ -33,15 +33,15 @@ module.exports = {
       timeout: 120000,
       gas: 'auto'
     },
-    matic: {
-      url: process.env.MATIC_URL,
-      // url: 'https://rpc-mainnet.maticvigil.com/',
-      accounts: [process.env.SECRET],
-      // blockGasLimit: 20000000,
-      blockGasLimit: 200000000000,
-      gasPrice: 10000000000,
-      timeout: 90000
-    },
+    // matic: {
+    //   url: process.env.MATIC_URL,
+    //   // url: 'https://rpc-mainnet.maticvigil.com/',
+    //   accounts: [process.env.SECRET],
+    //   // blockGasLimit: 20000000,
+    //   blockGasLimit: 200000000000,
+    //   gasPrice: 10000000000,
+    //   timeout: 90000
+    // },
     /*
     mumbai: {
       url: 'https://rpc-mumbai.matic.today',
