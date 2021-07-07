@@ -262,10 +262,6 @@ contract StakingFacet {
 
             s.tickets[id].accountBalances[sender] -= value;
             s.tickets[id].totalSupply -= uint96(value);
-
-            if (aavegotchiDiamond != address(0)) {
-                IERC1155Marketplace(aavegotchiDiamond).updateERC1155Listing(address(this), id, sender);
-            }
         }
         require(totalCost > 0, "Staking: Invalid Ticket Ids and Values");
         require(totalCost % dropTicketCost == 0, "Staking: Cannot partially convert Drop Tickets");
@@ -284,6 +280,7 @@ contract StakingFacet {
 
         if (aavegotchiDiamond != address(0)) {
             IERC1155Marketplace(aavegotchiDiamond).updateERC1155Listing(address(this), dropTicketId, sender);
+            IERC1155Marketplace(aavegotchiDiamond).updateBatchERC1155Listing(address(this), _ids, sender);
         }
         emit TransferBatch(sender, address(0), sender, eventTicketIds, eventTicketValues);
 
