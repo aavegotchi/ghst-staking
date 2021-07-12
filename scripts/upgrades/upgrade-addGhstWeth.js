@@ -1,5 +1,5 @@
-
-/* global ethers */
+const { LedgerSigner } = require('../../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets')
+const { sendToMultisig } = require('../libraries/multisig/multisig.js')
 
 function getSelectors (contract) {
   const signatures = Object.keys(contract.interface.functions)
@@ -19,13 +19,28 @@ function getSelector (func) {
 
 async function main () {
   const ghstStakingDiamondAddress = '0xA02d547512Bb90002807499F05495Fe9C4C3943f'
+  let signer
+  const owner = await (await ethers.getContractAt('OwnershipFacet', ghstStakingDiamondAddress)).owner()
+  const testing = ['hardhat', 'localhost'].includes(hre.network.name)
 
-  const StkGHSTWETH = await ethers.getContractFactory('StkGHSTWETH')
-  const StkGHSTWETH = await StkGHSTWETH.deploy(ghstStakingDiamondAddress)
+  if (testing) {
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: [owner]
+    })
+    signer = await ethers.getSigner(owner)
+  } else if (hre.network.name === 'matic') {
+    signer = new LedgerSigner(ethers.provider)
+  } else {
+    throw Error('Incorrect network selected')
+  }
+
+  const StkGHSTWETHFactory = await ethers.getContractFactory('StkGHSTWETH')
+  const StkGHSTWETH = await StkGHSTWETHFactory.deploy(ghstStakingDiamondAddress)
   await StkGHSTWETH.deployed()
   console.log('Deployed StkGHSTWETH:', StkGHSTWETH.address)
 
-  const oldStakingFacetAddress = '0x45d5b2A69b6210e9024A772FF9DA7Fe7337ee739'
+  const oldStakingFacetAddress = '0x4a5586E4A223Ac7C9355Aa8246afa8C3072B8dd8'
 
   const FacetCutAction = { Add: 0, Replace: 1, Remove: 2 }
   const diamondLoupeFacet = await ethers.getContractAt('DiamondLoupeFacet', ghstStakingDiamondAddress)
@@ -53,22 +68,31 @@ async function main () {
     }
   ]
 
-  const diamondCut = await ethers.getContractAt('IDiamondCut', ghstStakingDiamondAddress)
-  let tx = await diamondCut.diamondCut(cut, ethers.constants.AddressZero, '0x', { gasLimit: 5000000 })
-  console.log('Diamond cut tx:', tx.hash)
-  let receipt = await tx.wait()
-  if (!receipt.status) {
-    throw Error(`Diamond upgrade failed: ${tx.hash}`)
-  }
-  console.log('Completed diamond cut: ', tx.hash)
+  const diamondCut = (await ethers.getContractAt('IDiamondCut', ghstStakingDiamondAddress)).connect(signer)
+  let tx
+  let receipt
 
-  stakingFacet = await ethers.getContractAt('StakingFacet', ghstStakingDiamondAddress)
+  if (testing) {
+    console.log('Diamond cut')
+    tx = await diamondCut.diamondCut(cut, ethers.constants.AddressZero, '0x', { gasLimit: 8000000 })
+    console.log('Diamond cut tx:', tx.hash)
+    receipt = await tx.wait()
+    if (!receipt.status) {
+      throw Error(`Diamond upgrade failed: ${tx.hash}`)
+    }
+    console.log('Completed diamond cut: ', tx.hash)
+  } else {
+    console.log('Diamond cut')
+    tx = await diamondCut.populateTransaction.diamondCut(cut, ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
+    await sendToMultisig(process.env.DIAMOND_UPGRADER, signer, tx)
+  }
+
+  stakingFacet = (await ethers.getContractAt('StakingFacet', ghstStakingDiamondAddress)).connect(signer)
   const ghstWethToken = '0xccb9d2100037f1253e6c1682adf7dc9944498aff'
   // 10 percent more than 1 GHST per day
-  
-  //figure out the correct rate of FRENS for this token
-  
-  tx = await stakingFacet.setGhstWethToken(ghstWethToken, StkGHSTWETH.address, ethers.BigNumber.from('xxx'))
+
+  // figure out the correct rate of FRENS for this token
+  tx = await stakingFacet.setGhstWethToken(ghstWethToken, StkGHSTWETH.address, ethers.BigNumber.from('40000'))
   receipt = await tx.wait()
   if (!receipt.status) {
     throw Error(`Failed to set GhstWethToken: ${tx.hash}`)
@@ -81,9 +105,12 @@ async function main () {
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error)
-    process.exit(1)
-  })
+if (require.main === module) {
+  main()
+    .then(() => process.exit(0))
+    .catch(error => {
+      console.error(error)
+      process.exit(1)
+    })
+}
+exports.addGhstWeth = main

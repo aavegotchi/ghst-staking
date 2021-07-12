@@ -9,7 +9,7 @@ struct AppStorage {
     address minter;
 }
 
-contract StkGHSTUSDC {
+contract StkGHSTWETH {
     AppStorage s;
 
     uint256 constant MAX_UINT = uint256(-1);

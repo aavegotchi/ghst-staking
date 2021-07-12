@@ -141,8 +141,6 @@ contract StakingFacet {
         return s.ghstUsdcRate;
     }
 
-    //add setGhstWethToken function
-
     function stakeGhstUsdcPoolTokens(uint256 _poolTokens) external {
         updateFrens();
         address sender = LibMeta.msgSender();
@@ -150,6 +148,34 @@ contract StakingFacet {
         account.ghstUsdcPoolTokens += _poolTokens;
         IERC20Mintable(s.stkGhstUsdcToken).mint(sender, _poolTokens);
         LibERC20.transferFrom(s.ghstUsdcPoolToken, sender, address(this), _poolTokens);
+    }
+
+    function getGhstWethPoolToken() external view returns (address) {
+        return s.ghstWethPoolToken;
+    }
+
+    function getStkGhstWethToken() external view returns (address) {
+        return s.stkGhstWethToken;
+    }
+
+    function setGhstWethToken(
+        address _ghstWethPoolToken,
+        address _stkGhstWethToken,
+        uint256 _ghstWethRate
+    ) external {
+        LibDiamond.enforceIsContractOwner();
+        s.ghstWethPoolToken = _ghstWethPoolToken;
+        s.stkGhstWethToken = _stkGhstWethToken;
+        s.ghstWethRate = _ghstWethRate;
+    }
+
+    function updateGhstWethRate(uint256 _newRate) external onlyRateManager {
+        s.ghstWethRate = _newRate;
+        emit GhstWethRate(_newRate);
+    }
+
+    function ghstWethRate() external view returns (uint256) {
+        return s.ghstWethRate;
     }
 
     //todo: add stakeGhstWethPoolTokens + test functionality
