@@ -39,6 +39,9 @@ contract StakingFacet {
         frens_ += ((account.ghstUsdcPoolTokens * s.ghstUsdcRate) * timePeriod) / 24 hours;
         // 1 fren is generated for each GHST over 24 hours
         frens_ += (account.ghst * timePeriod) / 24 hours;
+
+        //Add in frens for GHST-WETH
+        frens_ += ((account.ghstWethPoolTokens * s.ghstWethRate) * timePeriod) / 24 hours;
     }
 
     function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
