@@ -23,10 +23,9 @@ contract StakingFacet {
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event PoolTokensRate(uint256 _newRate);
     event GhstUsdcRate(uint256 _newRate);
-
-    //todo event: GhstWethRate(uint256 _newRate);
     event RateManagerAdded(address indexed rateManager_);
     event RateManagerRemoved(address indexed rateManager_);
+    event GhstWethRate(uint256 _newRate);
 
     function frens(address _account) public view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
@@ -150,21 +149,31 @@ contract StakingFacet {
         LibERC20.transferFrom(s.ghstUsdcPoolToken, sender, address(this), _poolTokens);
     }
 
-    //to do: add stakeGhstWethPoolTokens
+    //todo: add stakeGhstWethPoolTokens + test functionality
+    function stakeGhstWethPoolTokens(uint256 _poolTokens) external {
+        updateFrens();
+        address sender = LibMeta.msgSender();
+        Account storage account = s.accounts[sender];
+        account.ghstWethPoolTokens += _poolTokens;
+        IERC20Mintable(s.stkGhstWethToken).mint(sender, _poolTokens);
+        LibERC20.transferFrom(s.ghstWethPoolToken, sender, address(this), _poolTokens);
+    }
 
+    ////todo: add ghstWethPoolToken and test functionality
     function staked(address _account)
         external
         view
         returns (
             uint256 ghst_,
             uint256 poolTokens_,
-            uint256 ghstUsdcPoolToken_
+            uint256 ghstUsdcPoolToken_,
+            uint256 ghstWethPoolToken_
         )
     {
         ghst_ = s.accounts[_account].ghst;
         poolTokens_ = s.accounts[_account].poolTokens;
         ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
-        //to do: add ghstWethPoolToken
+        ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
     }
 
     function withdrawGhstStake(uint256 _ghstValue) external {
@@ -202,7 +211,18 @@ contract StakingFacet {
         LibERC20.transfer(s.ghstUsdcPoolToken, sender, _poolTokens);
     }
 
-    //to do: add withdrawGhstWethPoolStake
+    //todo: add withdrawGhstWethPoolStake, test functionality
+    function withdrawGhstWethPoolStake(uint256 _poolTokens) external {
+        updateFrens();
+        address sender = LibMeta.msgSender();
+        uint256 bal = IERC20(s.stkGhstWethToken).balanceOf(sender);
+        require(bal >= _poolTokens, "Must have enough stkGhstWethTokens");
+        IERC20Mintable(s.stkGhstWethToken).burn(sender, _poolTokens);
+        uint256 accountPoolTokens = s.accounts[sender].ghstWethPoolTokens;
+        require(accountPoolTokens >= _poolTokens, "Can't withdraw more poolTokens than in account");
+        s.accounts[sender].ghstWethPoolTokens = accountPoolTokens - _poolTokens;
+        LibERC20.transfer(s.ghstWethPoolToken, sender, _poolTokens);
+    }
 
     //possibly refactor?
 

@@ -11,6 +11,7 @@ struct Account {
     uint256 poolTokens;
     uint256 frens;
     uint256 ghstUsdcPoolTokens;
+    uint256 ghstWethPoolTokens;
 }
 
 struct Ticket {
@@ -35,7 +36,7 @@ struct AppStorage {
     address aavegotchiDiamond;
     mapping(address => bool) rateManagers;
     //new
-    address ghstWethPoolContract; //token address of GHST-WETH LP
+    address ghstWethPoolToken; //token address of GHST-WETH LP
     address stkGhstWethToken; //token address of the stkGHST-WETH receipt token
     uint256 ghstWethRate; //the FRENS rate for GHST-WETH stakers
 }
