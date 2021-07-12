@@ -20,6 +20,7 @@ describe('Deploying', async function () {
   })
 
   it('Should reject when general user try to add or remove a rate manager', async function () {
+    
     // Check add and view function works
     let isManager = await generalUserStakingFacet.isRateManager(rateManager.address)
     expect(isManager).to.equal(false)

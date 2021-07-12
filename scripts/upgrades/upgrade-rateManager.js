@@ -45,8 +45,6 @@ async function main () {
     getSelector('function isRateManager(address account) public'),
     getSelector('function addRateManagers(address[] calldata rateManagers_) external'),
     getSelector('function removeRateManagers(address[] calldata rateManagers_) external'),
-    getSelector('function updateAccountsAndPoolTokensRate(address[] calldata _accounts, uint256 _newRate) external'),
-    getSelector('function updateAccountsAndGhstUsdcRate(address[] calldata _accounts, uint256 _newRate) external')
   ]
 
   let existingFuncs = getSelectors(facet)

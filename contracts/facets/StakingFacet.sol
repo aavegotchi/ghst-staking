@@ -54,7 +54,7 @@ contract StakingFacet {
         account.lastFrensUpdate = uint40(block.timestamp);
     }
 
-    function updateAccounts(address[] calldata _accounts) private onlyRateManager {
+    function updateAccounts(address[] calldata _accounts) external onlyRateManager {
         for (uint256 i; i < _accounts.length; i++) {
             address accountAddress = _accounts[i];
             Account storage account = s.accounts[accountAddress];
@@ -63,7 +63,7 @@ contract StakingFacet {
         }
     }
 
-    function updatePoolTokensRate(uint256 _newRate) private onlyRateManager {
+    function updatePoolTokensRate(uint256 _newRate) external onlyRateManager {
         s.poolTokensRate = _newRate;
         emit PoolTokensRate(_newRate);
     }
@@ -128,7 +128,7 @@ contract StakingFacet {
         s.ghstUsdcRate = _ghstUsdcRate;
     }
 
-    function updateGhstUsdcRate(uint256 _newRate) private onlyRateManager {
+    function updateGhstUsdcRate(uint256 _newRate) external onlyRateManager {
         s.ghstUsdcRate = _newRate;
         emit GhstUsdcRate(_newRate);
     }
@@ -318,15 +318,5 @@ contract StakingFacet {
             s.rateManagers[rateManagers_[index]] = false;
             emit RateManagerRemoved(rateManagers_[index]);
         }
-    }
-
-    function updateAccountsAndPoolTokensRate(address[] calldata _accounts, uint256 _newRate) external onlyRateManager {
-        updateAccounts(_accounts);
-        updatePoolTokensRate(_newRate);
-    }
-
-    function updateAccountsAndGhstUsdcRate(address[] calldata _accounts, uint256 _newRate) external onlyRateManager {
-        updateAccounts(_accounts);
-        updateGhstUsdcRate(_newRate);
     }
 }
