@@ -79,6 +79,10 @@ task('verifyFacet', 'Generates ABI file for diamond, includes all ABIs of facets
     sourceCode = sourceCode.replace(/\/\/ SPDX\-License\-Identifier\: MIT/g, '')
     sourceCode = sourceCode.replace('licenseindicator', '\/\/ SPDX\-License\-Identifier\: MIT')
 
+    sourceCode = sourceCode.replace('pragma experimental ABIEncoderV2;', 'encoderindicator')
+    sourceCode = sourceCode.replace(/pragma experimental ABIEncoderV2;/g, '')
+    sourceCode = sourceCode.replace('encoderindicator', 'pragma experimental ABIEncoderV2;')
+
     sourceCode = sourceCode.replace('pragma solidity 0\.7\.6\;', 'solidityindicator')
     sourceCode = sourceCode.replace(/pragma solidity 0\.7\.6\;/g, '')
     sourceCode = sourceCode.replace('solidityindicator', 'pragma solidity 0\.7\.6\;')
