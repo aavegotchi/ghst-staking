@@ -37,6 +37,7 @@
   },
   "homepage": "https://github.com/aavegotchi/ghst-staking#readme",
   "dependencies": {
-    "@ledgerhq/hw-transport-node-hid-noevents": "^6.0.2"
+    "@ledgerhq/hw-transport-node-hid-noevents": "^6.0.2",
+    "axios": "^0.21.1"
   }
 }
