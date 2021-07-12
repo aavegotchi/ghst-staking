@@ -23,6 +23,8 @@ contract StakingFacet {
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event PoolTokensRate(uint256 _newRate);
     event GhstUsdcRate(uint256 _newRate);
+
+    //todo event: GhstWethRate(uint256 _newRate);
     event RateManagerAdded(address indexed rateManager_);
     event RateManagerRemoved(address indexed rateManager_);
 
@@ -137,6 +139,8 @@ contract StakingFacet {
         return s.ghstUsdcRate;
     }
 
+    //add setGhstWethToken function
+
     function stakeGhstUsdcPoolTokens(uint256 _poolTokens) external {
         updateFrens();
         address sender = LibMeta.msgSender();
@@ -145,6 +149,8 @@ contract StakingFacet {
         IERC20Mintable(s.stkGhstUsdcToken).mint(sender, _poolTokens);
         LibERC20.transferFrom(s.ghstUsdcPoolToken, sender, address(this), _poolTokens);
     }
+
+    //to do: add stakeGhstWethPoolTokens
 
     function staked(address _account)
         external
@@ -158,6 +164,7 @@ contract StakingFacet {
         ghst_ = s.accounts[_account].ghst;
         poolTokens_ = s.accounts[_account].poolTokens;
         ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
+        //to do: add ghstWethPoolToken
     }
 
     function withdrawGhstStake(uint256 _ghstValue) external {
@@ -194,6 +201,10 @@ contract StakingFacet {
         s.accounts[sender].ghstUsdcPoolTokens = accountPoolTokens - _poolTokens;
         LibERC20.transfer(s.ghstUsdcPoolToken, sender, _poolTokens);
     }
+
+    //to do: add withdrawGhstWethPoolStake
+
+    //possibly refactor?
 
     function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
         require(_ids.length == _values.length, "Staking: _ids not the same length as _values");

@@ -34,4 +34,8 @@ struct AppStorage {
     mapping(address => uint256) metaNonces;
     address aavegotchiDiamond;
     mapping(address => bool) rateManagers;
+    //new
+    address ghstWethPoolContract; //token address of GHST-WETH LP
+    address stkGhstWethToken; //token address of the stkGHST-WETH receipt token
+    uint256 ghstWethRate; //the FRENS rate for GHST-WETH stakers
 }
