@@ -2,12 +2,14 @@
 /* eslint-disable  prefer-const */
 
 async function sendToMultisig (multisigAddress, signer, transaction) {
+
+  let gasPrice = 20000000000
   const abi = [
     'function submitTransaction(address destination, uint value, bytes data) public returns (uint transactionId)'
   ]
   const multisigContract = await ethers.getContractAt(abi, multisigAddress, signer)
   console.log('Sending transaction to multisig:', multisigAddress)
-  let tx = await multisigContract.submitTransaction(transaction.to, 0, transaction.data, {gasPrice:5000000000})
+  let tx = await multisigContract.submitTransaction(transaction.to, 0, transaction.data, {gasPrice:gasPrice})
   let receipt = await tx.wait()
   if (!receipt.status) {
     throw Error(`Failed to send transaction to multisig: ${tx.hash}`)

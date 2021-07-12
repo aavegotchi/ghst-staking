@@ -1,6 +1,8 @@
 const { LedgerSigner } = require('../../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets')
 const { sendToMultisig } = require('../libraries/multisig/multisig.js')
 
+let gasPrice = 20000000000
+
 function getSelectors (contract) {
   const signatures = Object.keys(contract.interface.functions)
   const selectors = signatures.reduce((acc, val) => {
@@ -37,7 +39,7 @@ async function main () {
   }
 
   const stakingFactory = await ethers.getContractFactory('contracts/facets/StakingFacet.sol:StakingFacet')
-  facet = await stakingFactory.deploy()
+  facet = await stakingFactory.deploy({gasPrice:gasPrice})
   await facet.deployed()
   console.log('Deployed StakingFacet:', facet.address)
 
@@ -90,6 +92,8 @@ async function main () {
     await sendToMultisig(process.env.DIAMOND_UPGRADER, signer, tx)
   }
   console.log('upgrade completed')
+
+
 }
 
 if (require.main === module) {
