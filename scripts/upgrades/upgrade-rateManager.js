@@ -1,4 +1,4 @@
-const { LedgerSigner } = require('@ethersproject/hardware-wallets')
+const { LedgerSigner } = require('../../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets')
 const { sendToMultisig } = require('../libraries/multisig/multisig.js')
 
 function getSelectors (contract) {
