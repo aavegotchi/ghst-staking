@@ -178,7 +178,6 @@ contract StakingFacet {
         return s.ghstWethRate;
     }
 
-    //todo: add stakeGhstWethPoolTokens + test functionality
     function stakeGhstWethPoolTokens(uint256 _poolTokens) external {
         updateFrens();
         address sender = LibMeta.msgSender();
@@ -188,7 +187,6 @@ contract StakingFacet {
         LibERC20.transferFrom(s.ghstWethPoolToken, sender, address(this), _poolTokens);
     }
 
-    ////todo: add ghstWethPoolToken and test functionality
     function staked(address _account)
         external
         view
@@ -240,7 +238,6 @@ contract StakingFacet {
         LibERC20.transfer(s.ghstUsdcPoolToken, sender, _poolTokens);
     }
 
-    //todo: add withdrawGhstWethPoolStake, test functionality
     function withdrawGhstWethPoolStake(uint256 _poolTokens) external {
         updateFrens();
         address sender = LibMeta.msgSender();
