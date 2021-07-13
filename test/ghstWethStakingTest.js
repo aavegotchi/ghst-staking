@@ -53,29 +53,60 @@ describe('Deploying', async function () {
     await expect(userStakingFacet.stakeGhstWethPoolTokens(userGhstWethPoolTokenBalance + 10)).to.be.reverted
   })
 
-  it('Should stake if stake less than balance of GHST/WETH pool token', async function () {
+  it('Should have GHST/WETH pool token balance to stake GHST/WETH', async function () {
     expect(userGhstWethPoolTokenBalance).to.greaterThan(stakeAmount)
+  })
 
-    let staked = await userStakingFacet.staked(userAddress)
-    const poolTokenAmountBeforeStake = staked['ghstWethPoolToken_'].toNumber()
-    const stkTokenBalanceBeforeStake = (await stkGhstWethToken.balanceOf(userAddress)).toNumber()
+  describe('Stake and withdraw', async function () {
+    let staked, poolTokenAmountBeforeStake, stkTokenBalanceBeforeStake, poolTokenAmountAfterStake,
+      stkTokenBalanceAfterStake
 
-    const allowance = await ghstWethPoolToken.allowance(userAddress, stakingFacet.address)
-    if (allowance.lt(stakeAmount)) {
-      const tx = await userGhstWethPoolToken.approve(stakingFacet.address, stakeAmount)
-      const receipt = await tx.wait()
-      if (!receipt.status) {
-        throw Error(`Transaction approving  address failed: ${tx.hash}`)
+    before(async function () {
+      staked = await userStakingFacet.staked(userAddress)
+      poolTokenAmountBeforeStake = staked['ghstWethPoolToken_'].toNumber()
+      stkTokenBalanceBeforeStake = (await stkGhstWethToken.balanceOf(userAddress)).toNumber()
+
+      const allowance = await ghstWethPoolToken.allowance(userAddress, stakingFacet.address)
+      if (allowance.lt(stakeAmount)) {
+        const tx = await userGhstWethPoolToken.approve(stakingFacet.address, stakeAmount)
+        const receipt = await tx.wait()
+        if (!receipt.status) {
+          throw Error(`Transaction approving  address failed: ${tx.hash}`)
+        }
       }
-    }
-    await userStakingFacet.stakeGhstWethPoolTokens(stakeAmount)
 
-    staked = await userStakingFacet.staked(userAddress)
-    const poolTokenAmountAfterStake = staked['ghstWethPoolToken_'].toNumber()
-    expect(poolTokenAmountAfterStake).to.equal(poolTokenAmountBeforeStake + stakeAmount)
+      await userStakingFacet.stakeGhstWethPoolTokens(stakeAmount)
 
-    const stkTokenBalanceAfterStake = (await stkGhstWethToken.balanceOf(userAddress)).toNumber()
-    expect(stkTokenBalanceAfterStake).to.equal(stkTokenBalanceBeforeStake + stakeAmount)
+      staked = await userStakingFacet.staked(userAddress)
+      poolTokenAmountAfterStake = staked['ghstWethPoolToken_'].toNumber()
+      stkTokenBalanceAfterStake = (await stkGhstWethToken.balanceOf(userAddress)).toNumber()
+    })
+
+    it('Should stake if stake less than balance of GHST/WETH pool token', async function () {
+      expect(poolTokenAmountAfterStake).to.equal(poolTokenAmountBeforeStake + stakeAmount)
+      expect(stkTokenBalanceAfterStake).to.equal(stkTokenBalanceBeforeStake + stakeAmount)
+    })
+
+    it('Should accumulate frens from staked GHST and staked GHST-ETH pool tokens', async function () {
+      const oldFrens = await userStakingFacet.frens(userAddress)
+
+      await ethers.provider.send('evm_increaseTime', [86400]) // add 1 day
+      await ethers.provider.send('evm_mine') // mine the next block
+
+      const netFrens = await userStakingFacet.frens(userAddress)
+
+      let frensDiff = staked['ghst_']
+      const poolTokens = staked['poolTokens_']
+      const ghstUsdcPoolToken = staked['ghstUsdcPoolToken_']
+      const poolTokensRate = await userStakingFacet.poolTokensRate()
+      const ghstUsdcRate = await userStakingFacet.ghstUsdcRate()
+      const ghstWethRate = await userStakingFacet.ghstWethRate()
+      frensDiff = frensDiff.add(poolTokensRate.mul(poolTokens))
+      frensDiff = frensDiff.add(ghstUsdcRate.mul(ghstUsdcPoolToken))
+      frensDiff = frensDiff.add(ghstWethRate.mul(poolTokenAmountAfterStake))
+
+      expect(netFrens).to.equal(oldFrens.add(frensDiff))
+    })
 
     it('Should reject if withdraw more than staked amount of GHST/WETH pool stake token', async function () {
       await expect(userStakingFacet.withdrawGhstWethPoolStake(stkTokenBalanceAfterStake + 10)).to.be.reverted

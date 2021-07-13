@@ -40,33 +40,44 @@ async function main () {
   await StkGHSTWETH.deployed()
   console.log('Deployed StkGHSTWETH:', StkGHSTWETH.address)
 
-  const oldStakingFacetAddress = '0x4a5586E4A223Ac7C9355Aa8246afa8C3072B8dd8'
+  const StakingFacet = await ethers.getContractFactory('StakingFacet')
+  let facet = await StakingFacet.deploy()
+  await facet.deployed()
+  console.log('Deployed new StakingFacet:', facet.address)
+
+  const newFuncs = [
+    getSelector('function getGhstWethPoolToken() external'),
+    getSelector('function getStkGhstWethToken() external'),
+    getSelector('function setGhstWethToken(address _ghstWethPoolToken, address _stkGhstWethToken, uint256 _ghstWethRate) external'),
+    getSelector('function updateGhstWethRate(uint256 _newRate) external'),
+    getSelector('function ghstWethRate() external'),
+    getSelector('function stakeGhstWethPoolTokens(uint256 _poolTokens) external'),
+    getSelector('function withdrawGhstWethPoolStake(uint256 _poolTokens) external')
+  ]
+
+  let existingFuncs = getSelectors(facet)
+  for (const selector of newFuncs) {
+    if (!existingFuncs.includes(selector)) {
+      throw Error('Selector', selector, 'not found')
+    }
+  }
+  existingFuncs = existingFuncs.filter(selector => !newFuncs.includes(selector))
 
   const FacetCutAction = { Add: 0, Replace: 1, Remove: 2 }
-  const diamondLoupeFacet = await ethers.getContractAt('DiamondLoupeFacet', ghstStakingDiamondAddress)
-  const oldSelectors = await diamondLoupeFacet.facetFunctionSelectors(oldStakingFacetAddress)
-
-  const StakingFacet = await ethers.getContractFactory('StakingFacet')
-  let stakingFacet = await StakingFacet.deploy()
-  await stakingFacet.deployed()
-  console.log('Deployed new StakingFacet:', stakingFacet.address)
-
-  console.log('Old functions:', oldSelectors)
-  console.log()
-  console.log('New Functions:', getSelectors(stakingFacet))
 
   const cut = [
     {
-      facetAddress: ethers.constants.AddressZero,
-      action: FacetCutAction.Remove,
-      functionSelectors: oldSelectors
+      facetAddress: facet.address,
+      action: FacetCutAction.Add,
+      functionSelectors: newFuncs
     },
     {
-      facetAddress: stakingFacet.address,
-      action: FacetCutAction.Add,
-      functionSelectors: getSelectors(stakingFacet)
+      facetAddress: facet.address,
+      action: FacetCutAction.Replace,
+      functionSelectors: existingFuncs
     }
   ]
+  console.log(cut)
 
   const diamondCut = (await ethers.getContractAt('IDiamondCut', ghstStakingDiamondAddress)).connect(signer)
   let tx
@@ -87,12 +98,12 @@ async function main () {
     await sendToMultisig(process.env.DIAMOND_UPGRADER, signer, tx)
   }
 
-  stakingFacet = (await ethers.getContractAt('StakingFacet', ghstStakingDiamondAddress)).connect(signer)
+  facet = (await ethers.getContractAt('StakingFacet', ghstStakingDiamondAddress)).connect(signer)
   const ghstWethToken = '0xccb9d2100037f1253e6c1682adf7dc9944498aff'
   // 10 percent more than 1 GHST per day
 
   // figure out the correct rate of FRENS for this token
-  tx = await stakingFacet.setGhstWethToken(ghstWethToken, StkGHSTWETH.address, ethers.BigNumber.from('40000'))
+  tx = await facet.setGhstWethToken(ghstWethToken, StkGHSTWETH.address, ethers.BigNumber.from('40000'))
   receipt = await tx.wait()
   if (!receipt.status) {
     throw Error(`Failed to set GhstWethToken: ${tx.hash}`)
