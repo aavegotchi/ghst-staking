@@ -1,6 +1,8 @@
 const { LedgerSigner } = require('../../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets')
 const { sendToMultisig } = require('../libraries/multisig/multisig.js')
 
+let gasPrice = 20000000000
+
 function getSelectors (contract) {
   const signatures = Object.keys(contract.interface.functions)
   const selectors = signatures.reduce((acc, val) => {
@@ -41,7 +43,7 @@ async function main () {
   console.log('Deployed StkGHSTWETH:', StkGHSTWETH.address)
 
   const StakingFacet = await ethers.getContractFactory('StakingFacet')
-  let facet = await StakingFacet.deploy()
+  let facet = await StakingFacet.deploy({gasPrice:gasPrice})
   await facet.deployed()
   console.log('Deployed new StakingFacet:', facet.address)
 
