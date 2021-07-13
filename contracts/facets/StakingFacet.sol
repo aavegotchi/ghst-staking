@@ -250,8 +250,6 @@ contract StakingFacet {
         LibERC20.transfer(s.ghstWethPoolToken, sender, _poolTokens);
     }
 
-    //possibly refactor?
-
     function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
         require(_ids.length == _values.length, "Staking: _ids not the same length as _values");
         updateFrens();

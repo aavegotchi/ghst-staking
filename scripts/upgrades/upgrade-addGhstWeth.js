@@ -103,7 +103,7 @@ async function main () {
   // 10 percent more than 1 GHST per day
 
   // figure out the correct rate of FRENS for this token
-  tx = await facet.setGhstWethToken(ghstWethToken, StkGHSTWETH.address, ethers.BigNumber.from('40000'))
+  tx = await facet.setGhstWethToken(ghstWethToken, StkGHSTWETH.address, ethers.BigNumber.from('12077243'))
   receipt = await tx.wait()
   if (!receipt.status) {
     throw Error(`Failed to set GhstWethToken: ${tx.hash}`)
