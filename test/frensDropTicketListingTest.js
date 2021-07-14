@@ -5,6 +5,7 @@ const { DropTicketListing } = require('../scripts/upgrades/upgrade-DropTicketLis
 const eightBillion = '8000000000000000000000000000'
 
 describe('Frens Drop Ticket', async function(){
+  const aavegotchiAddress = '0x86935F11C86623deC8a25696E1C19a8659CbF95d';
   const diamondAddress = '0xA02d547512Bb90002807499F05495Fe9C4C3943f';
   const marketplaceAddress = '0x1e09Fc5511fbFc4b4cf718b22962D1870804c279';
   const dropTicketId = 6;
@@ -12,7 +13,7 @@ describe('Frens Drop Ticket', async function(){
 
   before(async function(){
     this.timeout(1000000);
-    // await DropTicketListing();
+    await DropTicketListing();
 
     stakingFacet = await ethers.getContractAt('StakingFacet', diamondAddress)
     owner = await (await ethers.getContractAt('OwnershipFacet', diamondAddress)).owner();
@@ -21,9 +22,11 @@ describe('Frens Drop Ticket', async function(){
     const abi = [
       "function updateERC1155Listing(address _erc1155TokenAddress, uint256 _erc1155TypeId, address _owner) external",
       "function updateBatchERC1155Listing(address _erc1155TokenAddress, uint256[] calldata _erc1155TypeIds, address _owner) external",
-      "function getERC1155Listings(uint256 _category, string memory _sort, uint256 _length) external view returns (ERC1155Listing[] memory listings_)"
+      "function getERC1155Listings(uint256 _category, string memory _sort, uint256 _length) external view returns (ERC1155Listing[] memory listings_)",
+      "function getOwnerERC1155Listings(address _owner, uint256 _category, string memory _sort, uint256 _length) external"
     ];
     erc1155MarketplaceFacet = new ethers.Contract(marketplaceAddress, abi, signer);
+    // erc1155MarketplaceFacet = await (await ethers.getContractAt('Erc1155MarketplaceFacet', aavegotchiAddress)).connect(signer);
     ticketsFacet = await (await ethers.getContractAt('TicketsFacet', diamondAddress)).connect(signer);
     [ticketHolder] = await ethers.getSigners();
     ownerStakingFacet = await stakingFacet.connect(signer);
@@ -32,11 +35,16 @@ describe('Frens Drop Ticket', async function(){
 
   // it.only('test', async function() {
   //   const dropTicketBalance = await ticketsFacet.balanceOf(ticketHolder.address, dropTicketId)
-  //   console.log('Drop Ticket Balance', dropTicketBalance);
-  //   const listings = await erc1155MarketplaceFacet.getERC1155Listings(5, 'listed', parseInt(dropTicketBalance) + 1)
-  //   console.log('Listings', listings);
-  //   const value = await listings.wait();
-  //   console.log('Value', value);
+  //   const listings = await erc1155MarketplaceFacet.getOwnerERC1155Listings(ticketHolder.address, 3, 'listed', parseInt(dropTicketBalance) + 1)
+  //   console.log('listings', parseInt(listings.value));
+  //   return;
+    // const dropTicketBalance = await ticketsFacet.balanceOf(ticketHolder.address, dropTicketId)
+    
+    // console.log('Drop Ticket Balance', dropTicketBalance);
+    // const listings = await erc1155MarketplaceFacet.getERC1155Listings(5, 'listed', parseInt(dropTicketBalance) + 1)
+    // console.log('Listings', listings);
+    // const value = await listings.wait();
+    // console.log('Value', value);
   // }).timeout(50000);
 
   it('cant claim tickets if user balance is not enough', async function() {
@@ -86,13 +94,8 @@ describe('Frens Drop Ticket', async function(){
     const dropTicketBalance = await ticketsFacet.balanceOf(ticketHolder.address, dropTicketId)
     console.log(dropTicketBalance);
     
-    await erc1155MarketplaceFacet.updateERC1155Listing(holderStakingFacet.address, dropTicketId, ticketHolder);
-    await erc1155MarketplaceFacet.updateBatchERC1155Listing(holderStakingFacet.address, [6], ticketHolder);
-    
-    const listings = await erc1155MarketplaceFacet.getERC1155Listings(dropTicketId, 'listed', parseInt(dropTicketBalance) + 1)
+    const listings = await erc1155MarketplaceFacet.getERC1155Listings(3, 'listed', parseInt(dropTicketBalance) + 1)
     console.log(listings);
-    const value = await listings.wait();
-    console.log(value);
-    // expect(listings[0].quantity).to.equal(dropTicketBalance)
+    expect(parseInt(listings.value)).to.equal(parseInt(dropTicketBalance))
   });
 });
