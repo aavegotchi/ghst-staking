@@ -25,6 +25,7 @@ contract StakingFacet {
     event GhstUsdcRate(uint256 _newRate);
     event RateManagerAdded(address indexed rateManager_);
     event RateManagerRemoved(address indexed rateManager_);
+    event GhstWethRate(uint256 _newRate);
 
     function frens(address _account) public view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
@@ -38,6 +39,9 @@ contract StakingFacet {
         frens_ += ((account.ghstUsdcPoolTokens * s.ghstUsdcRate) * timePeriod) / 24 hours;
         // 1 fren is generated for each GHST over 24 hours
         frens_ += (account.ghst * timePeriod) / 24 hours;
+
+        //Add in frens for GHST-WETH
+        frens_ += ((account.ghstWethPoolTokens * s.ghstWethRate) * timePeriod) / 24 hours;
     }
 
     function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
@@ -146,18 +150,57 @@ contract StakingFacet {
         LibERC20.transferFrom(s.ghstUsdcPoolToken, sender, address(this), _poolTokens);
     }
 
+    function getGhstWethPoolToken() external view returns (address) {
+        return s.ghstWethPoolToken;
+    }
+
+    function getStkGhstWethToken() external view returns (address) {
+        return s.stkGhstWethToken;
+    }
+
+    function setGhstWethToken(
+        address _ghstWethPoolToken,
+        address _stkGhstWethToken,
+        uint256 _ghstWethRate
+    ) external {
+        LibDiamond.enforceIsContractOwner();
+        s.ghstWethPoolToken = _ghstWethPoolToken;
+        s.stkGhstWethToken = _stkGhstWethToken;
+        s.ghstWethRate = _ghstWethRate;
+    }
+
+    function updateGhstWethRate(uint256 _newRate) external onlyRateManager {
+        s.ghstWethRate = _newRate;
+        emit GhstWethRate(_newRate);
+    }
+
+    function ghstWethRate() external view returns (uint256) {
+        return s.ghstWethRate;
+    }
+
+    function stakeGhstWethPoolTokens(uint256 _poolTokens) external {
+        updateFrens();
+        address sender = LibMeta.msgSender();
+        Account storage account = s.accounts[sender];
+        account.ghstWethPoolTokens += _poolTokens;
+        IERC20Mintable(s.stkGhstWethToken).mint(sender, _poolTokens);
+        LibERC20.transferFrom(s.ghstWethPoolToken, sender, address(this), _poolTokens);
+    }
+
     function staked(address _account)
         external
         view
         returns (
             uint256 ghst_,
             uint256 poolTokens_,
-            uint256 ghstUsdcPoolToken_
+            uint256 ghstUsdcPoolToken_,
+            uint256 ghstWethPoolToken_
         )
     {
         ghst_ = s.accounts[_account].ghst;
         poolTokens_ = s.accounts[_account].poolTokens;
         ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
+        ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
     }
 
     function withdrawGhstStake(uint256 _ghstValue) external {
@@ -193,6 +236,18 @@ contract StakingFacet {
         require(accountPoolTokens >= _poolTokens, "Can't withdraw more poolTokens than in account");
         s.accounts[sender].ghstUsdcPoolTokens = accountPoolTokens - _poolTokens;
         LibERC20.transfer(s.ghstUsdcPoolToken, sender, _poolTokens);
+    }
+
+    function withdrawGhstWethPoolStake(uint256 _poolTokens) external {
+        updateFrens();
+        address sender = LibMeta.msgSender();
+        uint256 bal = IERC20(s.stkGhstWethToken).balanceOf(sender);
+        require(bal >= _poolTokens, "Must have enough stkGhstWethTokens");
+        IERC20Mintable(s.stkGhstWethToken).burn(sender, _poolTokens);
+        uint256 accountPoolTokens = s.accounts[sender].ghstWethPoolTokens;
+        require(accountPoolTokens >= _poolTokens, "Can't withdraw more poolTokens than in account");
+        s.accounts[sender].ghstWethPoolTokens = accountPoolTokens - _poolTokens;
+        LibERC20.transfer(s.ghstWethPoolToken, sender, _poolTokens);
     }
 
     function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
