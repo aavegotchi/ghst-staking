@@ -38,7 +38,7 @@ async function main () {
   }
 
   const StkGHSTWETHFactory = await ethers.getContractFactory('StkGHSTWETH')
-  const StkGHSTWETH = await StkGHSTWETHFactory.deploy(ghstStakingDiamondAddress)
+  const StkGHSTWETH = await StkGHSTWETHFactory.deploy(ghstStakingDiamondAddress, {gasPrice:gasPrice})
   await StkGHSTWETH.deployed()
   console.log('Deployed StkGHSTWETH:', StkGHSTWETH.address)
 
@@ -104,13 +104,22 @@ async function main () {
   const ghstWethToken = '0xccb9d2100037f1253e6c1682adf7dc9944498aff'
   // 10 percent more than 1 GHST per day
 
-  // figure out the correct rate of FRENS for this token
-  tx = await facet.setGhstWethToken(ghstWethToken, StkGHSTWETH.address, ethers.BigNumber.from('12077243'))
-  receipt = await tx.wait()
-  if (!receipt.status) {
-    throw Error(`Failed to set GhstWethToken: ${tx.hash}`)
+  if (testing) {
+ // figure out the correct rate of FRENS for this token
+ tx = await facet.setGhstWethToken(ghstWethToken, StkGHSTWETH.address, ethers.BigNumber.from('12077243'))
+ receipt = await tx.wait()
+ if (!receipt.status) {
+   throw Error(`Failed to set GhstWethToken: ${tx.hash}`)
+ }
+ console.log('Set GhstWethToken:', tx.hash)
   }
-  console.log('Set GhstWethToken:', tx.hash)
+  else {
+ // figure out the correct rate of FRENS for this token
+ tx = await facet.setGhstWethToken(ghstWethToken, StkGHSTWETH.address, ethers.BigNumber.from('12077243'))
+    await sendToMultisig(process.env.DIAMOND_UPGRADER, signer, tx)
+  }
+
+ 
 }
 
 // Deployed StkGHSTWETH: 0x04439eC4ba8b09acfae0E9b5D75A82cC63b19f09
