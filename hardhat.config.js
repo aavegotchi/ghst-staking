@@ -1,6 +1,7 @@
 /* global task ethers */
 require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-ethers')
+require("@nomiclabs/hardhat-truffle5");
 require('hardhat-contract-sizer')
 require('dotenv').config()
 require('solidity-coverage')

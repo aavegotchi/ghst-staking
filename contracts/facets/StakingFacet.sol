@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.7.6;
+pragma abicoder v2;
 
 import "../libraries/AppStorage.sol";
 import "../libraries/LibDiamond.sol";
@@ -10,7 +11,28 @@ import "../libraries/LibMeta.sol";
 
 // import "../interfaces/IUniswapV2Pair.sol";
 
+// struct ERC1155Listing {
+//     uint256 listingId;
+//     address seller;
+//     address erc1155TokenAddress;
+//     uint256 erc1155TypeId;
+//     uint256 category; // 0 is wearable, 1 is badge, 2 is consumable, 3 is tickets
+//     uint256 quantity;
+//     uint256 priceInWei;
+//     uint256 timeCreated;
+//     uint256 timeLastPurchased;
+//     uint256 sourceListingId;
+//     bool sold;
+//     bool cancelled;
+// }
+
 interface IERC1155Marketplace {
+    // function getERC1155Listings(
+    //     uint256 _category, // // 0 is wearable, 1 is badge, 2 is consumable, 3 is tickets
+    //     string memory _sort, // "listed" or "purchased"
+    //     uint256 _length // how many items to get back or the rest available
+    // ) external view returns (ERC1155Listing[] memory);
+
     function updateERC1155Listing(
         address _erc1155TokenAddress,
         uint256 _erc1155TypeId,
@@ -37,6 +59,7 @@ contract StakingFacet {
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event PoolTokensRate(uint256 _newRate);
     event GhstUsdcRate(uint256 _newRate);
+    // event UpdateERC1155TicketListing(uint256 quantity, address indexed owner);
 
     function frens(address _account) public view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
@@ -229,6 +252,12 @@ contract StakingFacet {
         }
         s.accounts[sender].frens = frensBal;
         emit TransferBatch(sender, address(0), sender, _ids, _values);
+        
+        address aavegotchiDiamond = s.aavegotchiDiamond;
+        if (aavegotchiDiamond != address(0)) {
+            IERC1155Marketplace(aavegotchiDiamond).updateBatchERC1155Listing(address(this), _ids, sender);
+        }
+        
         uint256 size;
         assembly {
             size := extcodesize(sender)
