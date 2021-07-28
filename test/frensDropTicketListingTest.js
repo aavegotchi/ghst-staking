@@ -15,75 +15,64 @@ describe('Frens Drop Ticket', async function(){
 
     // await DropTicketListing();
 
-    stakingFacet = await ethers.getContractAt('StakingFacet', diamondAddress)
-    owner = await (await ethers.getContractAt('OwnershipFacet', diamondAddress)).owner();
-    // marketplaceOwner = await (await ethers.getContractAt('ERC1155MarketplaceFacet', aavegotchiAddress)).owner();
-    signer = await ethers.provider.getSigner(owner);
-    [ticketHolder] = await ethers.getSigners();
-
-    const user = await hre.network.provider.request({
+    await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: ["0xC3c2e1Cf099Bc6e1fA94ce358562BCbD5cc59FE5"],
     });
 
-    tester = await ethers.getSigner('0xC3c2e1Cf099Bc6e1fA94ce358562BCbD5cc59FE5');
+    stakingFacet = await ethers.getContractAt('StakingFacet', diamondAddress)
+    owner = await (await ethers.getContractAt('OwnershipFacet', diamondAddress)).owner();
+    signer = await ethers.provider.getSigner(owner);
+    [ticketHolder] = await ethers.getSigners();
 
-    console.log('USER', user);
-    
+    tester = await ethers.getSigner('0xC3c2e1Cf099Bc6e1fA94ce358562BCbD5cc59FE5');
     
     testerTicketsFacet = await (await ethers.getContractAt('TicketsFacet', diamondAddress)).connect(tester);
     ticketsFacet = await (await ethers.getContractAt('TicketsFacet', diamondAddress)).connect(signer);
     ownerStakingFacet = await stakingFacet.connect(signer);
     holderStakingFacet = await stakingFacet.connect(ticketHolder);
     marketplaceInstance = new web3.eth.Contract(marketplaceABI, aavegotchiAddress);
+
   });
 
   it('cant claim tickets if user balance is not enough', async function() {
     await expect(holderStakingFacet.claimTickets([dropTicketId], [1])).to.be.revertedWith('Not enough frens points');
   });
 
-  it.only('test', async function() {
+  it.only('test listing update', async function() {
+    const testerStakingFacet = await stakingFacet.connect(tester);
     await testerTicketsFacet.migrateTickets([{
       owner: tester.address,
       ids: [0, 1, 2],
-      values: [100, 100, 100]
+      values: [100, 40, 20]
     }]);
     await testerTicketsFacet.setApprovalForAll(aavegotchiAddress, true);
-    // await marketplaceInstance.methods.setListingFee(0).send({
-    //   from: marketplaceOwner.address
-    // });
-    // const fee = await marketplaceInstance.methods.getListingFeeInWei().call();
-    // console.log(fee);
-    const tx = await marketplaceInstance.methods.setERC1155Listing(diamondAddress, 0, 100, '10000000000000000000').send({
+    // Set Listing for ticket id 0
+    await marketplaceInstance.methods.setERC1155Listing(diamondAddress, 0, 100, '10000000000000000000').send({
       from: tester.address
     });
-    await marketplaceInstance.methods.updateERC1155Listing(diamondAddress, 0, tester.address).send({
-      from: tester.address
-    });
-    const listingsBefore = await marketplaceInstance.methods.getOwnerERC1155Listings(
+    let tx = await marketplaceInstance.methods.getOwnerERC1155Listings(
       tester.address, 
-      0, 
+      3, 
+      'listed', 10
+    ).call();
+    console.log(tx);
+    const listingsBefore = tx[0][0]['quantity'];
+    // expect(parseInt(listingsBefore)).to.equal(100);
+    
+    console.log('migrating', tester.address, signer.address);
+    // await ownerStakingFacet.migrateFrens([tester.address], [eightBillion]);
+    console.log('migrated');
+
+    await testerStakingFacet.claimTickets([0, 1, 2], [100, 40, 20])
+    tx = await marketplaceInstance.methods.getOwnerERC1155Listings(
+      tester.address, 
+      3,
       'listed', 1000
     ).call();
-    console.log(listingsBefore);
-    ///////
-    // await ownerStakingFacet.migrateFrens([ticketHolder.address], [eightBillion]);
-    // const totalSupplyBefore = await ticketsFacet.totalSupply(dropTicketId)
-    
-    // const listingsBefore = await marketplaceInstance.methods.getOwnerERC1155Listings(
-    //   ticketHolder.address, 
-    //   3, 
-    //   'listed', 1000
-    // ).call();
-    // console.log(listingsBefore);
-    
-    // await holderStakingFacet.claimTickets([0, 1, 2, 3, 4, 5, 6], [100, 100, 100, 100, 1, 1, 1])
-    // const listingsAfter = await marketplaceInstance.methods.getOwnerERC1155Listings(
-    //   ticketHolder.address, 
-    //   3,
-    //   'listed', 1000
-    // ).call();
-    // console.log(listingsAfter);
+    const listingsAfter = tx[0][0]['quantity'];
+    console.log(tx);
+    // expect(parseInt(listingsAfter)).to.equal(0);
   }).timeout(1000000);
 
   it('should claim tickets', async function() {
@@ -109,11 +98,6 @@ describe('Frens Drop Ticket', async function(){
   }).timeout(100000);
 
   it('should convert tickets to drop ticket', async function(){
-    const listingsBefore = await marketplaceInstance.methods.getOwnerERC1155Listings(
-      ticketHolder.address, 
-      3, 
-      'purchased', 1000
-    ).call();
     await expect(holderStakingFacet.convertTickets([dropTicketId], [1])).to.be.revertedWith('Cannot convert Drop Ticket');
 
     const totalSupplyBefore = await ticketsFacet.totalSupply(dropTicketId)
@@ -139,12 +123,5 @@ describe('Frens Drop Ticket', async function(){
 
     //Too many tickets
     await expect(holderStakingFacet.convertTickets([2,3],[1000,1000])).to.be.revertedWith('Staking: Not enough Ticket balance')
-
-    const listingsAfter = await marketplaceInstance.methods.getOwnerERC1155Listings(
-      ticketHolder.address, 
-      3, 
-      'purchased', 1000
-    ).call();
-    expect(listingsAfter.length).to.equal(listingsBefore.length - 3);
   }).timeout(100000);
 });
