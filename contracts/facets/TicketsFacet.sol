@@ -215,6 +215,7 @@ contract TicketsFacet is IERC1155 {
     }
 
     function migrateTickets(TicketOwner[] calldata _ticketOwners) external {
+        LibDiamond.enforceIsContractOwner();
         address sender = LibMeta.msgSender();
         for (uint256 i; i < _ticketOwners.length; i++) {
             TicketOwner calldata ticketOwner = _ticketOwners[i];
