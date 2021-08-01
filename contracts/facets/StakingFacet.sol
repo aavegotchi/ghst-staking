@@ -8,7 +8,13 @@ import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/LibMeta.sol";
 
-// import "../interfaces/IUniswapV2Pair.sol";
+interface IERC1155Marketplace {
+    function updateBatchERC1155Listing(
+        address _erc1155TokenAddress,
+        uint256[] calldata _erc1155TypeIds,
+        address _owner
+    ) external;
+}
 
 interface IERC20Mintable {
     function mint(address _to, uint256 _amount) external;
@@ -315,6 +321,10 @@ contract StakingFacet {
 
         s.tickets[dropTicketId].accountBalances[sender] += newDropTickets;
         s.tickets[dropTicketId].totalSupply += uint96(newDropTickets);
+
+        if (s.aavegotchiDiamond != address(0)) {
+            IERC1155Marketplace(s.aavegotchiDiamond).updateBatchERC1155Listing(address(this), _ids, sender);
+        }
         emit TransferBatch(sender, address(0), sender, eventTicketIds, eventTicketValues);
 
         uint256 size;

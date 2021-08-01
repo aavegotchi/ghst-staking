@@ -1,21 +1,22 @@
 /* global task ethers */
-require('@nomiclabs/hardhat-waffle')
-require('@nomiclabs/hardhat-ethers')
-require('hardhat-contract-sizer')
-require('dotenv').config()
-require('solidity-coverage')
+require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-ethers");
+require("@nomiclabs/hardhat-truffle5");
+require("hardhat-contract-sizer");
+require("dotenv").config();
+require("solidity-coverage");
 // require('./tasks/generateDiamondABI.js')
-require('./tasks/verifyFacet.js')
+require("./tasks/verifyFacet.js");
 
 // This is a sample Buidler task. To learn how to create your own go to
 // https://buidler.dev/guides/create-task.html
-task('accounts', 'Prints the list of accounts', async () => {
-  const accounts = await ethers.getSigners()
+task("accounts", "Prints the list of accounts", async () => {
+  const accounts = await ethers.getSigners();
 
   for (const account of accounts) {
-    console.log(await account.getAddress())
+    console.log(await account.getAddress());
   }
-})
+});
 
 // You have to export an object to set up your config
 // This object can have the following optional entries:
@@ -26,16 +27,16 @@ module.exports = {
     hardhat: {
       forking: {
         url: process.env.MATIC_URL,
-        timeout: 8000000
+        timeout: 8000000,
         // blockNumber: 12552123
         // blockNumber: 13024371
       },
       blockGasLimit: 20000000,
       timeout: 120000,
-      gas: 'auto'
+      gas: "auto",
     },
     localhost: {
-      timeout: 8000000
+      timeout: 8000000,
     },
     matic: {
       url: process.env.MATIC_URL,
@@ -44,7 +45,7 @@ module.exports = {
       // blockGasLimit: 20000000,
       blockGasLimit: 200000000000,
       gasPrice: 10000000000,
-      timeout: 90000
+      timeout: 90000,
     },
     /*
     mumbai: {
@@ -72,37 +73,36 @@ module.exports = {
     }*/
   },
   gasReporter: {
-    currency: 'USD',
+    currency: "USD",
     gasPrice: 100,
-    enabled: false
+    enabled: false,
   },
   contractSizer: {
     alphaSort: false,
     runOnCompile: false,
-    disambiguatePaths: true
+    disambiguatePaths: true,
   },
   // This is a sample solc configuration that specifies which version of solc to use
   solidity: {
     compilers: [
       {
-        version: '0.7.6',
+        version: "0.7.6",
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200
-          }
-        }
+            runs: 200,
+          },
+        },
       },
       {
-        version: '0.7.4',
+        version: "0.7.4",
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200
-          }
-        }
-      }
-    ]
-
-  }
-}
+            runs: 200,
+          },
+        },
+      },
+    ],
+  },
+};
