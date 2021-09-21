@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity 0.8.1;
 
 import "../libraries/AppStorage.sol";
 import "../libraries/LibDiamond.sol";
@@ -33,7 +33,85 @@ contract StakingFacet {
     event RateManagerRemoved(address indexed rateManager_);
     event GhstWethRate(uint256 _newRate);
 
+    function initiateEpoch(PoolRates[] calldata _pools) external onlyRateManager {
+        require(s.currentEpoch == 0, "StakingFacet: Can only be called on first epoch");
+
+        Epoch storage firstEpoch = s.epochToEpochInfo[0];
+        firstEpoch.beginTime = block.timestamp;
+
+        //Update the pool rates for each pool in this epoch
+        for (uint256 index = 0; index < _pools.length; index++) {
+            PoolRates poolRate = _pools[index];
+            s.epochToPoolRate[s.currentEpoch][poolRate._poolAddress] = poolRate._rate;
+            s.poolTokenToReceiptToken[poolRate._poolAddress] = poolrate._poolReceiptToken;
+
+            s.supportedPools.push(poolRate._poolAddress);
+        }
+    }
+
+    function increaseEpoch(PoolRates[] calldata _pools) external onlyRateManager returns (uint256 epoch_) {
+        Epoch storage epochNow = s.epochToEpochInfo[s.currentEpoch];
+        epochNow.endTime = block.timestamp;
+
+        s.currentEpoch++;
+        Epoch storage newEpoch = s.epochToEpochInfo[s.currentEpoch];
+        newEpoch.beginTime = block.timestamp;
+
+        //Update the pool rates for each pool in this epoch
+        for (uint256 index = 0; index < _pools.length; index++) {
+            PoolRates poolRate = _pools[index];
+            s.epochToPoolRate[s.currentEpoch][poolRate._poolAddress] = poolRate._rate;
+        }
+
+        return s.currentEpoch;
+    }
+
+    function addPool(PoolRates calldata _epochPoolRate) external onlyRateManager {}
+
+    function epochFrens(address _account) public view returns (uint256 frens_) {
+        Account storage account = s.accounts[_account];
+        // this cannot underflow or overflow
+        uint256 timePeriod = block.timestamp - account.lastFrensUpdate;
+        frens_ = account.frens;
+        // 86400 the number of seconds in 1 day
+        // 100 frens are generated for each LP token over 24 hours
+
+        //How many epochs behind is the user? For each epoch they are behind, we will need to include that time
+
+        if (s.currentEpoch == 0) frens += frens();
+        else {
+            for (uint256 index = 0; index < s.supportedPools.length; index++) {
+                address poolAddress = s.supportedPools[index];
+                uint256 poolCurrentRate = s.epochToPoolRate[s.currentEpoch][poolAddress];
+
+                uint256 epochsBehind = s.currentEpoch - s.accounts[_account].userCurrentEpoch;
+
+                //Historic epoch must always be one behind (check logic)
+                for (uint256 i = 0; i < epochsBehind; i++) {
+                    uint256 historicEpoch = s.currentEpoch - i;
+
+                    //Parameters of epoch0 are the same as the previous version
+
+                    uint256 poolHistoricRate = s.epochToPoolRate[historicEpoch][poolAddress];
+
+                    //How long did this historic epoch last?
+                    Epoch memory epoch = s.epochToEpochInfo[historicEpoch];
+                    uint256 duration = epoch.endTime - epoch.beginTime;
+
+                    uint256 stakedTokens = s.accounts[_account].accountStakedTokens[poolAddress];
+
+                    uint256 accumulatedFrens = (stakedTokens * poolHistoricRate * duration) / 24 hours;
+
+                    frens_ += accumulatedFrens;
+                }
+            }
+        }
+    }
+
     function frens(address _account) public view returns (uint256 frens_) {
+        //This function is deprecated after epoch0. Use the epochFrens method instead.
+        if (s.currentEpoch != 0) return 0;
+
         Account storage account = s.accounts[_account];
         // this cannot underflow or overflow
         uint256 timePeriod = block.timestamp - account.lastFrensUpdate;
@@ -53,14 +131,14 @@ contract StakingFacet {
     function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
         frens_ = new uint256[](_accounts.length);
         for (uint256 i; i < _accounts.length; i++) {
-            frens_[i] = frens(_accounts[i]);
+            frens_[i] = epochFrens(_accounts[i]);
         }
     }
 
     function updateFrens() internal {
         address sender = LibMeta.msgSender();
         Account storage account = s.accounts[sender];
-        account.frens = frens(sender);
+        account.frens = epochFrens(sender);
         account.lastFrensUpdate = uint40(block.timestamp);
     }
 
@@ -68,55 +146,118 @@ contract StakingFacet {
         for (uint256 i; i < _accounts.length; i++) {
             address accountAddress = _accounts[i];
             Account storage account = s.accounts[accountAddress];
-            account.frens = frens(accountAddress);
+            account.frens = epochFrens(accountAddress);
             account.lastFrensUpdate = uint40(block.timestamp);
         }
     }
 
-    function updatePoolTokensRate(uint256 _newRate) external onlyRateManager {
-        s.poolTokensRate = _newRate;
-        emit PoolTokensRate(_newRate);
+    function _migrateToV2(address _account) internal {
+        uint256 ghst_ = s.accounts[_account].ghst;
+        uint256 poolTokens_ = s.accounts[_account].poolTokens;
+        uint256 ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
+        uint256 ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
+
+        //Set balances for all of the V1 pools
+
+        s.accounts[_account].accountStakedTokens[s.ghstContract] = ghst_;
+        s.accounts[_account].accountStakedTokens[s.poolContract] = poolTokens_;
+        s.accounts[_account].accountStakedTokens[s.ghstUsdcPoolToken] = ghstUsdcPoolToken_;
+        s.accounts[_account].accountStakedTokens[s.ghstWethPoolToken] = ghstWethPoolToken_;
+
+        //Set balances for all of the receipt tokens
+
+        //Set migrated to true
+        s.accounts[_address].hasMigrated = true;
     }
 
-    function poolTokensRate() external view returns (uint256) {
-        return s.poolTokensRate;
-    }
-
-    function migrateFrens(address[] calldata _stakers, uint256[] calldata _frens) external {
-        LibDiamond.enforceIsContractOwner();
-        require(_stakers.length == _frens.length, "StakingFacet: stakers not same length as frens");
-        for (uint256 i; i < _stakers.length; i++) {
-            Account storage account = s.accounts[_stakers[i]];
-            account.frens = uint104(_frens[i]);
-            account.lastFrensUpdate = uint40(block.timestamp);
-        }
-    }
-
-    function switchFrens(address _old, address _new) external {
-        LibDiamond.enforceIsContractOwner();
-        Account storage oldAccount = s.accounts[_old];
-        Account storage newAccount = s.accounts[_new];
-        (oldAccount.frens, newAccount.frens) = (newAccount.frens, oldAccount.frens);
-        oldAccount.lastFrensUpdate = uint40(block.timestamp);
-        newAccount.lastFrensUpdate = uint40(block.timestamp);
-    }
-
-    function stakeGhst(uint256 _ghstValue) external {
+    function stakeIntoPool(address _poolContractAddress, uint256 _amount) external {
         updateFrens();
         address sender = LibMeta.msgSender();
-        s.accounts[sender].ghst += uint96(_ghstValue);
-        LibERC20.transferFrom(s.ghstContract, sender, address(this), _ghstValue);
+        if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
+
+        //Credit the user's with their new LP token balance
+        s.accounts[sender].accountStakedTokens[_poolContractAddress] += _amount;
+
+        //The original stkGHST-QUICK LP token is minted from the Diamond, not an external contract
+        if (_poolContractAddress == s.poolContract) {
+            account.ghstStakingTokens += _poolTokens;
+            s.ghstStakingTokensTotalSupply += _poolTokens;
+            emit Transfer(address(0), sender, _poolTokens);
+        } else {
+            //Use mintable for minting stkGHST- token
+            address stkTokenAddress = s.poolTokenToReceiptToken[_poolContractAddress];
+            IERC20Mintable(stkTokenAddress).mint(sender, _amount);
+        }
+
+        //Transfer the LP tokens into the Diamond
+        LibERC20.transferFrom(_poolContractAddress, sender, address(this), _amount);
+    }
+
+    function withdrawFromPool(address _poolContractAddress, uint256 _amount) external {
+        //GHST
+        updateFrens();
+        address sender = LibMeta.msgSender();
+
+        if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
+
+        uint256 bal;
+        address receiptTokenAddress = s.poolTokenToReceiptToken[_poolContractAddress];
+        uint256 stakedBalance = s.accounts[sender].accountStakedTokens[_poolContractAddress];
+        //Balances for these must be handled separately
+        if (_poolContractAddress == s.ghstContract) {
+            bal = stakedBalance;
+        } else if (_poolContractAddress == s.poolContract) {
+            bal = stakedBalance;
+        } else {
+            //Checking the balance of the stkGHST- token here
+            bal = IERC20(receiptTokenAddress).balanceOf(sender);
+        }
+
+        //This is actually only required for receipt tokens
+        require(bal >= _amount, "StakingFacet: Can't withdraw more tokens than staked");
+        require(s.accounts[sender].accountStakedTokens[_poolContractAddress] >= _amount, "Can't withdraw more poolTokens than in account");
+
+        s.accounts[sender].accountStakedTokens[_poolContractAddress] -= _amount;
+
+        if (_poolContractAddress == s.poolContract) {
+            account.ghstStakingTokens -= _amount;
+            s.ghstStakingTokensTotalSupply -= _poolTokens;
+
+            /*
+            s.accounts[sender].ghstStakingTokens = bal - _poolTokens;
+            s.ghstStakingTokensTotalSupply -= _poolTokens;
+            */
+            uint256 accountPoolTokens = s.accounts[sender].poolTokens;
+            require(accountPoolTokens >= _poolTokens, "Can't withdraw more poolTokens than in account");
+            // s.accounts[sender].poolTokens = accountPoolTokens - _poolTokens;
+            emit Transfer(sender, address(0), _poolTokens);
+            // LibERC20.transfer(s.poolContract, sender, _poolTokens);
+        } else {
+            IERC20Mintable(receiptTokenAddress).burn(sender, _amount);
+            uint256 accountPoolTokens = s.accounts[sender].ghstUsdcPoolTokens;
+
+            // s.accounts[sender].ghstUsdcPoolTokens = accountPoolTokens - _poolTokens;
+            // LibERC20.transfer(s.ghstUsdcPoolToken, sender, _poolTokens);
+        }
+
+        LibERC20.transfer(_poolContractAddress, sender, _amount);
+    }
+
+    /*  Deprecated staking methods */
+    function stakeGhst(uint256 _ghstValue) external {
+        stakeIntoPool(s.ghstContract, _ghstValue);
     }
 
     function stakePoolTokens(uint256 _poolTokens) external {
-        updateFrens();
-        address sender = LibMeta.msgSender();
-        Account storage account = s.accounts[sender];
-        account.ghstStakingTokens += _poolTokens;
-        account.poolTokens += _poolTokens;
-        s.ghstStakingTokensTotalSupply += _poolTokens;
-        emit Transfer(address(0), sender, _poolTokens);
-        LibERC20.transferFrom(s.poolContract, sender, address(this), _poolTokens);
+        stakeIntoPool(s.poolContract, _poolTokens);
+    }
+
+    function stakeGhstUsdcPoolTokens(uint256 _poolTokens) external {
+        stakeIntoPool(s.ghstUsdcPoolToken, _poolTokens);
+    }
+
+    function stakeGhstWethPoolTokens(uint256 _poolTokens) external {
+        stakeIntoPool(s.ghstWethPoolToken, _poolTokens);
     }
 
     function getGhstUsdcPoolToken() external view returns (address) {
@@ -127,70 +268,12 @@ contract StakingFacet {
         return s.stkGhstUsdcToken;
     }
 
-    function setGhstUsdcToken(
-        address _ghstUsdcPoolToken,
-        address _stkGhstUsdcToken,
-        uint256 _ghstUsdcRate
-    ) external {
-        LibDiamond.enforceIsContractOwner();
-        s.ghstUsdcPoolToken = _ghstUsdcPoolToken;
-        s.stkGhstUsdcToken = _stkGhstUsdcToken;
-        s.ghstUsdcRate = _ghstUsdcRate;
-    }
-
-    function updateGhstUsdcRate(uint256 _newRate) external onlyRateManager {
-        s.ghstUsdcRate = _newRate;
-        emit GhstUsdcRate(_newRate);
-    }
-
-    function ghstUsdcRate() external view returns (uint256) {
-        return s.ghstUsdcRate;
-    }
-
-    function stakeGhstUsdcPoolTokens(uint256 _poolTokens) external {
-        updateFrens();
-        address sender = LibMeta.msgSender();
-        Account storage account = s.accounts[sender];
-        account.ghstUsdcPoolTokens += _poolTokens;
-        IERC20Mintable(s.stkGhstUsdcToken).mint(sender, _poolTokens);
-        LibERC20.transferFrom(s.ghstUsdcPoolToken, sender, address(this), _poolTokens);
-    }
-
     function getGhstWethPoolToken() external view returns (address) {
         return s.ghstWethPoolToken;
     }
 
     function getStkGhstWethToken() external view returns (address) {
         return s.stkGhstWethToken;
-    }
-
-    function setGhstWethToken(
-        address _ghstWethPoolToken,
-        address _stkGhstWethToken,
-        uint256 _ghstWethRate
-    ) external {
-        LibDiamond.enforceIsContractOwner();
-        s.ghstWethPoolToken = _ghstWethPoolToken;
-        s.stkGhstWethToken = _stkGhstWethToken;
-        s.ghstWethRate = _ghstWethRate;
-    }
-
-    function updateGhstWethRate(uint256 _newRate) external onlyRateManager {
-        s.ghstWethRate = _newRate;
-        emit GhstWethRate(_newRate);
-    }
-
-    function ghstWethRate() external view returns (uint256) {
-        return s.ghstWethRate;
-    }
-
-    function stakeGhstWethPoolTokens(uint256 _poolTokens) external {
-        updateFrens();
-        address sender = LibMeta.msgSender();
-        Account storage account = s.accounts[sender];
-        account.ghstWethPoolTokens += _poolTokens;
-        IERC20Mintable(s.stkGhstWethToken).mint(sender, _poolTokens);
-        LibERC20.transferFrom(s.ghstWethPoolToken, sender, address(this), _poolTokens);
     }
 
     function staked(address _account)
@@ -209,51 +292,22 @@ contract StakingFacet {
         ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
     }
 
+    /* Deprecated Withdraw methods */
+
     function withdrawGhstStake(uint256 _ghstValue) external {
-        updateFrens();
-        address sender = LibMeta.msgSender();
-        uint256 bal = s.accounts[sender].ghst;
-        require(bal >= _ghstValue, "Can't withdraw more GHST than staked");
-        s.accounts[sender].ghst = uint96(bal - _ghstValue);
-        LibERC20.transfer(s.ghstContract, sender, _ghstValue);
+        withdrawFromPool(s.ghstContract, _ghstValue);
     }
 
     function withdrawPoolStake(uint256 _poolTokens) external {
-        updateFrens();
-        address sender = LibMeta.msgSender();
-        uint256 bal = s.accounts[sender].ghstStakingTokens;
-        require(bal >= _poolTokens, "Can't withdraw more ghstStakingToken than in account");
-        s.accounts[sender].ghstStakingTokens = bal - _poolTokens;
-        s.ghstStakingTokensTotalSupply -= _poolTokens;
-        uint256 accountPoolTokens = s.accounts[sender].poolTokens;
-        require(accountPoolTokens >= _poolTokens, "Can't withdraw more poolTokens than in account");
-        s.accounts[sender].poolTokens = accountPoolTokens - _poolTokens;
-        emit Transfer(sender, address(0), _poolTokens);
-        LibERC20.transfer(s.poolContract, sender, _poolTokens);
+        withdrawFromPool(s.poolContract, _poolTokens);
     }
 
     function withdrawGhstUsdcPoolStake(uint256 _poolTokens) external {
-        updateFrens();
-        address sender = LibMeta.msgSender();
-        uint256 bal = IERC20(s.stkGhstUsdcToken).balanceOf(sender);
-        require(bal >= _poolTokens, "Must have enough stkGhstUsdcTokens");
-        IERC20Mintable(s.stkGhstUsdcToken).burn(sender, _poolTokens);
-        uint256 accountPoolTokens = s.accounts[sender].ghstUsdcPoolTokens;
-        require(accountPoolTokens >= _poolTokens, "Can't withdraw more poolTokens than in account");
-        s.accounts[sender].ghstUsdcPoolTokens = accountPoolTokens - _poolTokens;
-        LibERC20.transfer(s.ghstUsdcPoolToken, sender, _poolTokens);
+        withdrawFromPool(s.ghstUsdcPoolToken, _poolTokens);
     }
 
     function withdrawGhstWethPoolStake(uint256 _poolTokens) external {
-        updateFrens();
-        address sender = LibMeta.msgSender();
-        uint256 bal = IERC20(s.stkGhstWethToken).balanceOf(sender);
-        require(bal >= _poolTokens, "Must have enough stkGhstWethTokens");
-        IERC20Mintable(s.stkGhstWethToken).burn(sender, _poolTokens);
-        uint256 accountPoolTokens = s.accounts[sender].ghstWethPoolTokens;
-        require(accountPoolTokens >= _poolTokens, "Can't withdraw more poolTokens than in account");
-        s.accounts[sender].ghstWethPoolTokens = accountPoolTokens - _poolTokens;
-        LibERC20.transfer(s.ghstWethPoolToken, sender, _poolTokens);
+        withdrawFromPool(s.ghstWethPoolToken, _poolTokens);
     }
 
     function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
@@ -360,7 +414,7 @@ contract StakingFacet {
         }
     }
 
-    modifier onlyRateManager {
+    modifier onlyRateManager() {
         require(isRateManager(msg.sender), "StakingFacet: Must be rate manager");
         _;
     }

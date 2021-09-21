@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity 0.8.1;
 
 struct Account {
     // spender => amount
@@ -12,6 +12,10 @@ struct Account {
     uint256 frens;
     uint256 ghstUsdcPoolTokens;
     uint256 ghstWethPoolTokens;
+    //New
+    bool hasMigrated;
+    uint256 userCurrentEpoch;
+    mapping(address => uint256) accountStakedTokens;
 }
 
 struct Ticket {
@@ -39,4 +43,22 @@ struct AppStorage {
     address ghstWethPoolToken; //token address of GHST-WETH LP
     address stkGhstWethToken; //token address of the stkGHST-WETH receipt token
     uint256 ghstWethRate; //the FRENS rate for GHST-WETH stakers
+    //New
+    uint256 currentEpoch;
+    mapping(uint256 => EpochInfo) epochToEpochInfo;
+    mapping(uint256 => mapping(address => uint256)) epochToPoolRate;
+    address[] supportedPools;
+    mapping(address => address) poolTokenToReceiptToken;
+}
+
+struct EpochInfo {
+    uint256 beginTime;
+    uint256 endTime;
+}
+
+struct PoolInfo {
+    address _poolAddress;
+    address _poolReceiptToken; //The receipt token for staking into this pool. Can be address(0) if empty
+    uint256 _rate;
+    string _poolName;
 }
