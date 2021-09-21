@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.1;
+pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
 
 struct Account {
     // spender => amount
@@ -22,6 +23,11 @@ struct Ticket {
     // user address => balance
     mapping(address => uint256) accountBalances;
     uint96 totalSupply;
+}
+
+struct EpochInfo {
+    uint256 beginTime;
+    uint256 endTime;
 }
 
 struct AppStorage {
@@ -49,16 +55,4 @@ struct AppStorage {
     mapping(uint256 => mapping(address => uint256)) epochToPoolRate;
     address[] supportedPools;
     mapping(address => address) poolTokenToReceiptToken;
-}
-
-struct EpochInfo {
-    uint256 beginTime;
-    uint256 endTime;
-}
-
-struct PoolInfo {
-    address _poolAddress;
-    address _poolReceiptToken; //The receipt token for staking into this pool. Can be address(0) if empty
-    uint256 _rate;
-    string _poolName;
 }

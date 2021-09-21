@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.1;
+pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
 
 import "../libraries/AppStorage.sol";
 import "../libraries/LibDiamond.sol";
@@ -7,6 +8,7 @@ import "../libraries/LibERC20.sol";
 import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/LibMeta.sol";
+import {EpochInfo} from "../libraries/AppStorage.sol";
 
 interface IERC1155Marketplace {
     function updateBatchERC1155Listing(
@@ -33,40 +35,52 @@ contract StakingFacet {
     event RateManagerRemoved(address indexed rateManager_);
     event GhstWethRate(uint256 _newRate);
 
-    function initiateEpoch(PoolRates[] calldata _pools) external onlyRateManager {
+    /* New Epoch Functions */
+
+    /***
+    @dev An epoch is a period in which the rates of a pool are not altered. We can use epochs to track how many FRENS a user earned during the period, even after that epoch has ended. */
+
+    struct PoolInfo {
+        address _poolAddress;
+        address _poolReceiptToken; //The receipt token for staking into this pool. Can be address(0) if empty
+        uint256 _rate;
+        string _poolName;
+    }
+
+    function initiateEpoch(PoolInfo[] calldata _pools) external onlyRateManager {
         require(s.currentEpoch == 0, "StakingFacet: Can only be called on first epoch");
 
-        Epoch storage firstEpoch = s.epochToEpochInfo[0];
+        EpochInfo storage firstEpoch = s.epochToEpochInfo[0];
         firstEpoch.beginTime = block.timestamp;
 
         //Update the pool rates for each pool in this epoch
         for (uint256 index = 0; index < _pools.length; index++) {
-            PoolRates poolRate = _pools[index];
+            PoolInfo memory poolRate = _pools[index];
             s.epochToPoolRate[s.currentEpoch][poolRate._poolAddress] = poolRate._rate;
-            s.poolTokenToReceiptToken[poolRate._poolAddress] = poolrate._poolReceiptToken;
+            s.poolTokenToReceiptToken[poolRate._poolAddress] = poolRate._poolReceiptToken;
 
             s.supportedPools.push(poolRate._poolAddress);
         }
     }
 
-    function increaseEpoch(PoolRates[] calldata _pools) external onlyRateManager returns (uint256 epoch_) {
-        Epoch storage epochNow = s.epochToEpochInfo[s.currentEpoch];
+    function nextEpoch(PoolInfo[] calldata _pools) external onlyRateManager returns (uint256 epoch_) {
+        EpochInfo storage epochNow = s.epochToEpochInfo[s.currentEpoch];
         epochNow.endTime = block.timestamp;
 
         s.currentEpoch++;
-        Epoch storage newEpoch = s.epochToEpochInfo[s.currentEpoch];
+        EpochInfo storage newEpoch = s.epochToEpochInfo[s.currentEpoch];
         newEpoch.beginTime = block.timestamp;
 
         //Update the pool rates for each pool in this epoch
         for (uint256 index = 0; index < _pools.length; index++) {
-            PoolRates poolRate = _pools[index];
+            PoolInfo memory poolRate = _pools[index];
             s.epochToPoolRate[s.currentEpoch][poolRate._poolAddress] = poolRate._rate;
         }
 
         return s.currentEpoch;
     }
 
-    function addPool(PoolRates calldata _epochPoolRate) external onlyRateManager {}
+    function addPool(PoolInfo calldata _epochPoolRate) external onlyRateManager {}
 
     function epochFrens(address _account) public view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
@@ -78,7 +92,7 @@ contract StakingFacet {
 
         //How many epochs behind is the user? For each epoch they are behind, we will need to include that time
 
-        if (s.currentEpoch == 0) frens += frens();
+        if (s.currentEpoch == 0) frens_ += frens(_account);
         else {
             for (uint256 index = 0; index < s.supportedPools.length; index++) {
                 address poolAddress = s.supportedPools[index];
@@ -95,7 +109,7 @@ contract StakingFacet {
                     uint256 poolHistoricRate = s.epochToPoolRate[historicEpoch][poolAddress];
 
                     //How long did this historic epoch last?
-                    Epoch memory epoch = s.epochToEpochInfo[historicEpoch];
+                    EpochInfo memory epoch = s.epochToEpochInfo[historicEpoch];
                     uint256 duration = epoch.endTime - epoch.beginTime;
 
                     uint256 stakedTokens = s.accounts[_account].accountStakedTokens[poolAddress];
@@ -135,19 +149,18 @@ contract StakingFacet {
         }
     }
 
-    function updateFrens() internal {
-        address sender = LibMeta.msgSender();
-        Account storage account = s.accounts[sender];
-        account.frens = epochFrens(sender);
+    function updateFrens(address _sender) internal {
+        Account storage account = s.accounts[_sender];
+        account.frens = epochFrens(_sender);
         account.lastFrensUpdate = uint40(block.timestamp);
+
+        //Bring this user to the latest epoch now;
+        s.accounts[_sender].userCurrentEpoch = s.currentEpoch;
     }
 
     function updateAccounts(address[] calldata _accounts) external onlyRateManager {
         for (uint256 i; i < _accounts.length; i++) {
-            address accountAddress = _accounts[i];
-            Account storage account = s.accounts[accountAddress];
-            account.frens = epochFrens(accountAddress);
-            account.lastFrensUpdate = uint40(block.timestamp);
+            updateFrens(_accounts[i]);
         }
     }
 
@@ -158,21 +171,18 @@ contract StakingFacet {
         uint256 ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
 
         //Set balances for all of the V1 pools
-
         s.accounts[_account].accountStakedTokens[s.ghstContract] = ghst_;
         s.accounts[_account].accountStakedTokens[s.poolContract] = poolTokens_;
         s.accounts[_account].accountStakedTokens[s.ghstUsdcPoolToken] = ghstUsdcPoolToken_;
         s.accounts[_account].accountStakedTokens[s.ghstWethPoolToken] = ghstWethPoolToken_;
 
-        //Set balances for all of the receipt tokens
-
         //Set migrated to true
-        s.accounts[_address].hasMigrated = true;
+        s.accounts[_account].hasMigrated = true;
     }
 
-    function stakeIntoPool(address _poolContractAddress, uint256 _amount) external {
-        updateFrens();
+    function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
+        updateFrens(sender);
         if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
 
         //Credit the user's with their new LP token balance
@@ -180,9 +190,9 @@ contract StakingFacet {
 
         //The original stkGHST-QUICK LP token is minted from the Diamond, not an external contract
         if (_poolContractAddress == s.poolContract) {
-            account.ghstStakingTokens += _poolTokens;
-            s.ghstStakingTokensTotalSupply += _poolTokens;
-            emit Transfer(address(0), sender, _poolTokens);
+            s.accounts[sender].ghstStakingTokens += _amount;
+            s.ghstStakingTokensTotalSupply += _amount;
+            emit Transfer(address(0), sender, _amount);
         } else {
             //Use mintable for minting stkGHST- token
             address stkTokenAddress = s.poolTokenToReceiptToken[_poolContractAddress];
@@ -193,10 +203,11 @@ contract StakingFacet {
         LibERC20.transferFrom(_poolContractAddress, sender, address(this), _amount);
     }
 
-    function withdrawFromPool(address _poolContractAddress, uint256 _amount) external {
+    function withdrawFromPool(address _poolContractAddress, uint256 _amount) public {
         //GHST
-        updateFrens();
+
         address sender = LibMeta.msgSender();
+        updateFrens(sender);
 
         if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
 
@@ -220,17 +231,17 @@ contract StakingFacet {
         s.accounts[sender].accountStakedTokens[_poolContractAddress] -= _amount;
 
         if (_poolContractAddress == s.poolContract) {
-            account.ghstStakingTokens -= _amount;
-            s.ghstStakingTokensTotalSupply -= _poolTokens;
+            s.accounts[sender].ghstStakingTokens -= _amount;
+            s.ghstStakingTokensTotalSupply -= _amount;
 
             /*
-            s.accounts[sender].ghstStakingTokens = bal - _poolTokens;
-            s.ghstStakingTokensTotalSupply -= _poolTokens;
+            s.accounts[sender].ghstStakingTokens = bal - _amount;
+            s.ghstStakingTokensTotalSupply -= _amount;
             */
             uint256 accountPoolTokens = s.accounts[sender].poolTokens;
-            require(accountPoolTokens >= _poolTokens, "Can't withdraw more poolTokens than in account");
-            // s.accounts[sender].poolTokens = accountPoolTokens - _poolTokens;
-            emit Transfer(sender, address(0), _poolTokens);
+            require(accountPoolTokens >= _amount, "Can't withdraw more poolTokens than in account");
+            // s.accounts[sender].poolTokens = accountPoolTokens - _amount;
+            emit Transfer(sender, address(0), _amount);
             // LibERC20.transfer(s.poolContract, sender, _poolTokens);
         } else {
             IERC20Mintable(receiptTokenAddress).burn(sender, _amount);
@@ -312,8 +323,9 @@ contract StakingFacet {
 
     function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
         require(_ids.length == _values.length, "Staking: _ids not the same length as _values");
-        updateFrens();
+
         address sender = LibMeta.msgSender();
+        updateFrens(sender);
         uint256 frensBal = s.accounts[sender].frens;
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
