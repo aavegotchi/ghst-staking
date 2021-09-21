@@ -47,6 +47,14 @@ contract StakingFacet {
         string _poolName;
     }
 
+    /* MIGRATION PLAN: 
+    Step 1) Deploy upgrade + immediately initiateEpoch 0 to add support for current pools.
+    Step 2) Allow users to migrate their balances by calling stakeIntoPool() or withdrawFromPool()
+    Step 3) 
+    
+
+    */
+
     function initiateEpoch(PoolInfo[] calldata _pools) external onlyRateManager {
         require(s.currentEpoch == 0, "StakingFacet: Can only be called on first epoch");
 
@@ -55,15 +63,15 @@ contract StakingFacet {
 
         //Update the pool rates for each pool in this epoch
         for (uint256 index = 0; index < _pools.length; index++) {
-            PoolInfo memory poolRate = _pools[index];
-            s.epochToPoolRate[s.currentEpoch][poolRate._poolAddress] = poolRate._rate;
-            s.poolTokenToReceiptToken[poolRate._poolAddress] = poolRate._poolReceiptToken;
+            PoolInfo memory pool = _pools[index];
+            s.epochToPoolRate[0][pool._poolAddress] = pool._rate;
+            s.poolTokenToReceiptToken[pool._poolAddress] = pool._poolReceiptToken;
 
-            s.supportedPools.push(poolRate._poolAddress);
+            s.supportedPools.push(pool._poolAddress);
         }
     }
 
-    function nextEpoch(PoolInfo[] calldata _pools) external onlyRateManager returns (uint256 epoch_) {
+    function updateRates(PoolInfo[] calldata _pools) external onlyRateManager returns (uint256 epoch_) {
         EpochInfo storage epochNow = s.epochToEpochInfo[s.currentEpoch];
         epochNow.endTime = block.timestamp;
 
@@ -85,26 +93,21 @@ contract StakingFacet {
     function epochFrens(address _account) public view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
         // this cannot underflow or overflow
-        uint256 timePeriod = block.timestamp - account.lastFrensUpdate;
+        // uint256 timePeriod = block.timestamp - account.lastFrensUpdate;
         frens_ = account.frens;
-        // 86400 the number of seconds in 1 day
-        // 100 frens are generated for each LP token over 24 hours
 
-        //How many epochs behind is the user? For each epoch they are behind, we will need to include that time
-
-        if (s.currentEpoch == 0) frens_ += frens(_account);
+        //Use the old FRENS calculation if this user has not yet migrated
+        if (!s.accounts[_account].hasMigrated) frens_ += frens(_account);
         else {
+            //Looping through all the supported pools could get expensive
             for (uint256 index = 0; index < s.supportedPools.length; index++) {
                 address poolAddress = s.supportedPools[index];
-                uint256 poolCurrentRate = s.epochToPoolRate[s.currentEpoch][poolAddress];
 
                 uint256 epochsBehind = s.currentEpoch - s.accounts[_account].userCurrentEpoch;
 
                 //Historic epoch must always be one behind (check logic)
                 for (uint256 i = 0; i < epochsBehind; i++) {
                     uint256 historicEpoch = s.currentEpoch - i;
-
-                    //Parameters of epoch0 are the same as the previous version
 
                     uint256 poolHistoricRate = s.epochToPoolRate[historicEpoch][poolAddress];
 
