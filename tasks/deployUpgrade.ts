@@ -16,10 +16,12 @@ import { IDiamondCut } from "../typechain/IDiamondCut";
 import { getSelectors, getSighashes } from "../scripts/helperFunctions";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { DiamondLoupeFacet } from "../typechain";
 
 export interface FacetsAndAddSelectors {
   facetName: string;
   addSelectors: string[];
+  removeSelectors: string[];
 }
 
 type FacetCutType = { Add: 0; Replace: 1; Remove: 2 };
@@ -29,7 +31,6 @@ export interface DeployUpgradeTaskArgs {
   diamondUpgrader: string;
   diamondAddress: string;
   facetsAndAddSelectors: string;
-  removeSelectors: string;
   useMultisig: boolean;
   useLedger: boolean;
   // verifyFacets: boolean;
@@ -49,7 +50,9 @@ export function convertFacetAndSelectorsToString(
 
   facets.forEach((facet) => {
     outputString = outputString.concat(
-      `#${facet.facetName}$$$${facet.addSelectors.join("*")}`
+      `#${facet.facetName}$$$${facet.addSelectors.join(
+        "*"
+      )}$$$${facet.removeSelectors.join("*")}`
     );
   });
 
@@ -70,6 +73,7 @@ export function convertStringToFacetAndSelectors(
     output.push({
       facetName: facetsAndAddSelectors[0],
       addSelectors: facetsAndAddSelectors[1].split("*"),
+      removeSelectors: facetsAndAddSelectors[2].split("*"),
     });
   });
 
@@ -86,10 +90,6 @@ task(
     "facetsAndAddSelectors",
     "Stringified array of facet names to upgrade, along with an array of add Selectors"
   )
-  .addParam(
-    "removeSelectors",
-    "Stringifed array of selectors to remove from the Diamond, or empty"
-  )
   .addFlag(
     "useMultisig",
     "Set to true if multisig should be used for deploying"
@@ -103,7 +103,6 @@ task(
       const facetsAndAddSelectors: FacetsAndAddSelectors[] =
         convertStringToFacetAndSelectors(facets);
       const diamondUpgrader: string = taskArgs.diamondUpgrader;
-      const removeSelectors: string = taskArgs.removeSelectors;
       const diamondAddress: string = taskArgs.diamondAddress;
       const useMultisig = taskArgs.useMultisig;
       const useLedger = taskArgs.useLedger;
@@ -151,6 +150,7 @@ task(
         deployedFacets.push(deployedFacet);
 
         const newSelectors = getSighashes(facet.addSelectors, hre.ethers);
+        const removeSelectors = getSighashes(facet.removeSelectors, hre.ethers);
 
         let existingFuncs = getSelectors(deployedFacet);
         for (const selector of newSelectors) {
@@ -163,7 +163,13 @@ task(
           }
         }
 
-        console.log("new selectors:", newSelectors);
+        //Check if remove selectors exist in current diamond
+        // const diamondLoupeFacet = (await hre.ethers.getContractAt(
+        //   "DiamondLoupeFacet",
+        //   diamondAddress
+        // )) as DiamondLoupeFacet;
+
+        // const oldSelectors = await diamondLoupeFacet.facetFunctionSelectors;
 
         let existingSelectors = getSelectors(deployedFacet);
         existingSelectors = existingSelectors.filter(
@@ -179,20 +185,21 @@ task(
         }
 
         //Always replace the existing selectors to prevent duplications
-        cut.push({
+        /*  cut.push({
           facetAddress: deployedFacet.address,
           action: FacetCutAction.Replace,
           functionSelectors: existingSelectors,
         });
-      }
+        */
 
-      if (JSON.parse(removeSelectors).length > 0) {
-        console.log("Removing selectors:", removeSelectors);
-        cut.push({
-          facetAddress: hre.ethers.constants.AddressZero,
-          action: FacetCutAction.Remove,
-          functionSelectors: JSON.parse(removeSelectors),
-        });
+        if (removeSelectors.length > 0) {
+          console.log("Removing selectors:", removeSelectors);
+          cut.push({
+            facetAddress: hre.ethers.constants.AddressZero,
+            action: FacetCutAction.Remove,
+            functionSelectors: removeSelectors,
+          });
+        }
       }
 
       console.log(cut);

@@ -9,20 +9,38 @@ import { getSelector, maticDiamondAddress } from "../helperFunctions";
 async function upgrade() {
   const diamondUpgrader = "0x35fe3df776474a7b24b3b1ec6e745a830fdad351";
 
+  const poolInfoTuple =
+    "tuple(address _poolAddress, address _poolReceiptToken, uint256 _rate, string _poolName)";
+
   const facets: FacetsAndAddSelectors[] = [
     {
       facetName: "StakingFacet",
       addSelectors: [
-        "function initiateEpoch(PoolInfo[] calldata _pools) external",
-
-        "function updateRates(PoolInfo[] calldata _pools) external onlyRateManager",
-
+        `function initiateEpoch(${poolInfoTuple}[] calldata _pools) external`,
+        `function updateRates(${poolInfoTuple}[] calldata _pools) external`,
         "function epochFrens(address _account) public view returns (uint256 frens_)",
         "function stakeIntoPool(address _poolContractAddress, uint256 _amount) public",
         "function withdrawFromPool(address _poolContractAddress, uint256 _amount) public",
       ],
+      removeSelectors: [
+        // "function updatePoolTokensRate(uint256 _newRate) external",
+        // "function poolTokensRate() external view returns (uint256)",
+        // "function migrateFrens(address[] calldata _stakers, uint256[] calldata _frens) external",
+        // "function switchFrens(address _old, address _new) external",
+        // "function getGhstUsdcPoolToken() external view returns (address)",
+        // "function getStkGhstUsdcToken() external view returns (address)",
+        // "function setGhstUsdcToken(address _ghstUsdcPoolToken, address _stkGhstUsdcToken, uint256 _ghstUsdcRate) external",
+        // "function updateGhstUsdcRate(uint256 _newRate) external",
+        // "function ghstUsdcRate() external view returns (uint256)",
+        // "function getGhstWethPoolToken() external view returns (address)",
+        // "function getStkGhstWethToken() external view returns (address)",
+        // "function setGhstWethToken(address _ghstWethPoolToken,address _stkGhstWethToken,uint256 _ghstWethRate) external",
+        // "function updateGhstWethRate(uint256 _newRate) external",
+        // "function ghstWethRate() external view returns (uint256)",
+      ],
     },
   ];
+
   const joined = convertFacetAndSelectorsToString(facets);
 
   /*
@@ -36,13 +54,10 @@ async function upgrade() {
 -setGhstUsdcToken
 */
 
-  const removeSelectors: string[] = [];
-
   const args: DeployUpgradeTaskArgs = {
     diamondUpgrader: diamondUpgrader,
     diamondAddress: maticDiamondAddress,
     facetsAndAddSelectors: joined,
-    removeSelectors: JSON.stringify(removeSelectors),
     useLedger: true,
     useMultisig: true,
   };
