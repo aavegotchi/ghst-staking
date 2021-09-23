@@ -9,27 +9,17 @@ import { getSelector, maticDiamondAddress } from "../helperFunctions";
 async function upgrade() {
   const diamondUpgrader = "0x35fe3df776474a7b24b3b1ec6e745a830fdad351";
 
-  /*Functions to add:
--initiateEpoch
--increaseEpoch
--epochFrens
--migrateToV2
--stakeIntoPool
-*/
-
   const facets: FacetsAndAddSelectors[] = [
     {
-      facetName:
-        "contracts/Aavegotchi/facets/AavegotchiFacet.sol:AavegotchiFacet",
+      facetName: "StakingFacet",
       addSelectors: [
-        getSelector(
-          "function isPetOperatorForAll(address _owner, address _operator) external view returns (bool approved_)",
-          ethers
-        ),
-        getSelector(
-          "function setPetOperatorForAll(address _operator, bool _approved) external",
-          ethers
-        ),
+        "function initiateEpoch(PoolInfo[] calldata _pools) external",
+
+        "function updateRates(PoolInfo[] calldata _pools) external onlyRateManager",
+
+        "function epochFrens(address _account) public view returns (uint256 frens_)",
+        "function stakeIntoPool(address _poolContractAddress, uint256 _amount) public",
+        "function withdrawFromPool(address _poolContractAddress, uint256 _amount) public",
       ],
     },
   ];

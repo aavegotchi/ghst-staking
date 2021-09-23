@@ -42,6 +42,14 @@ export function getSelectors(contract: Contract) {
   return selectors;
 }
 
+export function getSighashes(selectors: string[], ethers: any): string[] {
+  const sighashes: string[] = [];
+  selectors.forEach((selector) => {
+    sighashes.push(getSelector(selector, ethers));
+  });
+  return sighashes;
+}
+
 export function getSelector(func: string, ethers: any) {
   const abiInterface = new ethers.utils.Interface([func]);
   return abiInterface.getSighash(ethers.utils.Fragment.from(func));

@@ -71,7 +71,7 @@ contract StakingFacet {
         }
     }
 
-    function updateRates(PoolInfo[] calldata _pools) external onlyRateManager returns (uint256 epoch_) {
+    function updateRates(PoolInfo[] calldata _pools) external onlyRateManager {
         EpochInfo storage epochNow = s.epochToEpochInfo[s.currentEpoch];
         epochNow.endTime = block.timestamp;
 
@@ -84,8 +84,6 @@ contract StakingFacet {
             PoolInfo memory poolRate = _pools[index];
             s.epochToPoolRate[s.currentEpoch][poolRate._poolAddress] = poolRate._rate;
         }
-
-        return s.currentEpoch;
     }
 
     function addPool(PoolInfo calldata _epochPoolRate) external onlyRateManager {}

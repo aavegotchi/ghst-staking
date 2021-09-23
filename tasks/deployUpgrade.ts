@@ -13,7 +13,7 @@ import { Signer } from "@ethersproject/abstract-signer";
 
 import { OwnershipFacet } from "../typechain/OwnershipFacet";
 import { IDiamondCut } from "../typechain/IDiamondCut";
-import { getSelectors } from "../scripts/helperFunctions";
+import { getSelectors, getSighashes } from "../scripts/helperFunctions";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -150,7 +150,18 @@ task(
         );
         deployedFacets.push(deployedFacet);
 
-        const newSelectors = facet.addSelectors;
+        const newSelectors = getSighashes(facet.addSelectors, hre.ethers);
+
+        let existingFuncs = getSelectors(deployedFacet);
+        for (const selector of newSelectors) {
+          if (!existingFuncs.includes(selector)) {
+            const index = newSelectors.findIndex((val) => val == selector);
+
+            throw Error(
+              `Selector ${selector} (${facet.addSelectors[index]}) not found`
+            );
+          }
+        }
 
         console.log("new selectors:", newSelectors);
 

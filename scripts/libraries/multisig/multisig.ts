@@ -1,11 +1,14 @@
 /* global ethers */
 /* eslint-disable  prefer-const */
 
+import { Signer } from "@ethersproject/abstract-signer";
+import { PopulatedTransaction } from "@ethersproject/contracts";
+
 export async function sendToMultisig(
-  multisigAddress,
-  signer,
-  transaction,
-  ethers
+  multisigAddress: string,
+  signer: Signer,
+  transaction: PopulatedTransaction,
+  ethers: any
 ) {
   let gasPrice = 20000000000;
   const abi = [
