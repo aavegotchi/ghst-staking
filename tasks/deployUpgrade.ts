@@ -144,7 +144,7 @@ task(
         const deployedFacet: Contract = await factory.deploy();
         await deployedFacet.deployed();
         console.log(
-          `Deployed Facet Address for ${facet}:`,
+          `Deployed Facet Address for ${facet.facetName}:`,
           deployedFacet.address
         );
         deployedFacets.push(deployedFacet);

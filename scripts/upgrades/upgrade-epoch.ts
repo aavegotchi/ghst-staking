@@ -4,7 +4,11 @@ import {
   DeployUpgradeTaskArgs,
   FacetsAndAddSelectors,
 } from "../../tasks/deployUpgrade";
-import { getSelector, maticDiamondAddress } from "../helperFunctions";
+import {
+  getSelector,
+  maticDiamondAddress,
+  maticStakingAddress,
+} from "../helperFunctions";
 
 async function upgrade() {
   const diamondUpgrader = "0x35fe3df776474a7b24b3b1ec6e745a830fdad351";
@@ -23,20 +27,20 @@ async function upgrade() {
         "function withdrawFromPool(address _poolContractAddress, uint256 _amount) public",
       ],
       removeSelectors: [
-        // "function updatePoolTokensRate(uint256 _newRate) external",
-        // "function poolTokensRate() external view returns (uint256)",
-        // "function migrateFrens(address[] calldata _stakers, uint256[] calldata _frens) external",
-        // "function switchFrens(address _old, address _new) external",
-        // "function getGhstUsdcPoolToken() external view returns (address)",
-        // "function getStkGhstUsdcToken() external view returns (address)",
-        // "function setGhstUsdcToken(address _ghstUsdcPoolToken, address _stkGhstUsdcToken, uint256 _ghstUsdcRate) external",
-        // "function updateGhstUsdcRate(uint256 _newRate) external",
-        // "function ghstUsdcRate() external view returns (uint256)",
-        // "function getGhstWethPoolToken() external view returns (address)",
-        // "function getStkGhstWethToken() external view returns (address)",
-        // "function setGhstWethToken(address _ghstWethPoolToken,address _stkGhstWethToken,uint256 _ghstWethRate) external",
-        // "function updateGhstWethRate(uint256 _newRate) external",
-        // "function ghstWethRate() external view returns (uint256)",
+        "function updatePoolTokensRate(uint256 _newRate) external",
+        "function poolTokensRate() external view returns (uint256)",
+        "function migrateFrens(address[] calldata _stakers, uint256[] calldata _frens) external",
+        "function switchFrens(address _old, address _new) external",
+        "function getGhstUsdcPoolToken() external view returns (address)",
+        "function getStkGhstUsdcToken() external view returns (address)",
+        "function setGhstUsdcToken(address _ghstUsdcPoolToken, address _stkGhstUsdcToken, uint256 _ghstUsdcRate) external",
+        "function updateGhstUsdcRate(uint256 _newRate) external",
+        "function ghstUsdcRate() external view returns (uint256)",
+        "function getGhstWethPoolToken() external view returns (address)",
+        "function getStkGhstWethToken() external view returns (address)",
+        "function setGhstWethToken(address _ghstWethPoolToken,address _stkGhstWethToken,uint256 _ghstWethRate) external",
+        "function updateGhstWethRate(uint256 _newRate) external",
+        "function ghstWethRate() external view returns (uint256)",
       ],
     },
   ];
@@ -56,7 +60,7 @@ async function upgrade() {
 
   const args: DeployUpgradeTaskArgs = {
     diamondUpgrader: diamondUpgrader,
-    diamondAddress: maticDiamondAddress,
+    diamondAddress: maticStakingAddress,
     facetsAndAddSelectors: joined,
     useLedger: true,
     useMultisig: true,
@@ -65,11 +69,14 @@ async function upgrade() {
   await run("deployUpgrade", args);
 }
 
-upgrade()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+if (require.main === module) {
+  upgrade()
+    .then(() => process.exit(0))
+    // .then(() => console.log('upgrade completed') /* process.exit(0) */)
+    .catch((error) => {
+      console.error(error);
+      process.exit(1);
+    });
+}
 
 exports.upgrade = upgrade;

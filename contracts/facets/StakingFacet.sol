@@ -50,7 +50,8 @@ contract StakingFacet {
     /* MIGRATION PLAN: 
     Step 1) Deploy upgrade + immediately initiateEpoch 0 to add support for current pools.
     Step 2) Allow users to migrate their balances by calling stakeIntoPool() or withdrawFromPool()
-    Step 3) 
+    Step 3) Users that have not migrated will continue to earn the same rate of FRENS on their pools. 
+    Step 4) Users that do not migrate within 30 days will be migrated by us. 
     
 
     */
@@ -86,7 +87,8 @@ contract StakingFacet {
         }
     }
 
-    function addPool(PoolInfo calldata _epochPoolRate) external onlyRateManager {}
+    /* function addPool(PoolInfo calldata _epochPoolRate) external onlyRateManager {}
+     */
 
     function epochFrens(address _account) public view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
