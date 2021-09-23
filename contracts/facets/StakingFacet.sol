@@ -9,6 +9,7 @@ import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/LibMeta.sol";
 import {EpochInfo} from "../libraries/AppStorage.sol";
+import "hardhat/console.sol";
 
 interface IERC1155Marketplace {
     function updateBatchERC1155Listing(
@@ -56,7 +57,8 @@ contract StakingFacet {
 
     */
 
-    function initiateEpoch(PoolInfo[] calldata _pools) external onlyRateManager {
+    //todo: add rateManager permissions
+    function initiateEpoch(PoolInfo[] calldata _pools) external {
         require(s.currentEpoch == 0, "StakingFacet: Can only be called on first epoch");
 
         EpochInfo storage firstEpoch = s.epochToEpochInfo[0];
@@ -72,7 +74,7 @@ contract StakingFacet {
         }
     }
 
-    function updateRates(PoolInfo[] calldata _pools) external onlyRateManager {
+    function updateRates(PoolInfo[] calldata _pools) external {
         EpochInfo storage epochNow = s.epochToEpochInfo[s.currentEpoch];
         epochNow.endTime = block.timestamp;
 
@@ -90,44 +92,81 @@ contract StakingFacet {
     /* function addPool(PoolInfo calldata _epochPoolRate) external onlyRateManager {}
      */
 
+    function _frensForEpoch(
+        address _account,
+        address _poolAddress,
+        uint256 _epoch
+    ) internal view returns (uint256) {
+        console.log("Getting frens for epoch", _epoch);
+        uint256 poolHistoricRate = s.epochToPoolRate[_epoch][_poolAddress];
+
+        console.log("pool historic rate", poolHistoricRate);
+
+        //How long did this historic epoch last?
+        EpochInfo memory epoch = s.epochToEpochInfo[_epoch];
+
+        console.log("epoch endtime:", epoch.endTime);
+
+        uint256 duration = 0;
+        if (epoch.endTime == 0) {
+            duration = block.timestamp - epoch.beginTime; //s.accounts[_account].lastFrensUpdate;
+        } else {
+            duration = epoch.endTime - epoch.beginTime;
+        }
+
+        //will underflow if duration has not ended
+
+        console.log("duration:", duration);
+
+        uint256 stakedTokens = s.accounts[_account].accountStakedTokens[_poolAddress];
+
+        uint256 accumulatedFrens = (stakedTokens * poolHistoricRate * duration) / 24 hours;
+
+        console.log("accumulated frens:", accumulatedFrens);
+
+        return accumulatedFrens;
+    }
+
     function epochFrens(address _account) public view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
         // this cannot underflow or overflow
         // uint256 timePeriod = block.timestamp - account.lastFrensUpdate;
         frens_ = account.frens;
 
+        console.log("epoch frens beginning amount:", frens_);
+
         //Use the old FRENS calculation if this user has not yet migrated
-        if (!s.accounts[_account].hasMigrated) frens_ += frens(_account);
-        else {
+        if (!s.accounts[_account].hasMigrated) {
+            frens_ = frens(_account);
+            console.log("has not migrated!");
+        } else {
+            console.log("has migrated!");
+
+            console.log("supported pools:", s.supportedPools.length);
             //Looping through all the supported pools could get expensive
             for (uint256 index = 0; index < s.supportedPools.length; index++) {
                 address poolAddress = s.supportedPools[index];
 
                 uint256 epochsBehind = s.currentEpoch - s.accounts[_account].userCurrentEpoch;
 
+                console.log("epochs behind:", epochsBehind);
+
                 //Historic epoch must always be one behind (check logic)
-                for (uint256 i = 0; i < epochsBehind; i++) {
+
+                //Get frens for current epoch
+                frens_ += _frensForEpoch(_account, poolAddress, s.currentEpoch);
+
+                for (uint256 i = 1; i <= epochsBehind; i++) {
                     uint256 historicEpoch = s.currentEpoch - i;
-
-                    uint256 poolHistoricRate = s.epochToPoolRate[historicEpoch][poolAddress];
-
-                    //How long did this historic epoch last?
-                    EpochInfo memory epoch = s.epochToEpochInfo[historicEpoch];
-                    uint256 duration = epoch.endTime - epoch.beginTime;
-
-                    uint256 stakedTokens = s.accounts[_account].accountStakedTokens[poolAddress];
-
-                    uint256 accumulatedFrens = (stakedTokens * poolHistoricRate * duration) / 24 hours;
-
-                    frens_ += accumulatedFrens;
+                    frens_ += _frensForEpoch(_account, poolAddress, historicEpoch);
                 }
             }
         }
     }
 
     function frens(address _account) public view returns (uint256 frens_) {
-        //This function is deprecated after epoch0. Use the epochFrens method instead.
-        if (s.currentEpoch != 0) return 0;
+        //This function will not be used after the user has migrated
+        if (s.accounts[_account].hasMigrated) return 0;
 
         Account storage account = s.accounts[_account];
         // this cannot underflow or overflow
@@ -143,6 +182,8 @@ contract StakingFacet {
 
         //Add in frens for GHST-WETH
         frens_ += ((account.ghstWethPoolTokens * s.ghstWethRate) * timePeriod) / 24 hours;
+
+        console.log("base frens:", frens_);
     }
 
     function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
@@ -167,7 +208,8 @@ contract StakingFacet {
         }
     }
 
-    function _migrateToV2(address _account) internal {
+    //todo: change for production
+    function _migrateToV2(address _account) public {
         uint256 ghst_ = s.accounts[_account].ghst;
         uint256 poolTokens_ = s.accounts[_account].poolTokens;
         uint256 ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
@@ -180,6 +222,8 @@ contract StakingFacet {
         s.accounts[_account].accountStakedTokens[s.ghstWethPoolToken] = ghstWethPoolToken_;
 
         //Set migrated to true
+        s.accounts[_account].frens = frens(_account);
+        s.accounts[_account].lastFrensUpdate = uint40(block.timestamp);
         s.accounts[_account].hasMigrated = true;
     }
 

@@ -25,6 +25,7 @@ async function upgrade() {
         "function epochFrens(address _account) public view returns (uint256 frens_)",
         "function stakeIntoPool(address _poolContractAddress, uint256 _amount) public",
         "function withdrawFromPool(address _poolContractAddress, uint256 _amount) public",
+        "function _migrateToV2(address _account) public",
       ],
       removeSelectors: [
         "function updatePoolTokensRate(uint256 _newRate) external",
