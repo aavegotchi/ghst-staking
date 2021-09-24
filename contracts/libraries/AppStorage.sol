@@ -53,6 +53,6 @@ struct AppStorage {
     uint256 currentEpoch;
     mapping(uint256 => EpochInfo) epochToEpochInfo;
     mapping(uint256 => mapping(address => uint256)) epochToPoolRate;
-    address[] supportedPools;
+    mapping(uint256 => address[]) epochSupportedPools;
     mapping(address => address) poolTokenToReceiptToken;
 }

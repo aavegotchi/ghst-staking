@@ -70,7 +70,9 @@ contract StakingFacet {
             s.epochToPoolRate[0][pool._poolAddress] = pool._rate;
             s.poolTokenToReceiptToken[pool._poolAddress] = pool._poolReceiptToken;
 
-            s.supportedPools.push(pool._poolAddress);
+            s.epochSupportedPools[0].push(pool._poolAddress);
+
+            // s.supportedPools.push(pool._poolAddress);
         }
     }
 
@@ -92,15 +94,8 @@ contract StakingFacet {
     /* function addPool(PoolInfo calldata _epochPoolRate) external onlyRateManager {}
      */
 
-    function _frensForEpoch(
-        address _account,
-        address _poolAddress,
-        uint256 _epoch
-    ) internal view returns (uint256) {
+    function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
         console.log("Getting frens for epoch", _epoch);
-        uint256 poolHistoricRate = s.epochToPoolRate[_epoch][_poolAddress];
-
-        console.log("pool historic rate", poolHistoricRate);
 
         //How long did this historic epoch last?
         EpochInfo memory epoch = s.epochToEpochInfo[_epoch];
@@ -116,13 +111,23 @@ contract StakingFacet {
 
         //will underflow if duration has not ended
 
-        console.log("duration:", duration);
+        uint256 accumulatedFrens = 0;
 
-        uint256 stakedTokens = s.accounts[_account].accountStakedTokens[_poolAddress];
+        for (uint256 index = 0; index < s.epochSupportedPools[_epoch].length; index++) {
+            address poolAddress = s.epochSupportedPools[_epoch][index];
 
-        uint256 accumulatedFrens = (stakedTokens * poolHistoricRate * duration) / 24 hours;
+            uint256 poolHistoricRate = s.epochToPoolRate[_epoch][poolAddress];
 
-        console.log("accumulated frens:", accumulatedFrens);
+            console.log("pool historic rate", poolHistoricRate);
+
+            console.log("duration:", duration);
+
+            uint256 stakedTokens = s.accounts[_account].accountStakedTokens[poolAddress];
+
+            accumulatedFrens += (stakedTokens * poolHistoricRate * duration) / 24 hours;
+
+            console.log("accumulated frens:", accumulatedFrens);
+        }
 
         return accumulatedFrens;
     }
@@ -142,24 +147,14 @@ contract StakingFacet {
         } else {
             console.log("has migrated!");
 
-            console.log("supported pools:", s.supportedPools.length);
-            //Looping through all the supported pools could get expensive
-            for (uint256 index = 0; index < s.supportedPools.length; index++) {
-                address poolAddress = s.supportedPools[index];
+            uint256 epochsBehind = s.currentEpoch - s.accounts[_account].userCurrentEpoch;
 
-                uint256 epochsBehind = s.currentEpoch - s.accounts[_account].userCurrentEpoch;
+            //Get frens for current epoch
+            frens_ += _frensForEpoch(_account, s.currentEpoch);
 
-                console.log("epochs behind:", epochsBehind);
-
-                //Historic epoch must always be one behind (check logic)
-
-                //Get frens for current epoch
-                frens_ += _frensForEpoch(_account, poolAddress, s.currentEpoch);
-
-                for (uint256 i = 1; i <= epochsBehind; i++) {
-                    uint256 historicEpoch = s.currentEpoch - i;
-                    frens_ += _frensForEpoch(_account, poolAddress, historicEpoch);
-                }
+            for (uint256 i = 1; i <= epochsBehind; i++) {
+                uint256 historicEpoch = s.currentEpoch - i;
+                frens_ += _frensForEpoch(_account, historicEpoch);
             }
         }
     }
