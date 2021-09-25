@@ -72,8 +72,14 @@ contract StakingFacet {
 
             s.epochSupportedPools[0].push(pool._poolAddress);
 
+            s.poolNames[pool._poolAddress] = pool._poolName;
+
             // s.supportedPools.push(pool._poolAddress);
         }
+    }
+
+    function hasMigrated(address _account) external view returns (bool) {
+        return s.accounts[_account].hasMigrated;
     }
 
     function updateRates(PoolInfo[] calldata _pools) external {
@@ -87,7 +93,14 @@ contract StakingFacet {
         //Update the pool rates for each pool in this epoch
         for (uint256 index = 0; index < _pools.length; index++) {
             PoolInfo memory poolRate = _pools[index];
+            s.epochSupportedPools[s.currentEpoch].push(poolRate._poolAddress);
             s.epochToPoolRate[s.currentEpoch][poolRate._poolAddress] = poolRate._rate;
+
+            string memory poolName = s.poolNames[poolRate._poolAddress];
+
+            if (keccak256(bytes(poolRate._poolName)) != keccak256(bytes(poolName))) {
+                s.poolNames[poolRate._poolAddress] = poolRate._poolName;
+            }
         }
     }
 
@@ -95,12 +108,12 @@ contract StakingFacet {
      */
 
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
-        console.log("Getting frens for epoch", _epoch);
+        // console.log("Getting frens for epoch", _epoch);
 
         //How long did this historic epoch last?
         EpochInfo memory epoch = s.epochToEpochInfo[_epoch];
 
-        console.log("epoch endtime:", epoch.endTime);
+        // console.log("epoch endtime:", epoch.endTime);
 
         uint256 duration = 0;
         if (epoch.endTime == 0) {
@@ -112,24 +125,42 @@ contract StakingFacet {
         //will underflow if duration has not ended
 
         uint256 accumulatedFrens = 0;
+        // uint256 supportedPools = s.epochSupportedPools[_epoch].length;
+
+        // console.log("supported pools in this epoch:", supportedPools);
 
         for (uint256 index = 0; index < s.epochSupportedPools[_epoch].length; index++) {
             address poolAddress = s.epochSupportedPools[_epoch][index];
 
             uint256 poolHistoricRate = s.epochToPoolRate[_epoch][poolAddress];
 
-            console.log("pool historic rate", poolHistoricRate);
+            // console.log("pool historic rate", poolHistoricRate);
 
-            console.log("duration:", duration);
+            // console.log("duration:", duration);
 
             uint256 stakedTokens = s.accounts[_account].accountStakedTokens[poolAddress];
 
             accumulatedFrens += (stakedTokens * poolHistoricRate * duration) / 24 hours;
 
-            console.log("accumulated frens:", accumulatedFrens);
+            // console.log("accumulated frens:", accumulatedFrens);
         }
 
         return accumulatedFrens;
+    }
+
+    struct PoolRateOutput {
+        address poolAddress;
+        uint256 rate;
+    }
+
+    function poolRatesInEpoch(uint256 _epoch) external view returns (PoolRateOutput[] memory _rates) {
+        _rates = new PoolRateOutput[](s.epochSupportedPools[_epoch].length);
+
+        for (uint256 index = 0; index < s.epochSupportedPools[_epoch].length; index++) {
+            address poolAddress = s.epochSupportedPools[_epoch][index];
+            uint256 rate = s.epochToPoolRate[_epoch][poolAddress];
+            _rates[index] = PoolRateOutput(poolAddress, rate);
+        }
     }
 
     function epochFrens(address _account) public view returns (uint256 frens_) {
@@ -138,14 +169,14 @@ contract StakingFacet {
         // uint256 timePeriod = block.timestamp - account.lastFrensUpdate;
         frens_ = account.frens;
 
-        console.log("epoch frens beginning amount:", frens_);
+        // console.log("epoch frens beginning amount:", frens_);
 
         //Use the old FRENS calculation if this user has not yet migrated
         if (!s.accounts[_account].hasMigrated) {
             frens_ = frens(_account);
-            console.log("has not migrated!");
+            // console.log("has not migrated!");
         } else {
-            console.log("has migrated!");
+            // console.log("has migrated!");
 
             uint256 epochsBehind = s.currentEpoch - s.accounts[_account].userCurrentEpoch;
 
@@ -178,7 +209,7 @@ contract StakingFacet {
         //Add in frens for GHST-WETH
         frens_ += ((account.ghstWethPoolTokens * s.ghstWethRate) * timePeriod) / 24 hours;
 
-        console.log("base frens:", frens_);
+        // console.log("base frens:", frens_);
     }
 
     function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
@@ -205,10 +236,13 @@ contract StakingFacet {
 
     //todo: change for production
     function _migrateToV2(address _account) public {
+        console.log("migrate!");
         uint256 ghst_ = s.accounts[_account].ghst;
         uint256 poolTokens_ = s.accounts[_account].poolTokens;
         uint256 ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
         uint256 ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
+
+        console.log("ghst:", ghst_);
 
         //Set balances for all of the V1 pools
         s.accounts[_account].accountStakedTokens[s.ghstContract] = ghst_;
@@ -231,7 +265,7 @@ contract StakingFacet {
         s.accounts[sender].accountStakedTokens[_poolContractAddress] += _amount;
 
         //The original stkGHST-QUICK LP token is minted from the Diamond, not an external contract
-        if (_poolContractAddress == s.poolContract) {
+        if (_poolContractAddress == s.ghstContract) {} else if (_poolContractAddress == s.poolContract) {
             s.accounts[sender].ghstStakingTokens += _amount;
             s.ghstStakingTokensTotalSupply += _amount;
             emit Transfer(address(0), sender, _amount);
@@ -246,9 +280,11 @@ contract StakingFacet {
     }
 
     function withdrawFromPool(address _poolContractAddress, uint256 _amount) public {
+        // console.log("amount:", _amount);
         //GHST
 
         address sender = LibMeta.msgSender();
+        // console.log("sender", sender);
         updateFrens(sender);
 
         if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
@@ -256,7 +292,13 @@ contract StakingFacet {
         uint256 bal;
         address receiptTokenAddress = s.poolTokenToReceiptToken[_poolContractAddress];
         uint256 stakedBalance = s.accounts[sender].accountStakedTokens[_poolContractAddress];
+
+        // console.log("staked balance:", stakedBalance);
         //Balances for these must be handled separately
+
+        // console.log("pool contract:", _poolContractAddress);
+        // console.log("ghst contract:", s.ghstContract);
+
         if (_poolContractAddress == s.ghstContract) {
             bal = stakedBalance;
         } else if (_poolContractAddress == s.poolContract) {
@@ -266,13 +308,17 @@ contract StakingFacet {
             bal = IERC20(receiptTokenAddress).balanceOf(sender);
         }
 
+        console.log("bal:", bal);
+
         //This is actually only required for receipt tokens
         require(bal >= _amount, "StakingFacet: Can't withdraw more tokens than staked");
         require(s.accounts[sender].accountStakedTokens[_poolContractAddress] >= _amount, "Can't withdraw more poolTokens than in account");
 
         s.accounts[sender].accountStakedTokens[_poolContractAddress] -= _amount;
 
-        if (_poolContractAddress == s.poolContract) {
+        if (_poolContractAddress == s.ghstContract) {
+            // console.log("ghst contract, do nothing");
+        } else if (_poolContractAddress == s.poolContract) {
             s.accounts[sender].ghstStakingTokens -= _amount;
             s.ghstStakingTokensTotalSupply -= _amount;
 
@@ -327,6 +373,31 @@ contract StakingFacet {
 
     function getStkGhstWethToken() external view returns (address) {
         return s.stkGhstWethToken;
+    }
+
+    struct StakedOutput {
+        address poolAddress;
+        string poolName;
+        uint256 amount;
+    }
+
+    function currentEpoch() external view returns (uint256) {
+        return s.currentEpoch;
+    }
+
+    function stakedInCurrentEpoch(address _account) external view returns (StakedOutput[] memory _staked) {
+        return stakedInEpoch(_account, s.currentEpoch);
+    }
+
+    function stakedInEpoch(address _account, uint256 _epoch) public view returns (StakedOutput[] memory _staked) {
+        _staked = new StakedOutput[](s.epochSupportedPools[_epoch].length);
+
+        for (uint256 index = 0; index < s.epochSupportedPools[_epoch].length; index++) {
+            address poolAddress = s.epochSupportedPools[_epoch][index];
+            uint256 amount = s.accounts[_account].accountStakedTokens[poolAddress];
+            string memory poolName = s.poolNames[poolAddress];
+            _staked[index] = StakedOutput(poolAddress, poolName, amount);
+        }
     }
 
     function staked(address _account)

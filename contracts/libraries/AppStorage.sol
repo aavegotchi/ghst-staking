@@ -55,4 +55,5 @@ struct AppStorage {
     mapping(uint256 => mapping(address => uint256)) epochToPoolRate;
     mapping(uint256 => address[]) epochSupportedPools;
     mapping(address => address) poolTokenToReceiptToken;
+    mapping(address => string) poolNames;
 }

@@ -16,6 +16,11 @@ async function upgrade() {
   const poolInfoTuple =
     "tuple(address _poolAddress, address _poolReceiptToken, uint256 _rate, string _poolName)";
 
+  const poolRateTuple = "tuple(address poolAddress, uint256 rate)";
+
+  const stakedOutputTuple =
+    "tuple(address poolAddress, string poolName, uint256 amount)";
+
   const facets: FacetsAndAddSelectors[] = [
     {
       facetName: "StakingFacet",
@@ -26,6 +31,11 @@ async function upgrade() {
         "function stakeIntoPool(address _poolContractAddress, uint256 _amount) public",
         "function withdrawFromPool(address _poolContractAddress, uint256 _amount) public",
         "function _migrateToV2(address _account) public",
+        `function poolRatesInEpoch(uint256 _epoch) external view returns (${poolRateTuple}[] memory _rates)`,
+        `function stakedInEpoch(address _account, uint256 _epoch) external view returns (${stakedOutputTuple}[] memory _staked)`,
+        `function stakedInCurrentEpoch(address _account) external view returns (${stakedOutputTuple}[] memory _staked)`,
+        "function currentEpoch() external view returns (uint256)",
+        "function hasMigrated(address _account) external view returns (bool)",
       ],
       removeSelectors: [
         "function updatePoolTokensRate(uint256 _newRate) external",
