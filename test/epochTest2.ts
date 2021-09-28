@@ -72,31 +72,6 @@ describe("Epoch Tests (Other Tokens)", async function () {
     expect(currentEpoch).to.equal("0");
   });
 
-  /*
-  it("Should have a balance of stkGHST-QUICK before withdrawing", async function () {
-    let stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress2);
-
-    let frens = await stakingFacet.frens(testAddress2);
-    console.log("frens:", frens.toString());
-    let epochFrens = await stakingFacet.epochFrens(testAddress2);
-    console.log("epoch:", epochFrens.toString());
-
-    const currentEpoch = await stakingFacet.currentEpoch();
-    const ghstQUICK = stakedPools[1];
-    const poolInfo = await stakingFacet.getPoolInfo(
-      ghstQUICK.poolAddress,
-      currentEpoch
-    );
-    const stkGHSTQUICK = (await ethers.getContractAt(
-      "ERC20",
-      poolInfo._poolReceiptToken
-    )) as IERC20;
-    const balance = await stkGHSTQUICK.balanceOf(testAddress2);
-    console.log("stkGHST-QUICK balance:", balance.toString());
-    expect(balance).to.equal(ghstQUICK.amount);
-  });
-  */
-
   it("Unmigrated account can withdraw and automatically migrate", async function () {
     stakingFacet = await impersonate(
       testAddress,
@@ -139,19 +114,30 @@ describe("Epoch Tests (Other Tokens)", async function () {
     expect(hasMigrated).to.equal(true);
   });
   it("Balance of receipt tokens should be zero after withdrawing", async function () {
-    let stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress);
+    // let stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress);
     const currentEpoch = await stakingFacet.currentEpoch();
-    const ghstQUICK = stakedPools[1];
-    const poolInfo = await stakingFacet.getPoolInfo(
-      ghstQUICK.poolAddress,
-      currentEpoch
-    );
-    const stkGHSTQUICK = (await ethers.getContractAt(
-      "ERC20",
-      poolInfo._poolReceiptToken
-    )) as IERC20;
-    const balance = await stkGHSTQUICK.balanceOf(testAddress);
-    expect(balance).to.equal(0);
+    // const ghstQUICK = stakedPools[1];
+
+    let stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress);
+
+    for (let index = 0; index < stakedPools.length; index++) {
+      const pool = stakedPools[index];
+
+      const poolInfo = await stakingFacet.getPoolInfo(
+        pool.poolAddress,
+        currentEpoch
+      );
+
+      if (pool.poolName !== "GHST") {
+        const receiptToken = (await ethers.getContractAt(
+          "ERC20",
+          poolInfo._poolReceiptToken
+        )) as IERC20;
+
+        const balance = await receiptToken.balanceOf(testAddress);
+        expect(balance).to.equal(0);
+      }
+    }
   });
 
   it("Should stop receiving FRENS after withdrawing from pool", async function () {
