@@ -3,20 +3,26 @@ import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
 import { StakingFacet } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
+import { BigNumber, BigNumberish } from "@ethersproject/bignumber";
+import { Signer } from "@ethersproject/abstract-signer";
+import { ethers } from "hardhat";
 
-const { ethers } = require("hardhat");
+// const { ethers } = require("hardhat");
 const { upgrade } = require("../scripts/upgrades/upgrade-epoch.ts");
 
-describe("Deploying", async function () {
+interface PoolObject {
+  _poolAddress: string;
+  _poolReceiptToken: string;
+  _rate: BigNumberish;
+  _poolName: string;
+}
+
+const testAddress = "0x51208e5cC9215c6360210C48F81C8270637a5218";
+const testAddress2 = "0x027Ffd3c119567e85998f4E6B9c3d83D5702660c";
+let owner: string, signer: Signer, stakingFacet: StakingFacet;
+
+describe("Epoch Tests (GHST Only)", async function () {
   const diamondAddress = maticStakingAddress;
-  let owner: string,
-    rateManager: string,
-    generalUser,
-    signer,
-    stakingFacet: StakingFacet,
-    ownerStakingFacet: Contract;
-  const testAddress = "0x51208e5cC9215c6360210C48F81C8270637a5218";
-  const ghstPoolAddress = "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7";
 
   before(async function () {
     this.timeout(20000000);
@@ -26,12 +32,11 @@ describe("Deploying", async function () {
       await ethers.getContractAt("OwnershipFacet", diamondAddress)
     ).owner();
     signer = await ethers.provider.getSigner(owner);
-    [rateManager, generalUser] = await ethers.getSigners();
+
     stakingFacet = (await ethers.getContractAt(
       "StakingFacet",
       diamondAddress
     )) as StakingFacet;
-    ownerStakingFacet = await stakingFacet.connect(signer);
   });
 
   it("Can initiate epoch", async function () {
@@ -61,8 +66,8 @@ describe("Deploying", async function () {
     frens = await stakingFacet.frens(testAddress);
     epochFrens = await stakingFacet.epochFrens(testAddress);
 
-    console.log("frens:", ethers.utils.formatEther(frens));
-    console.log("epoch frens:", ethers.utils.formatEther(epochFrens));
+    // console.log("frens:", ethers.utils.formatEther(frens));
+    // console.log("epoch frens:", ethers.utils.formatEther(epochFrens));
 
     // expect(epochFrens.sub(frens)).to.lessThanOrEqual(1);
 
@@ -72,7 +77,7 @@ describe("Deploying", async function () {
     // expect(frens).to.equal(epochFrens);
   });
   it("Can update rate and create new epoch", async function () {
-    const pools = [];
+    const pools: PoolObject[] = [];
     pools.push({
       _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
       _poolReceiptToken: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
@@ -107,7 +112,7 @@ describe("Deploying", async function () {
     const before = await stakingFacet.epochFrens(testAddress);
 
     ethers.provider.send("evm_increaseTime", [86400]);
-    ethers.provider.send("evm_mine");
+    ethers.provider.send("evm_mine", []);
 
     const after = await stakingFacet.epochFrens(testAddress);
     const difference = after.sub(before);
@@ -115,7 +120,7 @@ describe("Deploying", async function () {
   });
 
   it("Should accrue 4x the FRENS over 24 hrs", async function () {
-    const pools = [];
+    const pools: PoolObject[] = [];
     pools.push({
       _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
       _poolReceiptToken: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
@@ -137,7 +142,7 @@ describe("Deploying", async function () {
     const before = await stakingFacet.epochFrens(testAddress);
 
     ethers.provider.send("evm_increaseTime", [86400]);
-    ethers.provider.send("evm_mine");
+    ethers.provider.send("evm_mine", []);
 
     const after = await stakingFacet.epochFrens(testAddress);
     const difference = after.sub(before);
@@ -194,4 +199,44 @@ describe("Deploying", async function () {
   it("User can unstake GHST-WETH", async function () {});
 
   it("User can re-stake GHST-WETH", async function () {});
+
+  it("FRENS stop being emitted when rate is zero", async function () {
+    const pools: PoolObject[] = [];
+
+    const before = await stakingFacet.epochFrens(testAddress);
+    console.log("before:", before.toString());
+
+    const tx = await stakingFacet.updateRates(pools);
+    await tx.wait();
+
+    const currentEpoch = await stakingFacet.currentEpoch();
+    expect(currentEpoch).to.equal("3");
+
+    const rates = await stakingFacet.poolRatesInEpoch(currentEpoch);
+    expect(rates.length).to.equal(0);
+
+    ethers.provider.send("evm_increaseTime", [86400 * 3]);
+    ethers.provider.send("evm_mine", []);
+
+    const after = await stakingFacet.epochFrens(testAddress);
+    // console.log("after:", after.toString());
+
+    const difference = after.sub(before);
+    // console.log("difference:", ethers.utils.formatEther(difference));
+    expect(Number(difference.toString())).to.be.lessThan(
+      Number(ethers.utils.parseEther("1"))
+    );
+  });
+
+  it("Unmigrated account can withdraw and automatically migrate", async function () {
+    stakingFacet = await impersonate(
+      testAddress2,
+      stakingFacet,
+      ethers,
+      network
+    );
+
+    const stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress2);
+    console.log("staked pools:", stakedPools);
+  });
 });

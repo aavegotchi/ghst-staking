@@ -78,7 +78,7 @@ contract StakingFacet {
         }
     }
 
-    function hasMigrated(address _account) external view returns (bool) {
+    function hasMigrated(address _account) public view returns (bool) {
         return s.accounts[_account].hasMigrated;
     }
 
@@ -102,6 +102,10 @@ contract StakingFacet {
                 s.poolNames[poolRate._poolAddress] = poolRate._poolName;
             }
         }
+    }
+
+    function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (PoolInfo memory _poolInfo) {
+        return PoolInfo(_poolAddress, s.poolTokenToReceiptToken[_poolAddress], s.epochToPoolRate[_epoch][_poolAddress], s.poolNames[_poolAddress]);
     }
 
     /* function addPool(PoolInfo calldata _epochPoolRate) external onlyRateManager {}
@@ -236,13 +240,13 @@ contract StakingFacet {
 
     //todo: change for production
     function _migrateToV2(address _account) public {
-        console.log("migrate!");
+        // console.log("migrate!");
         uint256 ghst_ = s.accounts[_account].ghst;
         uint256 poolTokens_ = s.accounts[_account].poolTokens;
         uint256 ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
         uint256 ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
 
-        console.log("ghst:", ghst_);
+        // console.log("ghst:", ghst_);
 
         //Set balances for all of the V1 pools
         s.accounts[_account].accountStakedTokens[s.ghstContract] = ghst_;
@@ -289,29 +293,22 @@ contract StakingFacet {
 
         if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
 
-        uint256 bal;
+        // uint256 bal;
         address receiptTokenAddress = s.poolTokenToReceiptToken[_poolContractAddress];
         uint256 stakedBalance = s.accounts[sender].accountStakedTokens[_poolContractAddress];
 
-        // console.log("staked balance:", stakedBalance);
-        //Balances for these must be handled separately
-
-        // console.log("pool contract:", _poolContractAddress);
-        // console.log("ghst contract:", s.ghstContract);
-
-        if (_poolContractAddress == s.ghstContract) {
-            bal = stakedBalance;
-        } else if (_poolContractAddress == s.poolContract) {
-            bal = stakedBalance;
-        } else {
-            //Checking the balance of the stkGHST- token here
-            bal = IERC20(receiptTokenAddress).balanceOf(sender);
+        if (receiptTokenAddress != address(0)) {
+            console.log("pool address:", _poolContractAddress);
+            console.log("receipt address:", receiptTokenAddress);
+            console.log("sender:", sender);
+            console.log("amount:", _amount);
+            require(IERC20(receiptTokenAddress).balanceOf(sender) >= _amount, "StakingFacet: Receipt token insufficient");
         }
 
-        console.log("bal:", bal);
+        // console.log("bal:", bal);
 
         //This is actually only required for receipt tokens
-        require(bal >= _amount, "StakingFacet: Can't withdraw more tokens than staked");
+        require(stakedBalance >= _amount, "StakingFacet: Can't withdraw more tokens than staked");
         require(s.accounts[sender].accountStakedTokens[_poolContractAddress] >= _amount, "Can't withdraw more poolTokens than in account");
 
         s.accounts[sender].accountStakedTokens[_poolContractAddress] -= _amount;
@@ -386,7 +383,16 @@ contract StakingFacet {
     }
 
     function stakedInCurrentEpoch(address _account) external view returns (StakedOutput[] memory _staked) {
-        return stakedInEpoch(_account, s.currentEpoch);
+        //Used for compatibility between migrated and non-migrated users
+        if (!hasMigrated(_account)) {
+            console.log("hasnt migrated!");
+            Account storage account = s.accounts[_account];
+            _staked = new StakedOutput[](4);
+            _staked[0] = StakedOutput(s.ghstContract, "GHST", account.ghst);
+            _staked[1] = StakedOutput(s.poolContract, "GHST-QUICK", account.poolTokens);
+            _staked[2] = StakedOutput(s.poolContract, "GHST-USDC", account.ghstUsdcPoolTokens);
+            _staked[3] = StakedOutput(s.poolContract, "GHST-QUICK", account.ghstWethPoolTokens);
+        } else return stakedInEpoch(_account, s.currentEpoch);
     }
 
     function stakedInEpoch(address _account, uint256 _epoch) public view returns (StakedOutput[] memory _staked) {

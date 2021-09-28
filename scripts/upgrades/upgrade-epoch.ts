@@ -35,7 +35,8 @@ async function upgrade() {
         `function stakedInEpoch(address _account, uint256 _epoch) external view returns (${stakedOutputTuple}[] memory _staked)`,
         `function stakedInCurrentEpoch(address _account) external view returns (${stakedOutputTuple}[] memory _staked)`,
         "function currentEpoch() external view returns (uint256)",
-        "function hasMigrated(address _account) external view returns (bool)",
+        "function hasMigrated(address _account) public view returns (bool)",
+        `function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (${poolInfoTuple} memory _poolInfo)`,
       ],
       removeSelectors: [
         "function updatePoolTokensRate(uint256 _newRate) external",
