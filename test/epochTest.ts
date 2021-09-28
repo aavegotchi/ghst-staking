@@ -43,7 +43,7 @@ describe("Epoch Tests (GHST Only)", async function () {
     const pools = [];
     pools.push({
       _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
-      _poolReceiptToken: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
+      _poolReceiptToken: ethers.constants.AddressZero,
       _rate: "1",
       _poolName: "GHST",
     });
@@ -80,7 +80,7 @@ describe("Epoch Tests (GHST Only)", async function () {
     const pools: PoolObject[] = [];
     pools.push({
       _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
-      _poolReceiptToken: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
+      _poolReceiptToken: ethers.constants.AddressZero,
       _rate: "2",
       _poolName: "GHST",
     });
@@ -123,7 +123,7 @@ describe("Epoch Tests (GHST Only)", async function () {
     const pools: PoolObject[] = [];
     pools.push({
       _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
-      _poolReceiptToken: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
+      _poolReceiptToken: ethers.constants.AddressZero,
       _rate: "4",
       _poolName: "GHST",
     });
@@ -226,17 +226,5 @@ describe("Epoch Tests (GHST Only)", async function () {
     expect(Number(difference.toString())).to.be.lessThan(
       Number(ethers.utils.parseEther("1"))
     );
-  });
-
-  it("Unmigrated account can withdraw and automatically migrate", async function () {
-    stakingFacet = await impersonate(
-      testAddress2,
-      stakingFacet,
-      ethers,
-      network
-    );
-
-    const stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress2);
-    console.log("staked pools:", stakedPools);
   });
 });

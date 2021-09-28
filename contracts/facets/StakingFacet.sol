@@ -390,8 +390,8 @@ contract StakingFacet {
             _staked = new StakedOutput[](4);
             _staked[0] = StakedOutput(s.ghstContract, "GHST", account.ghst);
             _staked[1] = StakedOutput(s.poolContract, "GHST-QUICK", account.poolTokens);
-            _staked[2] = StakedOutput(s.poolContract, "GHST-USDC", account.ghstUsdcPoolTokens);
-            _staked[3] = StakedOutput(s.poolContract, "GHST-QUICK", account.ghstWethPoolTokens);
+            _staked[2] = StakedOutput(s.ghstUsdcPoolToken, "GHST-USDC", account.ghstUsdcPoolTokens);
+            _staked[3] = StakedOutput(s.ghstWethPoolToken, "GHST-WETH", account.ghstWethPoolTokens);
         } else return stakedInEpoch(_account, s.currentEpoch);
     }
 
