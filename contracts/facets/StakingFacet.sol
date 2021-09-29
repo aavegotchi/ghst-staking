@@ -36,6 +36,13 @@ contract StakingFacet {
     event RateManagerRemoved(address indexed rateManager_);
     event GhstWethRate(uint256 _newRate);
 
+    //Epoch events
+    event StakeInEpoch(address indexed _account, address indexed _poolAddress, uint256 indexed _epoch, uint256 _amount);
+    event WithdrawInEpoch(address indexed _account, address indexed _poolAddress, uint256 indexed _epoch, uint256 _amount);
+    event PoolAddedInEpoch(address indexed _poolAddress, address indexed _epoch);
+    event EpochIncreased(uint256 indexed _newEpoch);
+    event UserMigrated(address indexed _account);
+
     /* New Epoch Functions */
 
     /***
@@ -47,15 +54,6 @@ contract StakingFacet {
         uint256 _rate;
         string _poolName;
     }
-
-    /* MIGRATION PLAN: 
-    Step 1) Deploy upgrade + immediately initiateEpoch 0 to add support for current pools.
-    Step 2) Allow users to migrate their balances by calling stakeIntoPool() or withdrawFromPool()
-    Step 3) Users that have not migrated will continue to earn the same rate of FRENS on their pools. 
-    Step 4) Users that do not migrate within 30 days will be migrated by us. 
-    
-
-    */
 
     //todo: add rateManager permissions
     function initiateEpoch(PoolInfo[] calldata _pools) external {
@@ -73,9 +71,9 @@ contract StakingFacet {
             s.epochSupportedPools[0].push(pool._poolAddress);
 
             s.poolNames[pool._poolAddress] = pool._poolName;
-
-            // s.supportedPools.push(pool._poolAddress);
         }
+
+        emit EpochIncreased(0);
     }
 
     function hasMigrated(address _account) public view returns (bool) {
@@ -102,14 +100,13 @@ contract StakingFacet {
                 s.poolNames[poolRate._poolAddress] = poolRate._poolName;
             }
         }
+
+        emit EpochIncreased(s.currentEpoch);
     }
 
     function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (PoolInfo memory _poolInfo) {
         return PoolInfo(_poolAddress, s.poolTokenToReceiptToken[_poolAddress], s.epochToPoolRate[_epoch][_poolAddress], s.poolNames[_poolAddress]);
     }
-
-    /* function addPool(PoolInfo calldata _epochPoolRate) external onlyRateManager {}
-     */
 
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
         // console.log("Getting frens for epoch", _epoch);
@@ -240,13 +237,10 @@ contract StakingFacet {
 
     //todo: change for production
     function _migrateToV2(address _account) public {
-        // console.log("migrate!");
         uint256 ghst_ = s.accounts[_account].ghst;
         uint256 poolTokens_ = s.accounts[_account].poolTokens;
         uint256 ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
         uint256 ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
-
-        // console.log("ghst:", ghst_);
 
         //Set balances for all of the V1 pools
         s.accounts[_account].accountStakedTokens[s.ghstContract] = ghst_;
@@ -258,6 +252,8 @@ contract StakingFacet {
         s.accounts[_account].frens = frens(_account);
         s.accounts[_account].lastFrensUpdate = uint40(block.timestamp);
         s.accounts[_account].hasMigrated = true;
+
+        emit UserMigrated(_account);
     }
 
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
@@ -281,14 +277,13 @@ contract StakingFacet {
 
         //Transfer the LP tokens into the Diamond
         LibERC20.transferFrom(_poolContractAddress, sender, address(this), _amount);
+
+        emit StakeInEpoch(sender, _poolContractAddress, s.currentEpoch, _amount);
     }
 
     function withdrawFromPool(address _poolContractAddress, uint256 _amount) public {
-        // console.log("amount:", _amount);
-        //GHST
-
         address sender = LibMeta.msgSender();
-        // console.log("sender", sender);
+
         updateFrens(sender);
 
         if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
@@ -298,14 +293,8 @@ contract StakingFacet {
         uint256 stakedBalance = s.accounts[sender].accountStakedTokens[_poolContractAddress];
 
         if (receiptTokenAddress != address(0)) {
-            console.log("pool address:", _poolContractAddress);
-            console.log("receipt address:", receiptTokenAddress);
-            console.log("sender:", sender);
-            console.log("amount:", _amount);
             require(IERC20(receiptTokenAddress).balanceOf(sender) >= _amount, "StakingFacet: Receipt token insufficient");
         }
-
-        // console.log("bal:", bal);
 
         //This is actually only required for receipt tokens
         require(stakedBalance >= _amount, "StakingFacet: Can't withdraw more tokens than staked");
@@ -319,24 +308,16 @@ contract StakingFacet {
             s.accounts[sender].ghstStakingTokens -= _amount;
             s.ghstStakingTokensTotalSupply -= _amount;
 
-            /*
-            s.accounts[sender].ghstStakingTokens = bal - _amount;
-            s.ghstStakingTokensTotalSupply -= _amount;
-            */
             uint256 accountPoolTokens = s.accounts[sender].poolTokens;
             require(accountPoolTokens >= _amount, "Can't withdraw more poolTokens than in account");
-            // s.accounts[sender].poolTokens = accountPoolTokens - _amount;
             emit Transfer(sender, address(0), _amount);
-            // LibERC20.transfer(s.poolContract, sender, _poolTokens);
         } else {
             IERC20Mintable(receiptTokenAddress).burn(sender, _amount);
-            uint256 accountPoolTokens = s.accounts[sender].ghstUsdcPoolTokens;
-
-            // s.accounts[sender].ghstUsdcPoolTokens = accountPoolTokens - _poolTokens;
-            // LibERC20.transfer(s.ghstUsdcPoolToken, sender, _poolTokens);
         }
 
         LibERC20.transfer(_poolContractAddress, sender, _amount);
+
+        emit WithdrawInEpoch(sender, _poolContractAddress, s.currentEpoch, _amount);
     }
 
     /*  Deprecated staking methods */
@@ -385,7 +366,6 @@ contract StakingFacet {
     function stakedInCurrentEpoch(address _account) external view returns (StakedOutput[] memory _staked) {
         //Used for compatibility between migrated and non-migrated users
         if (!hasMigrated(_account)) {
-            console.log("hasnt migrated!");
             Account storage account = s.accounts[_account];
             _staked = new StakedOutput[](4);
             _staked[0] = StakedOutput(s.ghstContract, "GHST", account.ghst);

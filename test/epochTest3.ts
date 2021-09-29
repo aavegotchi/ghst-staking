@@ -3,11 +3,10 @@ import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
 import { IERC20, StakingFacet } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
-import { BigNumber, BigNumberish } from "@ethersproject/bignumber";
+import { BigNumberish } from "@ethersproject/bignumber";
 import { Signer } from "@ethersproject/abstract-signer";
 import { ethers } from "hardhat";
 
-// const { ethers } = require("hardhat");
 const { upgrade } = require("../scripts/upgrades/upgrade-epoch.ts");
 
 interface PoolObject {
@@ -20,7 +19,7 @@ interface PoolObject {
 const testAddress = "0x027Ffd3c119567e85998f4E6B9c3d83D5702660c";
 let owner: string, signer: Signer, stakingFacet: StakingFacet;
 
-describe("Epoch Tests (Other Tokens)", async function () {
+describe("Epoch Tests (Deprecated Functions)", async function () {
   const diamondAddress = maticStakingAddress;
 
   before(async function () {
@@ -72,7 +71,7 @@ describe("Epoch Tests (Other Tokens)", async function () {
     expect(currentEpoch).to.equal("0");
   });
 
-  it("Unmigrated account can withdraw and automatically migrate", async function () {
+  it("Unmigrated account can use deprecated functions to withdraw", async function () {
     stakingFacet = await impersonate(
       testAddress,
       stakingFacet,
@@ -80,43 +79,27 @@ describe("Epoch Tests (Other Tokens)", async function () {
       network
     );
 
+    let staked = await stakingFacet.staked(testAddress);
+
+    const tx = await stakingFacet.withdrawGhstStake(staked.ghst_);
+    const receipt = await tx.wait();
+
+    await stakingFacet.withdrawPoolStake(staked.poolTokens_);
+    await stakingFacet.withdrawGhstUsdcPoolStake(staked.ghstUsdcPoolToken_);
+    await stakingFacet.withdrawGhstWethPoolStake(staked.ghstWethPoolToken_);
+
     let stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress);
 
-    let frens = await stakingFacet.frens(testAddress);
-
-    let epochFrens = await stakingFacet.epochFrens(testAddress);
-    // console.log("epoch:", epochFrens.toString());
-
     for (let index = 0; index < stakedPools.length; index++) {
       const pool = stakedPools[index];
-
-      // console.log("index:", index);
-
-      //Withdraw GHST-QUICK
-      await stakingFacet.withdrawFromPool(pool.poolAddress, pool.amount);
+      expect(pool.amount).to.equal(0);
     }
-
-    stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress);
-
-    for (let index = 0; index < stakedPools.length; index++) {
-      const pool = stakedPools[index];
-      if (pool.poolName !== "GHST") {
-        expect(pool.amount).to.equal(0);
-      }
-    }
-
-    frens = await stakingFacet.frens(testAddress);
-    // console.log("frens after:", frens.toString());
-    epochFrens = await stakingFacet.epochFrens(testAddress);
-    // console.log("epoch after:", epochFrens.toString());
 
     const hasMigrated = await stakingFacet.hasMigrated(testAddress);
     expect(hasMigrated).to.equal(true);
   });
   it("Balance of receipt tokens should be zero after withdrawing", async function () {
-    // let stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress);
     const currentEpoch = await stakingFacet.currentEpoch();
-    // const ghstQUICK = stakedPools[1];
 
     let stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress);
 

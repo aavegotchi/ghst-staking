@@ -29,7 +29,7 @@ async function upgrade() {
         `function updateRates(${poolInfoTuple}[] calldata _pools) external`,
         "function epochFrens(address _account) public view returns (uint256 frens_)",
         "function stakeIntoPool(address _poolContractAddress, uint256 _amount) public",
-        "function withdrawFromPool(address _poolContractAddress, uint256 _amount) public",
+        "function withdrawFromPool(address _poolContractAddress, uint256 _amount) public returns (bool)",
         "function _migrateToV2(address _account) public",
         `function poolRatesInEpoch(uint256 _epoch) external view returns (${poolRateTuple}[] memory _rates)`,
         `function stakedInEpoch(address _account, uint256 _epoch) external view returns (${stakedOutputTuple}[] memory _staked)`,
@@ -58,17 +58,6 @@ async function upgrade() {
   ];
 
   const joined = convertFacetAndSelectorsToString(facets);
-
-  /*
-  -updatePoolTokensRate
--poolTokensRate
--migrateFrens
--switchFrens
--updateGhstUsdcRate
--setGhstWethToken
--updateGhstWethRate
--setGhstUsdcToken
-*/
 
   const args: DeployUpgradeTaskArgs = {
     diamondUpgrader: diamondUpgrader,
