@@ -55,9 +55,9 @@ contract StakingFacet {
         string _poolName;
     }
 
-    //todo: add rateManager permissions
     function initiateEpoch(PoolInfo[] calldata _pools) external onlyRateManager {
-        require(s.currentEpoch == 0, "StakingFacet: Can only be called on first epoch");
+        require(s.epochs[0].supportedPools.length == 0, "StakingFacet: Can only be called on first epoch");
+        require(_pools.length > 0, "StakingFacet: Pools length cannot be zero");
 
         Epoch storage firstEpoch = s.epochs[0];
         firstEpoch.beginTime = block.timestamp;
@@ -65,6 +65,10 @@ contract StakingFacet {
         //Update the pool rates for each pool in this epoch
         for (uint256 index = 0; index < _pools.length; index++) {
             PoolInfo memory pool = _pools[index];
+
+            if (pool._poolAddress != s.ghstContract) {
+                require(pool._poolReceiptToken != address(0), "StakingFacet: Pool must have receipt token");
+            }
 
             s.pools[pool._poolAddress].name = pool._poolName;
             s.pools[pool._poolAddress].receiptToken = pool._poolReceiptToken;
@@ -82,29 +86,32 @@ contract StakingFacet {
         return s.accounts[_account].hasMigrated;
     }
 
-    function updateRates(PoolInfo[] calldata _pools) external onlyRateManager {
+    function updateRates(PoolInfo[] calldata _newPools) external onlyRateManager {
         Epoch storage epochNow = s.epochs[s.currentEpoch];
         epochNow.endTime = block.timestamp;
 
         s.currentEpoch++;
+
         Epoch storage newEpoch = s.epochs[s.currentEpoch];
         newEpoch.beginTime = block.timestamp;
 
-        //Update the pool rates for each pool in this epoch
-        for (uint256 index = 0; index < _pools.length; index++) {
-            PoolInfo memory poolInfo = _pools[index];
+        for (uint256 index = 0; index < _newPools.length; index++) {
+            PoolInfo memory newPool = _newPools[index];
+            Pool storage pool = s.pools[newPool._poolAddress];
 
-            newEpoch.supportedPools.push(poolInfo._poolAddress);
-
-            s.pools[poolInfo._poolAddress].epochPoolRate[s.currentEpoch] = poolInfo._rate;
-
-            string memory poolName = s.pools[poolInfo._poolAddress].name;
-
-            if (keccak256(bytes(poolInfo._poolName)) != keccak256(bytes(poolName))) {
-                s.pools[poolInfo._poolAddress].name = poolInfo._poolName;
+            if (newPool._poolAddress != s.ghstContract) {
+                require(newPool._poolReceiptToken != address(0), "StakingFacet: Pool must have receipt token");
             }
 
-            emit PoolAddedInEpoch(poolInfo._poolAddress, s.currentEpoch);
+            newEpoch.supportedPools.push(newPool._poolAddress);
+
+            pool.epochPoolRate[s.currentEpoch] = newPool._rate;
+
+            if (keccak256(bytes(newPool._poolName)) != keccak256(bytes(pool.name))) {
+                pool.name = newPool._poolName;
+            }
+
+            emit PoolAddedInEpoch(newPool._poolAddress, s.currentEpoch);
         }
 
         emit EpochIncreased(s.currentEpoch);
@@ -117,6 +124,7 @@ contract StakingFacet {
 
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
         Epoch memory epoch = s.epochs[_epoch];
+        address[] memory supportedPools = epoch.supportedPools;
 
         uint256 duration = 0;
         if (epoch.endTime == 0) {
@@ -128,8 +136,8 @@ contract StakingFacet {
 
         uint256 accumulatedFrens = 0;
 
-        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
-            address poolAddress = epoch.supportedPools[index];
+        for (uint256 index = 0; index < supportedPools.length; index++) {
+            address poolAddress = supportedPools[index];
 
             uint256 poolHistoricRate = s.pools[poolAddress].epochPoolRate[_epoch];
 
@@ -260,11 +268,15 @@ contract StakingFacet {
         updateFrens(sender);
         if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
 
+        //Transfer the LP tokens into the Diamond
+        LibERC20.transferFrom(_poolContractAddress, sender, address(this), _amount);
+
         //Credit the user's with their new LP token balance
         s.accounts[sender].accountStakedTokens[_poolContractAddress] += _amount;
 
-        //The original stkGHST-QUICK LP token is minted from the Diamond, not an external contract
-        if (_poolContractAddress == s.ghstContract) {} else if (_poolContractAddress == s.poolContract) {
+        if (_poolContractAddress == s.ghstContract) {
+            //Do nothing for original GHST contract
+        } else if (_poolContractAddress == s.poolContract) {
             s.accounts[sender].ghstStakingTokens += _amount;
             s.ghstStakingTokensTotalSupply += _amount;
             emit Transfer(address(0), sender, _amount);
@@ -273,9 +285,6 @@ contract StakingFacet {
             address stkTokenAddress = s.pools[_poolContractAddress].receiptToken;
             IERC20Mintable(stkTokenAddress).mint(sender, _amount);
         }
-
-        //Transfer the LP tokens into the Diamond
-        LibERC20.transferFrom(_poolContractAddress, sender, address(this), _amount);
 
         emit StakeInEpoch(sender, _poolContractAddress, s.currentEpoch, _amount);
     }
@@ -375,11 +384,11 @@ contract StakingFacet {
     }
 
     function stakedInEpoch(address _account, uint256 _epoch) public view returns (StakedOutput[] memory _staked) {
-        Epoch storage Epoch = s.epochs[_epoch];
-        _staked = new StakedOutput[](Epoch.supportedPools.length);
+        Epoch storage epoch = s.epochs[_epoch];
+        _staked = new StakedOutput[](epoch.supportedPools.length);
 
-        for (uint256 index = 0; index < Epoch.supportedPools.length; index++) {
-            address poolAddress = Epoch.supportedPools[index];
+        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
+            address poolAddress = epoch.supportedPools[index];
             uint256 amount = s.accounts[_account].accountStakedTokens[poolAddress];
             string memory poolName = s.pools[poolAddress].name;
             _staked[index] = StakedOutput(poolAddress, poolName, amount);

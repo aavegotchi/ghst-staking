@@ -18,8 +18,8 @@ interface PoolObject {
 }
 
 const testAddress = "0x51208e5cC9215c6360210C48F81C8270637a5218";
-const testAddress2 = "0x027Ffd3c119567e85998f4E6B9c3d83D5702660c";
-let owner: string, signer: Signer, stakingFacet: StakingFacet;
+const rateManager = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
+let stakingFacet: StakingFacet;
 
 describe("Epoch Tests (GHST Only)", async function () {
   const diamondAddress = maticStakingAddress;
@@ -28,15 +28,39 @@ describe("Epoch Tests (GHST Only)", async function () {
     this.timeout(20000000);
     await upgrade();
 
-    owner = await (
-      await ethers.getContractAt("OwnershipFacet", diamondAddress)
-    ).owner();
-    signer = await ethers.provider.getSigner(owner);
-
     stakingFacet = (await ethers.getContractAt(
       "StakingFacet",
       diamondAddress
     )) as StakingFacet;
+
+    stakingFacet = await impersonate(
+      rateManager,
+      stakingFacet,
+      ethers,
+      network
+    );
+  });
+
+  it("Cannot initiate with zero pools", async function () {
+    const pools: PoolObject[] = [];
+    await expect(stakingFacet.initiateEpoch(pools)).to.be.revertedWith(
+      "StakingFacet: Pools length cannot be zero"
+    );
+  });
+
+  it("Cannot add pool without a receipt token (except GHST)", async function () {
+    const pools: PoolObject[] = [
+      {
+        _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
+        _poolReceiptToken: ethers.constants.AddressZero,
+        _rate: "83",
+        _poolName: "GHST-QUICK",
+      },
+    ];
+
+    await expect(stakingFacet.initiateEpoch(pools)).to.be.revertedWith(
+      "StakingFacet: Pool must have receipt token"
+    );
   });
 
   it("Can initiate epoch", async function () {
@@ -54,27 +78,34 @@ describe("Epoch Tests (GHST Only)", async function () {
     expect(currentEpoch).to.equal("0");
   });
 
+  it("Cannot re-initiate epoch 0", async function () {
+    const pools = [];
+    pools.push({
+      _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
+      _poolReceiptToken: ethers.constants.AddressZero,
+      _rate: "1",
+      _poolName: "GHST",
+    });
+
+    await expect(stakingFacet.initiateEpoch(pools)).to.be.revertedWith(
+      "StakingFacet: Can only be called on first epoch"
+    );
+  });
+
   it("Can migrate user", async function () {
     // Check add and view function works
 
     let frens = await stakingFacet.frens(testAddress);
     let epochFrens = await stakingFacet.epochFrens(testAddress);
 
-    const tx = await stakingFacet._migrateToV2(testAddress);
+    const tx = await stakingFacet.migrateToV2([testAddress]);
     await tx.wait();
 
     frens = await stakingFacet.frens(testAddress);
     epochFrens = await stakingFacet.epochFrens(testAddress);
 
-    // console.log("frens:", ethers.utils.formatEther(frens));
-    // console.log("epoch frens:", ethers.utils.formatEther(epochFrens));
-
-    // expect(epochFrens.sub(frens)).to.lessThanOrEqual(1);
-
     const hasMigrated = await stakingFacet.hasMigrated(testAddress);
     expect(hasMigrated).to.equal(true);
-
-    // expect(frens).to.equal(epochFrens);
   });
   it("Can update rate and create new epoch", async function () {
     const pools: PoolObject[] = [];
@@ -204,7 +235,13 @@ describe("Epoch Tests (GHST Only)", async function () {
     const pools: PoolObject[] = [];
 
     const before = await stakingFacet.epochFrens(testAddress);
-    console.log("before:", before.toString());
+
+    stakingFacet = (await impersonate(
+      rateManager,
+      stakingFacet,
+      ethers,
+      network
+    )) as StakingFacet;
 
     const tx = await stakingFacet.updateRates(pools);
     await tx.wait();

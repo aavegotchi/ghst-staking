@@ -17,7 +17,9 @@ interface PoolObject {
 }
 
 const testAddress = "0x027Ffd3c119567e85998f4E6B9c3d83D5702660c";
-let owner: string, signer: Signer, stakingFacet: StakingFacet;
+const rateManager = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
+
+let stakingFacet: StakingFacet;
 
 describe("Epoch Tests (Deprecated Functions)", async function () {
   const diamondAddress = maticStakingAddress;
@@ -26,15 +28,17 @@ describe("Epoch Tests (Deprecated Functions)", async function () {
     this.timeout(2000000000);
     await upgrade();
 
-    owner = await (
-      await ethers.getContractAt("OwnershipFacet", diamondAddress)
-    ).owner();
-    signer = await ethers.provider.getSigner(owner);
-
     stakingFacet = (await ethers.getContractAt(
       "StakingFacet",
       diamondAddress
     )) as StakingFacet;
+
+    stakingFacet = await impersonate(
+      rateManager,
+      stakingFacet,
+      ethers,
+      network
+    );
   });
 
   it("Can initiate epoch", async function () {
@@ -124,7 +128,6 @@ describe("Epoch Tests (Deprecated Functions)", async function () {
 
   it("Should stop receiving FRENS after withdrawing from pool", async function () {
     const epochFrensBefore = await stakingFacet.epochFrens(testAddress);
-    // console.log("before:", epochFrensBefore);
     ethers.provider.send("evm_increaseTime", [86400 * 3]);
     ethers.provider.send("evm_mine", []);
     const epochFrensAfter = await stakingFacet.epochFrens(testAddress);

@@ -16,7 +16,7 @@ require("./tasks/verifyFacet.js");
 // Go to https://buidler.dev/config/ to learn more
 module.exports = {
   mocha: {
-    timeout: 100000,
+    timeout: 100000000,
   },
   networks: {
     hardhat: {
