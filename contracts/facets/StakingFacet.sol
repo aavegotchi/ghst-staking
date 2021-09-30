@@ -43,17 +43,154 @@ contract StakingFacet {
     event EpochIncreased(uint256 indexed _newEpoch);
     event UserMigrated(address indexed _account);
 
-    /* New Epoch Functions */
-
-    /***
-    @dev An epoch is a period in which the rates of a pool are not altered. We can use epochs to track how many FRENS a user earned during the period, even after that epoch has ended. */
-
     struct PoolInput {
         address _poolAddress;
         address _poolReceiptToken; //The receipt token for staking into this pool. Can be address(0) if empty
         uint256 _rate;
         string _poolName;
     }
+
+    struct StakedOutput {
+        address poolAddress;
+        string poolName;
+        uint256 amount;
+    }
+
+    struct PoolRateOutput {
+        address poolAddress;
+        uint256 rate;
+    }
+
+    /***********************************|
+   |       Epoch Read Functions         |
+   |__________________________________*/
+
+    function hasMigrated(address _account) public view returns (bool) {
+        return s.accounts[_account].hasMigrated;
+    }
+
+    function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (PoolInput memory _poolInfo) {
+        Pool storage pool = s.pools[_poolAddress];
+        return PoolInput(_poolAddress, pool.receiptToken, pool.epochPoolRate[_epoch], pool.name);
+    }
+
+    function currentEpoch() external view returns (uint256) {
+        return s.currentEpoch;
+    }
+
+    function stakedInCurrentEpoch(address _account) external view returns (StakedOutput[] memory _staked) {
+        //Used for compatibility between migrated and non-migrated users
+        if (!hasMigrated(_account)) {
+            Account storage account = s.accounts[_account];
+            _staked = new StakedOutput[](4);
+            _staked[0] = StakedOutput(s.ghstContract, "GHST", account.ghst);
+            _staked[1] = StakedOutput(s.poolContract, "GHST-QUICK", account.poolTokens);
+            _staked[2] = StakedOutput(s.ghstUsdcPoolToken, "GHST-USDC", account.ghstUsdcPoolTokens);
+            _staked[3] = StakedOutput(s.ghstWethPoolToken, "GHST-WETH", account.ghstWethPoolTokens);
+        } else return stakedInEpoch(_account, s.currentEpoch);
+    }
+
+    function stakedInEpoch(address _account, uint256 _epoch) public view returns (StakedOutput[] memory _staked) {
+        Epoch storage epoch = s.epochs[_epoch];
+        _staked = new StakedOutput[](epoch.supportedPools.length);
+
+        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
+            address poolAddress = epoch.supportedPools[index];
+            uint256 amount = s.accounts[_account].accountStakedTokens[poolAddress];
+            string memory poolName = s.pools[poolAddress].name;
+            _staked[index] = StakedOutput(poolAddress, poolName, amount);
+        }
+    }
+
+    function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
+        Epoch memory epoch = s.epochs[_epoch];
+        address[] memory supportedPools = epoch.supportedPools;
+
+        uint256 duration = 0;
+        if (epoch.endTime == 0) {
+            //This epoch has not ended yet, so use the duration between beginTime and now
+            duration = block.timestamp - epoch.beginTime;
+        } else {
+            duration = epoch.endTime - epoch.beginTime;
+        }
+
+        uint256 accumulatedFrens = 0;
+
+        for (uint256 index = 0; index < supportedPools.length; index++) {
+            address poolAddress = supportedPools[index];
+
+            uint256 poolHistoricRate = s.pools[poolAddress].epochPoolRate[_epoch];
+            uint256 stakedTokens = s.accounts[_account].accountStakedTokens[poolAddress];
+            accumulatedFrens += (stakedTokens * poolHistoricRate * duration) / 24 hours;
+        }
+
+        return accumulatedFrens;
+    }
+
+    function poolRatesInEpoch(uint256 _epoch) external view returns (PoolRateOutput[] memory _rates) {
+        Epoch storage epoch = s.epochs[_epoch];
+        _rates = new PoolRateOutput[](epoch.supportedPools.length);
+
+        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
+            address poolAddress = epoch.supportedPools[index];
+            uint256 rate = s.pools[poolAddress].epochPoolRate[_epoch];
+            _rates[index] = PoolRateOutput(poolAddress, rate);
+        }
+    }
+
+    ///@dev Useful for testing but will be set to internal in production
+    function epochFrens(address _account) public view returns (uint256 frens_) {
+        Account storage account = s.accounts[_account];
+        frens_ = account.frens;
+
+        //Use the old FRENS calculation if this user has not yet migrated
+        if (!account.hasMigrated) {
+            frens_ = frens(_account);
+        } else {
+            uint256 epochsBehind = s.currentEpoch - account.userCurrentEpoch;
+
+            //Get frens for current epoch
+            frens_ += _frensForEpoch(_account, s.currentEpoch);
+
+            for (uint256 i = 1; i <= epochsBehind; i++) {
+                uint256 historicEpoch = s.currentEpoch - i;
+                frens_ += _frensForEpoch(_account, historicEpoch);
+            }
+        }
+    }
+
+    function frens(address _account) public view returns (uint256 frens_) {
+        //Use epochFrens after a user has migrated
+        if (s.accounts[_account].hasMigrated) return epochFrens(_account);
+
+        //Old implementation
+
+        Account storage account = s.accounts[_account];
+        // this cannot underflow or overflow
+        uint256 timePeriod = block.timestamp - account.lastFrensUpdate;
+        frens_ = account.frens;
+        // 86400 the number of seconds in 1 day
+        // 100 frens are generated for each LP token over 24 hours
+        frens_ += ((account.poolTokens * s.poolTokensRate) * timePeriod) / 24 hours;
+
+        frens_ += ((account.ghstUsdcPoolTokens * s.ghstUsdcRate) * timePeriod) / 24 hours;
+        // 1 fren is generated for each GHST over 24 hours
+        frens_ += (account.ghst * timePeriod) / 24 hours;
+
+        //Add in frens for GHST-WETH
+        frens_ += ((account.ghstWethPoolTokens * s.ghstWethRate) * timePeriod) / 24 hours;
+    }
+
+    function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
+        frens_ = new uint256[](_accounts.length);
+        for (uint256 i; i < _accounts.length; i++) {
+            frens_[i] = frens(_accounts[i]);
+        }
+    }
+
+    /***********************************|
+   |       Epoch Write Functions        |
+   |__________________________________*/
 
     function _addPoolInEpoch(PoolInput memory _pool, uint256 _epoch) internal {
         address poolAddress = _pool._poolAddress;
@@ -104,145 +241,6 @@ contract StakingFacet {
         }
 
         emit EpochIncreased(s.currentEpoch);
-    }
-
-    function hasMigrated(address _account) public view returns (bool) {
-        return s.accounts[_account].hasMigrated;
-    }
-
-    function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (PoolInput memory _poolInfo) {
-        Pool storage pool = s.pools[_poolAddress];
-        return PoolInput(_poolAddress, pool.receiptToken, pool.epochPoolRate[_epoch], pool.name);
-    }
-
-    function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
-        Epoch memory epoch = s.epochs[_epoch];
-        address[] memory supportedPools = epoch.supportedPools;
-
-        uint256 duration = 0;
-        if (epoch.endTime == 0) {
-            //This epoch has not ended yet, so use the duration between beginTime and now
-            duration = block.timestamp - epoch.beginTime;
-        } else {
-            duration = epoch.endTime - epoch.beginTime;
-        }
-
-        uint256 accumulatedFrens = 0;
-
-        for (uint256 index = 0; index < supportedPools.length; index++) {
-            address poolAddress = supportedPools[index];
-
-            uint256 poolHistoricRate = s.pools[poolAddress].epochPoolRate[_epoch];
-            uint256 stakedTokens = s.accounts[_account].accountStakedTokens[poolAddress];
-            accumulatedFrens += (stakedTokens * poolHistoricRate * duration) / 24 hours;
-        }
-
-        return accumulatedFrens;
-    }
-
-    struct PoolRateOutput {
-        address poolAddress;
-        uint256 rate;
-    }
-
-    function poolRatesInEpoch(uint256 _epoch) external view returns (PoolRateOutput[] memory _rates) {
-        Epoch storage epoch = s.epochs[_epoch];
-        _rates = new PoolRateOutput[](epoch.supportedPools.length);
-
-        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
-            address poolAddress = epoch.supportedPools[index];
-            uint256 rate = s.pools[poolAddress].epochPoolRate[_epoch];
-            _rates[index] = PoolRateOutput(poolAddress, rate);
-        }
-    }
-
-    ///@dev Useful for testing but will be removed in production
-    function epochFrens(address _account) public view returns (uint256 frens_) {
-        Account storage account = s.accounts[_account];
-        frens_ = account.frens;
-
-        //Use the old FRENS calculation if this user has not yet migrated
-        if (!account.hasMigrated) {
-            frens_ = frens(_account);
-        } else {
-            uint256 epochsBehind = s.currentEpoch - account.userCurrentEpoch;
-
-            //Get frens for current epoch
-            frens_ += _frensForEpoch(_account, s.currentEpoch);
-
-            for (uint256 i = 1; i <= epochsBehind; i++) {
-                uint256 historicEpoch = s.currentEpoch - i;
-                frens_ += _frensForEpoch(_account, historicEpoch);
-            }
-        }
-    }
-
-    function frens(address _account) public view returns (uint256 frens_) {
-        //Use epochFrens after a user has migrated
-        if (s.accounts[_account].hasMigrated) return epochFrens(_account);
-
-        //Old implementation
-
-        Account storage account = s.accounts[_account];
-        // this cannot underflow or overflow
-        uint256 timePeriod = block.timestamp - account.lastFrensUpdate;
-        frens_ = account.frens;
-        // 86400 the number of seconds in 1 day
-        // 100 frens are generated for each LP token over 24 hours
-        frens_ += ((account.poolTokens * s.poolTokensRate) * timePeriod) / 24 hours;
-
-        frens_ += ((account.ghstUsdcPoolTokens * s.ghstUsdcRate) * timePeriod) / 24 hours;
-        // 1 fren is generated for each GHST over 24 hours
-        frens_ += (account.ghst * timePeriod) / 24 hours;
-
-        //Add in frens for GHST-WETH
-        frens_ += ((account.ghstWethPoolTokens * s.ghstWethRate) * timePeriod) / 24 hours;
-    }
-
-    function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
-        frens_ = new uint256[](_accounts.length);
-        for (uint256 i; i < _accounts.length; i++) {
-            frens_[i] = frens(_accounts[i]);
-        }
-    }
-
-    function updateFrens(address _sender) internal {
-        Account storage account = s.accounts[_sender];
-        account.frens = epochFrens(_sender);
-        account.lastFrensUpdate = uint40(block.timestamp);
-
-        //Bring this user to the latest epoch now;
-        s.accounts[_sender].userCurrentEpoch = s.currentEpoch;
-    }
-
-    ////@dev Used for migrating accounts by rateManager
-    function migrateToV2(address[] memory _accounts) external onlyRateManager {
-        for (uint256 index = 0; index < _accounts.length; index++) {
-            _migrateToV2(_accounts[index]);
-        }
-    }
-
-    function _migrateToV2(address _account) private {
-        uint256 ghst_ = s.accounts[_account].ghst;
-        uint256 poolTokens_ = s.accounts[_account].poolTokens;
-        uint256 ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
-        uint256 ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
-
-        //Set balances for all of the V1 pools
-        s.accounts[_account].accountStakedTokens[s.ghstContract] = ghst_;
-        s.accounts[_account].accountStakedTokens[s.poolContract] = poolTokens_;
-        s.accounts[_account].accountStakedTokens[s.ghstUsdcPoolToken] = ghstUsdcPoolToken_;
-        s.accounts[_account].accountStakedTokens[s.ghstWethPoolToken] = ghstWethPoolToken_;
-
-        //Update FRENS with last balance
-        s.accounts[_account].frens = frens(_account);
-        s.accounts[_account].lastFrensUpdate = uint40(block.timestamp);
-        s.accounts[_account].userCurrentEpoch = s.currentEpoch;
-
-        //Set migrated to true
-        s.accounts[_account].hasMigrated = true;
-
-        emit UserMigrated(_account);
     }
 
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
@@ -310,7 +308,49 @@ contract StakingFacet {
         emit WithdrawInEpoch(sender, _poolContractAddress, s.currentEpoch, _amount);
     }
 
-    /*  Deprecated staking methods */
+    ////@dev Used for migrating accounts by rateManager
+    function migrateToV2(address[] memory _accounts) external onlyRateManager {
+        for (uint256 index = 0; index < _accounts.length; index++) {
+            _migrateToV2(_accounts[index]);
+        }
+    }
+
+    function updateFrens(address _sender) internal {
+        Account storage account = s.accounts[_sender];
+        account.frens = epochFrens(_sender);
+        account.lastFrensUpdate = uint40(block.timestamp);
+
+        //Bring this user to the latest epoch now;
+        s.accounts[_sender].userCurrentEpoch = s.currentEpoch;
+    }
+
+    function _migrateToV2(address _account) private {
+        uint256 ghst_ = s.accounts[_account].ghst;
+        uint256 poolTokens_ = s.accounts[_account].poolTokens;
+        uint256 ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
+        uint256 ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
+
+        //Set balances for all of the V1 pools
+        s.accounts[_account].accountStakedTokens[s.ghstContract] = ghst_;
+        s.accounts[_account].accountStakedTokens[s.poolContract] = poolTokens_;
+        s.accounts[_account].accountStakedTokens[s.ghstUsdcPoolToken] = ghstUsdcPoolToken_;
+        s.accounts[_account].accountStakedTokens[s.ghstWethPoolToken] = ghstWethPoolToken_;
+
+        //Update FRENS with last balance
+        s.accounts[_account].frens = frens(_account);
+        s.accounts[_account].lastFrensUpdate = uint40(block.timestamp);
+        s.accounts[_account].userCurrentEpoch = s.currentEpoch;
+
+        //Set migrated to true
+        s.accounts[_account].hasMigrated = true;
+
+        emit UserMigrated(_account);
+    }
+
+    /***********************************|
+   |     Deprecated Write Functions     |
+   |__________________________________*/
+
     function stakeGhst(uint256 _ghstValue) external {
         stakeIntoPool(s.ghstContract, _ghstValue);
     }
@@ -326,6 +366,26 @@ contract StakingFacet {
     function stakeGhstWethPoolTokens(uint256 _poolTokens) external {
         stakeIntoPool(s.ghstWethPoolToken, _poolTokens);
     }
+
+    function withdrawGhstStake(uint256 _ghstValue) external {
+        withdrawFromPool(s.ghstContract, _ghstValue);
+    }
+
+    function withdrawPoolStake(uint256 _poolTokens) external {
+        withdrawFromPool(s.poolContract, _poolTokens);
+    }
+
+    function withdrawGhstUsdcPoolStake(uint256 _poolTokens) external {
+        withdrawFromPool(s.ghstUsdcPoolToken, _poolTokens);
+    }
+
+    function withdrawGhstWethPoolStake(uint256 _poolTokens) external {
+        withdrawFromPool(s.ghstWethPoolToken, _poolTokens);
+    }
+
+    /***********************************|
+   |      Deprecated Read Functions     |
+   |__________________________________*/
 
     function getGhstUsdcPoolToken() external view returns (address) {
         return s.ghstUsdcPoolToken;
@@ -343,41 +403,6 @@ contract StakingFacet {
         return s.stkGhstWethToken;
     }
 
-    struct StakedOutput {
-        address poolAddress;
-        string poolName;
-        uint256 amount;
-    }
-
-    function currentEpoch() external view returns (uint256) {
-        return s.currentEpoch;
-    }
-
-    function stakedInCurrentEpoch(address _account) external view returns (StakedOutput[] memory _staked) {
-        //Used for compatibility between migrated and non-migrated users
-        if (!hasMigrated(_account)) {
-            Account storage account = s.accounts[_account];
-            _staked = new StakedOutput[](4);
-            _staked[0] = StakedOutput(s.ghstContract, "GHST", account.ghst);
-            _staked[1] = StakedOutput(s.poolContract, "GHST-QUICK", account.poolTokens);
-            _staked[2] = StakedOutput(s.ghstUsdcPoolToken, "GHST-USDC", account.ghstUsdcPoolTokens);
-            _staked[3] = StakedOutput(s.ghstWethPoolToken, "GHST-WETH", account.ghstWethPoolTokens);
-        } else return stakedInEpoch(_account, s.currentEpoch);
-    }
-
-    function stakedInEpoch(address _account, uint256 _epoch) public view returns (StakedOutput[] memory _staked) {
-        Epoch storage epoch = s.epochs[_epoch];
-        _staked = new StakedOutput[](epoch.supportedPools.length);
-
-        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
-            address poolAddress = epoch.supportedPools[index];
-            uint256 amount = s.accounts[_account].accountStakedTokens[poolAddress];
-            string memory poolName = s.pools[poolAddress].name;
-            _staked[index] = StakedOutput(poolAddress, poolName, amount);
-        }
-    }
-
-    /// @dev deprecated method
     function staked(address _account)
         external
         view
@@ -394,25 +419,9 @@ contract StakingFacet {
         ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
     }
 
-    /// @dev deprecated method
-    function withdrawGhstStake(uint256 _ghstValue) external {
-        withdrawFromPool(s.ghstContract, _ghstValue);
-    }
-
-    /// @dev deprecated method
-    function withdrawPoolStake(uint256 _poolTokens) external {
-        withdrawFromPool(s.poolContract, _poolTokens);
-    }
-
-    /// @dev deprecated method
-    function withdrawGhstUsdcPoolStake(uint256 _poolTokens) external {
-        withdrawFromPool(s.ghstUsdcPoolToken, _poolTokens);
-    }
-
-    /// @dev deprecated method
-    function withdrawGhstWethPoolStake(uint256 _poolTokens) external {
-        withdrawFromPool(s.ghstWethPoolToken, _poolTokens);
-    }
+    /***********************************|
+   |           Ticket Functions          |
+   |__________________________________*/
 
     function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
         require(_ids.length == _values.length, "Staking: _ids not the same length as _values");
@@ -518,6 +527,10 @@ contract StakingFacet {
             revert("Staking: _id does not exist");
         }
     }
+
+    /***********************************|
+   |       Rate Manager Functions        |
+   |__________________________________*/
 
     modifier onlyRateManager() {
         require(isRateManager(msg.sender), "StakingFacet: Must be rate manager");
