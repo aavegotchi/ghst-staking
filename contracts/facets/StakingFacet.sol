@@ -56,7 +56,7 @@ contract StakingFacet {
     }
 
     //todo: add rateManager permissions
-    function initiateEpoch(PoolInfo[] calldata _pools) external {
+    function initiateEpoch(PoolInfo[] calldata _pools) external onlyRateManager {
         require(s.currentEpoch == 0, "StakingFacet: Can only be called on first epoch");
 
         Epoch storage firstEpoch = s.epochs[0];
@@ -71,8 +71,6 @@ contract StakingFacet {
             s.pools[pool._poolAddress].epochPoolRate[0] = pool._rate;
 
             firstEpoch.supportedPools.push(pool._poolAddress);
-
-            // s.epochSupportedPools[0].push(pool._poolAddress);
         }
 
         emit EpochIncreased(0);
@@ -82,7 +80,7 @@ contract StakingFacet {
         return s.accounts[_account].hasMigrated;
     }
 
-    function updateRates(PoolInfo[] calldata _pools) external {
+    function updateRates(PoolInfo[] calldata _pools) external onlyRateManager {
         Epoch storage epochNow = s.epochs[s.currentEpoch];
         epochNow.endTime = block.timestamp;
 
@@ -114,24 +112,17 @@ contract StakingFacet {
     }
 
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
-        // console.log("Getting frens for epoch", _epoch);
-
-        //How long did this historic epoch last?
         Epoch memory epoch = s.epochs[_epoch];
-
-        // console.log("epoch endtime:", epoch.endTime);
 
         uint256 duration = 0;
         if (epoch.endTime == 0) {
-            duration = block.timestamp - epoch.beginTime; //s.accounts[_account].lastFrensUpdate;
+            //This epoch has not ended yet, so use the duration between beginTime and now
+            duration = block.timestamp - epoch.beginTime;
         } else {
             duration = epoch.endTime - epoch.beginTime;
         }
 
-        //will underflow if duration has not ended
-
         uint256 accumulatedFrens = 0;
-        // Pool storage pool = s.pools[]
 
         for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
             address poolAddress = epoch.supportedPools[index];
@@ -141,8 +132,6 @@ contract StakingFacet {
             uint256 stakedTokens = s.accounts[_account].accountStakedTokens[poolAddress];
 
             accumulatedFrens += (stakedTokens * poolHistoricRate * duration) / 24 hours;
-
-            // console.log("accumulated frens:", accumulatedFrens);
         }
 
         return accumulatedFrens;
@@ -235,8 +224,13 @@ contract StakingFacet {
         }
     }
 
-    //todo: change for production
-    function _migrateToV2(address _account) public {
+    function migrateToV2(address[] memory _accounts) external onlyRateManager {
+        for (uint256 index = 0; index < _accounts.length; index++) {
+            _migrateToV2(_accounts[index]);
+        }
+    }
+
+    function _migrateToV2(address _account) private {
         uint256 ghst_ = s.accounts[_account].ghst;
         uint256 poolTokens_ = s.accounts[_account].poolTokens;
         uint256 ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
