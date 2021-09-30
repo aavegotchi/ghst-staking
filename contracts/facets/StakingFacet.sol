@@ -39,7 +39,7 @@ contract StakingFacet {
     //Epoch events
     event StakeInEpoch(address indexed _account, address indexed _poolAddress, uint256 indexed _epoch, uint256 _amount);
     event WithdrawInEpoch(address indexed _account, address indexed _poolAddress, uint256 indexed _epoch, uint256 _amount);
-    event PoolAddedInEpoch(address indexed _poolAddress, address indexed _epoch);
+    event PoolAddedInEpoch(address indexed _poolAddress, uint256 indexed _epoch);
     event EpochIncreased(uint256 indexed _newEpoch);
     event UserMigrated(address indexed _account);
 
@@ -71,6 +71,8 @@ contract StakingFacet {
             s.pools[pool._poolAddress].epochPoolRate[0] = pool._rate;
 
             firstEpoch.supportedPools.push(pool._poolAddress);
+
+            emit PoolAddedInEpoch(pool._poolAddress, 0);
         }
 
         emit EpochIncreased(0);
@@ -90,17 +92,19 @@ contract StakingFacet {
 
         //Update the pool rates for each pool in this epoch
         for (uint256 index = 0; index < _pools.length; index++) {
-            PoolInfo memory poolRate = _pools[index];
+            PoolInfo memory poolInfo = _pools[index];
 
-            newEpoch.supportedPools.push(poolRate._poolAddress);
+            newEpoch.supportedPools.push(poolInfo._poolAddress);
 
-            s.pools[poolRate._poolAddress].epochPoolRate[s.currentEpoch] = poolRate._rate;
+            s.pools[poolInfo._poolAddress].epochPoolRate[s.currentEpoch] = poolInfo._rate;
 
-            string memory poolName = s.pools[poolRate._poolAddress].name;
+            string memory poolName = s.pools[poolInfo._poolAddress].name;
 
-            if (keccak256(bytes(poolRate._poolName)) != keccak256(bytes(poolName))) {
-                s.pools[poolRate._poolAddress].name = poolRate._poolName;
+            if (keccak256(bytes(poolInfo._poolName)) != keccak256(bytes(poolName))) {
+                s.pools[poolInfo._poolAddress].name = poolInfo._poolName;
             }
+
+            emit PoolAddedInEpoch(poolInfo._poolAddress, s.currentEpoch);
         }
 
         emit EpochIncreased(s.currentEpoch);
@@ -224,6 +228,7 @@ contract StakingFacet {
         }
     }
 
+    ////@dev Used for migrating accounts by rateManager
     function migrateToV2(address[] memory _accounts) external onlyRateManager {
         for (uint256 index = 0; index < _accounts.length; index++) {
             _migrateToV2(_accounts[index]);
