@@ -48,14 +48,14 @@ contract StakingFacet {
     /***
     @dev An epoch is a period in which the rates of a pool are not altered. We can use epochs to track how many FRENS a user earned during the period, even after that epoch has ended. */
 
-    struct PoolInfo {
+    struct PoolInput {
         address _poolAddress;
         address _poolReceiptToken; //The receipt token for staking into this pool. Can be address(0) if empty
         uint256 _rate;
         string _poolName;
     }
 
-    function _addPoolInEpoch(PoolInfo memory _pool, uint256 _epoch) internal {
+    function _addPoolInEpoch(PoolInput memory _pool, uint256 _epoch) internal {
         address poolAddress = _pool._poolAddress;
         if (poolAddress != s.ghstContract) {
             require(_pool._poolReceiptToken != address(0), "StakingFacet: Pool must have receipt token");
@@ -68,7 +68,7 @@ contract StakingFacet {
         emit PoolAddedInEpoch(poolAddress, _epoch);
     }
 
-    function initiateEpoch(PoolInfo[] calldata _pools) external onlyRateManager {
+    function initiateEpoch(PoolInput[] calldata _pools) external onlyRateManager {
         require(s.epochs[0].supportedPools.length == 0, "StakingFacet: Can only be called on first epoch");
         require(_pools.length > 0, "StakingFacet: Pools length cannot be zero");
 
@@ -83,7 +83,7 @@ contract StakingFacet {
         emit EpochIncreased(0);
     }
 
-    function updateRates(PoolInfo[] calldata _newPools) external onlyRateManager {
+    function updateRates(PoolInput[] calldata _newPools) external onlyRateManager {
         require(_newPools.length > 0, "StakingFacet: Pools length cannot be zero");
 
         //End current epoch
@@ -99,7 +99,7 @@ contract StakingFacet {
 
         //Add pools
         for (uint256 index = 0; index < _newPools.length; index++) {
-            PoolInfo memory newPool = _newPools[index];
+            PoolInput memory newPool = _newPools[index];
             _addPoolInEpoch(newPool, s.currentEpoch);
         }
 
@@ -110,9 +110,9 @@ contract StakingFacet {
         return s.accounts[_account].hasMigrated;
     }
 
-    function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (PoolInfo memory _poolInfo) {
+    function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (PoolInput memory _poolInfo) {
         Pool storage pool = s.pools[_poolAddress];
-        return PoolInfo(_poolAddress, pool.receiptToken, pool.epochPoolRate[_epoch], pool.name);
+        return PoolInput(_poolAddress, pool.receiptToken, pool.epochPoolRate[_epoch], pool.name);
     }
 
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
@@ -133,9 +133,7 @@ contract StakingFacet {
             address poolAddress = supportedPools[index];
 
             uint256 poolHistoricRate = s.pools[poolAddress].epochPoolRate[_epoch];
-
             uint256 stakedTokens = s.accounts[_account].accountStakedTokens[poolAddress];
-
             accumulatedFrens += (stakedTokens * poolHistoricRate * duration) / 24 hours;
         }
 
@@ -158,22 +156,16 @@ contract StakingFacet {
         }
     }
 
+    ///@dev Useful for testing but will be removed in production
     function epochFrens(address _account) public view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
-        // this cannot underflow or overflow
-        // uint256 timePeriod = block.timestamp - account.lastFrensUpdate;
         frens_ = account.frens;
 
-        // console.log("epoch frens beginning amount:", frens_);
-
         //Use the old FRENS calculation if this user has not yet migrated
-        if (!s.accounts[_account].hasMigrated) {
+        if (!account.hasMigrated) {
             frens_ = frens(_account);
-            // console.log("has not migrated!");
         } else {
-            // console.log("has migrated!");
-
-            uint256 epochsBehind = s.currentEpoch - s.accounts[_account].userCurrentEpoch;
+            uint256 epochsBehind = s.currentEpoch - account.userCurrentEpoch;
 
             //Get frens for current epoch
             frens_ += _frensForEpoch(_account, s.currentEpoch);
