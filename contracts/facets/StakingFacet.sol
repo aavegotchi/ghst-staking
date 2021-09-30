@@ -55,6 +55,19 @@ contract StakingFacet {
         string _poolName;
     }
 
+    function _addPoolInEpoch(PoolInfo memory _pool, uint256 _epoch) internal {
+        address poolAddress = _pool._poolAddress;
+        if (poolAddress != s.ghstContract) {
+            require(_pool._poolReceiptToken != address(0), "StakingFacet: Pool must have receipt token");
+        }
+        s.pools[_pool._poolAddress].name = _pool._poolName;
+        s.pools[_pool._poolAddress].receiptToken = _pool._poolReceiptToken;
+        s.pools[_pool._poolAddress].epochPoolRate[0] = _pool._rate;
+
+        s.epochs[_epoch].supportedPools.push(poolAddress);
+        emit PoolAddedInEpoch(poolAddress, _epoch);
+    }
+
     function initiateEpoch(PoolInfo[] calldata _pools) external onlyRateManager {
         require(s.epochs[0].supportedPools.length == 0, "StakingFacet: Can only be called on first epoch");
         require(_pools.length > 0, "StakingFacet: Pools length cannot be zero");
@@ -64,57 +77,37 @@ contract StakingFacet {
 
         //Update the pool rates for each pool in this epoch
         for (uint256 index = 0; index < _pools.length; index++) {
-            PoolInfo memory pool = _pools[index];
-
-            if (pool._poolAddress != s.ghstContract) {
-                require(pool._poolReceiptToken != address(0), "StakingFacet: Pool must have receipt token");
-            }
-
-            s.pools[pool._poolAddress].name = pool._poolName;
-            s.pools[pool._poolAddress].receiptToken = pool._poolReceiptToken;
-            s.pools[pool._poolAddress].epochPoolRate[0] = pool._rate;
-
-            firstEpoch.supportedPools.push(pool._poolAddress);
-
-            emit PoolAddedInEpoch(pool._poolAddress, 0);
+            _addPoolInEpoch(_pools[index], 0);
         }
 
         emit EpochIncreased(0);
     }
 
-    function hasMigrated(address _account) public view returns (bool) {
-        return s.accounts[_account].hasMigrated;
-    }
-
     function updateRates(PoolInfo[] calldata _newPools) external onlyRateManager {
+        require(_newPools.length > 0, "StakingFacet: Pools length cannot be zero");
+
+        //End current epoch
         Epoch storage epochNow = s.epochs[s.currentEpoch];
         epochNow.endTime = block.timestamp;
 
+        //Increase epoch counter
         s.currentEpoch++;
 
+        //Begin new epoch
         Epoch storage newEpoch = s.epochs[s.currentEpoch];
         newEpoch.beginTime = block.timestamp;
 
+        //Add pools
         for (uint256 index = 0; index < _newPools.length; index++) {
             PoolInfo memory newPool = _newPools[index];
-            Pool storage pool = s.pools[newPool._poolAddress];
-
-            if (newPool._poolAddress != s.ghstContract) {
-                require(newPool._poolReceiptToken != address(0), "StakingFacet: Pool must have receipt token");
-            }
-
-            newEpoch.supportedPools.push(newPool._poolAddress);
-
-            pool.epochPoolRate[s.currentEpoch] = newPool._rate;
-
-            if (keccak256(bytes(newPool._poolName)) != keccak256(bytes(pool.name))) {
-                pool.name = newPool._poolName;
-            }
-
-            emit PoolAddedInEpoch(newPool._poolAddress, s.currentEpoch);
+            _addPoolInEpoch(newPool, s.currentEpoch);
         }
 
         emit EpochIncreased(s.currentEpoch);
+    }
+
+    function hasMigrated(address _account) public view returns (bool) {
+        return s.accounts[_account].hasMigrated;
     }
 
     function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (PoolInfo memory _poolInfo) {
@@ -193,8 +186,10 @@ contract StakingFacet {
     }
 
     function frens(address _account) public view returns (uint256 frens_) {
-        //This function will not be used after the user has migrated
-        if (s.accounts[_account].hasMigrated) return 0;
+        //Use epochFrens after a user has migrated
+        if (s.accounts[_account].hasMigrated) return epochFrens(_account);
+
+        //Old implementation
 
         Account storage account = s.accounts[_account];
         // this cannot underflow or overflow
@@ -210,14 +205,12 @@ contract StakingFacet {
 
         //Add in frens for GHST-WETH
         frens_ += ((account.ghstWethPoolTokens * s.ghstWethRate) * timePeriod) / 24 hours;
-
-        // console.log("base frens:", frens_);
     }
 
     function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
         frens_ = new uint256[](_accounts.length);
         for (uint256 i; i < _accounts.length; i++) {
-            frens_[i] = epochFrens(_accounts[i]);
+            frens_[i] = frens(_accounts[i]);
         }
     }
 
@@ -228,12 +221,6 @@ contract StakingFacet {
 
         //Bring this user to the latest epoch now;
         s.accounts[_sender].userCurrentEpoch = s.currentEpoch;
-    }
-
-    function updateAccounts(address[] calldata _accounts) external onlyRateManager {
-        for (uint256 i; i < _accounts.length; i++) {
-            updateFrens(_accounts[i]);
-        }
     }
 
     ////@dev Used for migrating accounts by rateManager
@@ -255,9 +242,12 @@ contract StakingFacet {
         s.accounts[_account].accountStakedTokens[s.ghstUsdcPoolToken] = ghstUsdcPoolToken_;
         s.accounts[_account].accountStakedTokens[s.ghstWethPoolToken] = ghstWethPoolToken_;
 
-        //Set migrated to true
+        //Update FRENS with last balance
         s.accounts[_account].frens = frens(_account);
         s.accounts[_account].lastFrensUpdate = uint40(block.timestamp);
+        s.accounts[_account].userCurrentEpoch = s.currentEpoch;
+
+        //Set migrated to true
         s.accounts[_account].hasMigrated = true;
 
         emit UserMigrated(_account);

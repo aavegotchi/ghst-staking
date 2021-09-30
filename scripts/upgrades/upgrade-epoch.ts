@@ -53,6 +53,7 @@ async function upgrade() {
         "function setGhstWethToken(address _ghstWethPoolToken,address _stkGhstWethToken,uint256 _ghstWethRate) external",
         "function updateGhstWethRate(uint256 _newRate) external",
         "function ghstWethRate() external view returns (uint256)",
+        "function updateAccounts(address[] calldata _accounts) external",
       ],
     },
   ];
