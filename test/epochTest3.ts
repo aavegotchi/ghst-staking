@@ -81,8 +81,10 @@ describe("Epoch Tests (Deprecated Functions)", async function () {
 
     let staked = await stakingFacet.staked(testAddress);
 
-    const tx = await stakingFacet.withdrawGhstStake(staked.ghst_);
-    const receipt = await tx.wait();
+    await stakingFacet.withdrawGhstStake(staked.ghst_);
+
+    const hasMigrated = await stakingFacet.hasMigrated(testAddress);
+    expect(hasMigrated).to.equal(true);
 
     await stakingFacet.withdrawPoolStake(staked.poolTokens_);
     await stakingFacet.withdrawGhstUsdcPoolStake(staked.ghstUsdcPoolToken_);
@@ -94,9 +96,6 @@ describe("Epoch Tests (Deprecated Functions)", async function () {
       const pool = stakedPools[index];
       expect(pool.amount).to.equal(0);
     }
-
-    const hasMigrated = await stakingFacet.hasMigrated(testAddress);
-    expect(hasMigrated).to.equal(true);
   });
   it("Balance of receipt tokens should be zero after withdrawing", async function () {
     const currentEpoch = await stakingFacet.currentEpoch();

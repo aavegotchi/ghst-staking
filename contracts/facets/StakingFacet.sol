@@ -8,7 +8,7 @@ import "../libraries/LibERC20.sol";
 import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/LibMeta.sol";
-import {EpochInfo} from "../libraries/AppStorage.sol";
+import {Epoch} from "../libraries/AppStorage.sol";
 import "hardhat/console.sol";
 
 interface IERC1155Marketplace {
@@ -59,18 +59,20 @@ contract StakingFacet {
     function initiateEpoch(PoolInfo[] calldata _pools) external {
         require(s.currentEpoch == 0, "StakingFacet: Can only be called on first epoch");
 
-        EpochInfo storage firstEpoch = s.epochToEpochInfo[0];
+        Epoch storage firstEpoch = s.epochs[0];
         firstEpoch.beginTime = block.timestamp;
 
         //Update the pool rates for each pool in this epoch
         for (uint256 index = 0; index < _pools.length; index++) {
             PoolInfo memory pool = _pools[index];
-            s.epochToPoolRate[0][pool._poolAddress] = pool._rate;
-            s.poolTokenToReceiptToken[pool._poolAddress] = pool._poolReceiptToken;
 
-            s.epochSupportedPools[0].push(pool._poolAddress);
+            s.pools[pool._poolAddress].name = pool._poolName;
+            s.pools[pool._poolAddress].receiptToken = pool._poolReceiptToken;
+            s.pools[pool._poolAddress].epochPoolRate[0] = pool._rate;
 
-            s.poolNames[pool._poolAddress] = pool._poolName;
+            firstEpoch.supportedPools.push(pool._poolAddress);
+
+            // s.epochSupportedPools[0].push(pool._poolAddress);
         }
 
         emit EpochIncreased(0);
@@ -81,23 +83,25 @@ contract StakingFacet {
     }
 
     function updateRates(PoolInfo[] calldata _pools) external {
-        EpochInfo storage epochNow = s.epochToEpochInfo[s.currentEpoch];
+        Epoch storage epochNow = s.epochs[s.currentEpoch];
         epochNow.endTime = block.timestamp;
 
         s.currentEpoch++;
-        EpochInfo storage newEpoch = s.epochToEpochInfo[s.currentEpoch];
+        Epoch storage newEpoch = s.epochs[s.currentEpoch];
         newEpoch.beginTime = block.timestamp;
 
         //Update the pool rates for each pool in this epoch
         for (uint256 index = 0; index < _pools.length; index++) {
             PoolInfo memory poolRate = _pools[index];
-            s.epochSupportedPools[s.currentEpoch].push(poolRate._poolAddress);
-            s.epochToPoolRate[s.currentEpoch][poolRate._poolAddress] = poolRate._rate;
 
-            string memory poolName = s.poolNames[poolRate._poolAddress];
+            newEpoch.supportedPools.push(poolRate._poolAddress);
+
+            s.pools[poolRate._poolAddress].epochPoolRate[s.currentEpoch] = poolRate._rate;
+
+            string memory poolName = s.pools[poolRate._poolAddress].name;
 
             if (keccak256(bytes(poolRate._poolName)) != keccak256(bytes(poolName))) {
-                s.poolNames[poolRate._poolAddress] = poolRate._poolName;
+                s.pools[poolRate._poolAddress].name = poolRate._poolName;
             }
         }
 
@@ -105,14 +109,15 @@ contract StakingFacet {
     }
 
     function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (PoolInfo memory _poolInfo) {
-        return PoolInfo(_poolAddress, s.poolTokenToReceiptToken[_poolAddress], s.epochToPoolRate[_epoch][_poolAddress], s.poolNames[_poolAddress]);
+        Pool storage pool = s.pools[_poolAddress];
+        return PoolInfo(_poolAddress, pool.receiptToken, pool.epochPoolRate[_epoch], pool.name);
     }
 
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
         // console.log("Getting frens for epoch", _epoch);
 
         //How long did this historic epoch last?
-        EpochInfo memory epoch = s.epochToEpochInfo[_epoch];
+        Epoch memory epoch = s.epochs[_epoch];
 
         // console.log("epoch endtime:", epoch.endTime);
 
@@ -126,18 +131,12 @@ contract StakingFacet {
         //will underflow if duration has not ended
 
         uint256 accumulatedFrens = 0;
-        // uint256 supportedPools = s.epochSupportedPools[_epoch].length;
+        // Pool storage pool = s.pools[]
 
-        // console.log("supported pools in this epoch:", supportedPools);
+        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
+            address poolAddress = epoch.supportedPools[index];
 
-        for (uint256 index = 0; index < s.epochSupportedPools[_epoch].length; index++) {
-            address poolAddress = s.epochSupportedPools[_epoch][index];
-
-            uint256 poolHistoricRate = s.epochToPoolRate[_epoch][poolAddress];
-
-            // console.log("pool historic rate", poolHistoricRate);
-
-            // console.log("duration:", duration);
+            uint256 poolHistoricRate = s.pools[poolAddress].epochPoolRate[_epoch];
 
             uint256 stakedTokens = s.accounts[_account].accountStakedTokens[poolAddress];
 
@@ -155,11 +154,12 @@ contract StakingFacet {
     }
 
     function poolRatesInEpoch(uint256 _epoch) external view returns (PoolRateOutput[] memory _rates) {
-        _rates = new PoolRateOutput[](s.epochSupportedPools[_epoch].length);
+        Epoch storage epoch = s.epochs[_epoch];
+        _rates = new PoolRateOutput[](epoch.supportedPools.length);
 
-        for (uint256 index = 0; index < s.epochSupportedPools[_epoch].length; index++) {
-            address poolAddress = s.epochSupportedPools[_epoch][index];
-            uint256 rate = s.epochToPoolRate[_epoch][poolAddress];
+        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
+            address poolAddress = epoch.supportedPools[index];
+            uint256 rate = s.pools[poolAddress].epochPoolRate[_epoch];
             _rates[index] = PoolRateOutput(poolAddress, rate);
         }
     }
@@ -271,7 +271,7 @@ contract StakingFacet {
             emit Transfer(address(0), sender, _amount);
         } else {
             //Use mintable for minting stkGHST- token
-            address stkTokenAddress = s.poolTokenToReceiptToken[_poolContractAddress];
+            address stkTokenAddress = s.pools[_poolContractAddress].receiptToken;
             IERC20Mintable(stkTokenAddress).mint(sender, _amount);
         }
 
@@ -289,7 +289,7 @@ contract StakingFacet {
         if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
 
         // uint256 bal;
-        address receiptTokenAddress = s.poolTokenToReceiptToken[_poolContractAddress];
+        address receiptTokenAddress = s.pools[_poolContractAddress].receiptToken;
         uint256 stakedBalance = s.accounts[sender].accountStakedTokens[_poolContractAddress];
 
         if (receiptTokenAddress != address(0)) {
@@ -376,16 +376,18 @@ contract StakingFacet {
     }
 
     function stakedInEpoch(address _account, uint256 _epoch) public view returns (StakedOutput[] memory _staked) {
-        _staked = new StakedOutput[](s.epochSupportedPools[_epoch].length);
+        Epoch storage Epoch = s.epochs[_epoch];
+        _staked = new StakedOutput[](Epoch.supportedPools.length);
 
-        for (uint256 index = 0; index < s.epochSupportedPools[_epoch].length; index++) {
-            address poolAddress = s.epochSupportedPools[_epoch][index];
+        for (uint256 index = 0; index < Epoch.supportedPools.length; index++) {
+            address poolAddress = Epoch.supportedPools[index];
             uint256 amount = s.accounts[_account].accountStakedTokens[poolAddress];
-            string memory poolName = s.poolNames[poolAddress];
+            string memory poolName = s.pools[poolAddress].name;
             _staked[index] = StakedOutput(poolAddress, poolName, amount);
         }
     }
 
+    /// @dev deprecated method
     function staked(address _account)
         external
         view
@@ -402,20 +404,22 @@ contract StakingFacet {
         ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
     }
 
-    /* Deprecated Withdraw methods */
-
+    /// @dev deprecated method
     function withdrawGhstStake(uint256 _ghstValue) external {
         withdrawFromPool(s.ghstContract, _ghstValue);
     }
 
+    /// @dev deprecated method
     function withdrawPoolStake(uint256 _poolTokens) external {
         withdrawFromPool(s.poolContract, _poolTokens);
     }
 
+    /// @dev deprecated method
     function withdrawGhstUsdcPoolStake(uint256 _poolTokens) external {
         withdrawFromPool(s.ghstUsdcPoolToken, _poolTokens);
     }
 
+    /// @dev deprecated method
     function withdrawGhstWethPoolStake(uint256 _poolTokens) external {
         withdrawFromPool(s.ghstWethPoolToken, _poolTokens);
     }

@@ -25,9 +25,16 @@ struct Ticket {
     uint96 totalSupply;
 }
 
-struct EpochInfo {
+struct Epoch {
     uint256 beginTime;
     uint256 endTime;
+    address[] supportedPools;
+}
+
+struct Pool {
+    address receiptToken;
+    string name;
+    mapping(uint256 => uint256) epochPoolRate;
 }
 
 struct AppStorage {
@@ -49,11 +56,8 @@ struct AppStorage {
     address ghstWethPoolToken; //token address of GHST-WETH LP
     address stkGhstWethToken; //token address of the stkGHST-WETH receipt token
     uint256 ghstWethRate; //the FRENS rate for GHST-WETH stakers
-    //New
+    //New for Epoch
     uint256 currentEpoch;
-    mapping(uint256 => EpochInfo) epochToEpochInfo;
-    mapping(uint256 => mapping(address => uint256)) epochToPoolRate;
-    mapping(uint256 => address[]) epochSupportedPools;
-    mapping(address => address) poolTokenToReceiptToken;
-    mapping(address => string) poolNames;
+    mapping(address => Pool) pools;
+    mapping(uint256 => Epoch) epochs;
 }
