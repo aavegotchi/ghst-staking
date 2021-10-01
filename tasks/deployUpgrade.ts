@@ -1,4 +1,3 @@
-import { LedgerSigner } from "../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets";
 import { sendToMultisig } from "../scripts/libraries/multisig/multisig";
 import { AddressZero } from "@ethersproject/constants";
 import { task } from "hardhat/config";
@@ -124,8 +123,12 @@ task(
         });
         signer = await hre.ethers.getSigner(owner);
       } else if (hre.network.name === "matic") {
-        if (useLedger) signer = new LedgerSigner(hre.ethers.provider);
-        else signer = (await hre.ethers.getSigners())[0];
+        if (useLedger) {
+          const {
+            LedgerSigner,
+          } = require("../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets");
+          signer = new LedgerSigner(hre.ethers.provider);
+        } else signer = (await hre.ethers.getSigners())[0];
       } else {
         throw Error("Incorrect network selected");
       }

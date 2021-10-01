@@ -64,8 +64,8 @@ async function upgrade() {
     diamondUpgrader: diamondUpgrader,
     diamondAddress: maticStakingAddress,
     facetsAndAddSelectors: joined,
-    useLedger: true,
-    useMultisig: true,
+    useLedger: false,
+    useMultisig: false,
   };
 
   await run("deployUpgrade", args);
