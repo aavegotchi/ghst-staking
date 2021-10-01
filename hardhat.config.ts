@@ -23,8 +23,6 @@ module.exports = {
       forking: {
         url: process.env.MATIC_URL,
         timeout: 8000000,
-        // blockNumber: 12552123
-        // blockNumber: 13024371
       },
       blockGasLimit: 20000000,
       timeout: 120000,
@@ -35,37 +33,11 @@ module.exports = {
     },
     matic: {
       url: process.env.MATIC_URL,
-      // url: 'https://rpc-mainnet.maticvigil.com/',
-      accounts: [process.env.SECRET],
-      // blockGasLimit: 20000000,
+      // accounts: [process.env.SECRET],
       blockGasLimit: 200000000000,
       gasPrice: 10000000000,
       timeout: 90000,
     },
-    /*
-    mumbai: {
-      url: 'https://rpc-mumbai.matic.today',
-      accounts: [process.env.SECRET],
-      blockGasLimit: 20000000,
-      gasPrice: 1000000000
-    },
-    gorli: {
-      url: process.env.GORLI,
-      accounts: [process.env.SECRET],
-      blockGasLimit: 20000000,
-      gasPrice: 2100000000
-    },
-    kovan: {
-      url: process.env.KOVAN_URL,
-      accounts: [process.env.SECRET],
-      gasPrice: 5000000000
-    },
-    ethereum: {
-      url: process.env.MAINNET_URL,
-      accounts: [process.env.SECRET],
-      blockGasLimit: 20000000,
-      gasPrice: 2100000000
-    }*/
   },
   gasReporter: {
     currency: "USD",

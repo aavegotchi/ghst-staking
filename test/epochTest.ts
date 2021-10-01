@@ -124,10 +124,12 @@ describe("Epoch Tests (GHST Only)", async function () {
 
   it("Epoch rates should be correct", async function () {
     let rates = await stakingFacet.poolRatesInEpoch("0");
+    console.log("rates:", rates[0].toString());
     expect(rates[0].rate).to.equal("1");
 
     rates = await stakingFacet.poolRatesInEpoch("1");
     expect(rates[0].rate).to.equal("2");
+    console.log("rates:", rates[0].toString());
   });
 
   it("Should accrue 2x the FRENS over 24 hrs", async function () {
@@ -231,6 +233,7 @@ describe("Epoch Tests (GHST Only)", async function () {
 
   it("User can re-stake GHST-WETH", async function () {});
 
+  /*
   it("FRENS stop being emitted when rate is zero", async function () {
     const pools: PoolObject[] = [];
 
@@ -264,4 +267,5 @@ describe("Epoch Tests (GHST Only)", async function () {
       Number(ethers.utils.parseEther("1"))
     );
   });
+  */
 });

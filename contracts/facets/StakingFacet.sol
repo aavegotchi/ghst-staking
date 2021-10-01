@@ -199,7 +199,7 @@ contract StakingFacet {
         }
         s.pools[_pool._poolAddress].name = _pool._poolName;
         s.pools[_pool._poolAddress].receiptToken = _pool._poolReceiptToken;
-        s.pools[_pool._poolAddress].epochPoolRate[0] = _pool._rate;
+        s.pools[_pool._poolAddress].epochPoolRate[_epoch] = _pool._rate;
 
         s.epochs[_epoch].supportedPools.push(poolAddress);
         emit PoolAddedInEpoch(poolAddress, _epoch);
