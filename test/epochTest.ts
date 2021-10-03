@@ -6,16 +6,10 @@ import { network } from "hardhat";
 import { BigNumber, BigNumberish } from "@ethersproject/bignumber";
 import { Signer } from "@ethersproject/abstract-signer";
 import { ethers } from "hardhat";
+import { PoolObject } from "../types";
 
 // const { ethers } = require("hardhat");
 const { upgrade } = require("../scripts/upgrades/upgrade-epoch.ts");
-
-interface PoolObject {
-  _poolAddress: string;
-  _poolReceiptToken: string;
-  _rate: BigNumberish;
-  _poolName: string;
-}
 
 const testAddress = "0x51208e5cC9215c6360210C48F81C8270637a5218";
 const rateManager = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
@@ -55,6 +49,7 @@ describe("Epoch Tests (GHST Only)", async function () {
         _poolReceiptToken: ethers.constants.AddressZero,
         _rate: "83",
         _poolName: "GHST-QUICK",
+        _poolUrl: "",
       },
     ];
 
@@ -114,6 +109,7 @@ describe("Epoch Tests (GHST Only)", async function () {
       _poolReceiptToken: ethers.constants.AddressZero,
       _rate: "2",
       _poolName: "GHST",
+      _poolUrl: "",
     });
     const tx = await stakingFacet.updateRates(pools);
     await tx.wait();
@@ -159,6 +155,7 @@ describe("Epoch Tests (GHST Only)", async function () {
       _poolReceiptToken: ethers.constants.AddressZero,
       _rate: "4",
       _poolName: "GHST",
+      _poolUrl: "",
     });
     const tx = await stakingFacet.updateRates(pools);
     await tx.wait();
@@ -228,6 +225,7 @@ describe("Epoch Tests (GHST Only)", async function () {
       _poolReceiptToken: ethers.constants.AddressZero,
       _rate: "0",
       _poolName: "GHST",
+      _poolUrl: "",
     });
 
     const before = await stakingFacet.epochFrens(testAddress);

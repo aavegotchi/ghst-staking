@@ -48,6 +48,7 @@ contract StakingFacet {
         address _poolReceiptToken; //The receipt token for staking into this pool. Can be address(0) if empty
         uint256 _rate;
         string _poolName;
+        string _poolUrl;
     }
 
     struct StakedOutput {
@@ -71,7 +72,7 @@ contract StakingFacet {
 
     function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (PoolInput memory _poolInfo) {
         Pool storage pool = s.pools[_poolAddress];
-        return PoolInput(_poolAddress, pool.receiptToken, pool.epochPoolRate[_epoch], pool.name);
+        return PoolInput(_poolAddress, pool.receiptToken, pool.epochPoolRate[_epoch], pool.name, pool.url);
     }
 
     function currentEpoch() external view returns (uint256) {
@@ -200,6 +201,7 @@ contract StakingFacet {
         s.pools[_pool._poolAddress].name = _pool._poolName;
         s.pools[_pool._poolAddress].receiptToken = _pool._poolReceiptToken;
         s.pools[_pool._poolAddress].epochPoolRate[_epoch] = _pool._rate;
+        s.pools[_pool._poolAddress].url = _pool._poolUrl;
 
         s.epochs[_epoch].supportedPools.push(poolAddress);
         emit PoolAddedInEpoch(poolAddress, _epoch);

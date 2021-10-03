@@ -5,4 +5,5 @@ export interface PoolObject {
   _poolReceiptToken: string;
   _rate: BigNumberish;
   _poolName: string;
+  _poolUrl: string;
 }

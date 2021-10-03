@@ -34,6 +34,7 @@ struct Epoch {
 struct Pool {
     address receiptToken;
     string name;
+    string url;
     mapping(uint256 => uint256) epochPoolRate;
 }
 
