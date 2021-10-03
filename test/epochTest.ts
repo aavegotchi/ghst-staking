@@ -221,21 +221,14 @@ describe("Epoch Tests (GHST Only)", async function () {
     expect(stakedGhst.amount).to.equal(stakeAmount);
   });
 
-  it("User can unstake GHST-QUICK", async function () {});
-
-  it("User can re-stake GHST-QUICK", async function () {});
-
-  it("User can unstake GHST-USDC", async function () {});
-
-  it("User can re-stake GHST-USDC", async function () {});
-
-  it("User can unstake GHST-WETH", async function () {});
-
-  it("User can re-stake GHST-WETH", async function () {});
-
-  /*
   it("FRENS stop being emitted when rate is zero", async function () {
     const pools: PoolObject[] = [];
+    pools.push({
+      _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
+      _poolReceiptToken: ethers.constants.AddressZero,
+      _rate: "0",
+      _poolName: "GHST",
+    });
 
     const before = await stakingFacet.epochFrens(testAddress);
 
@@ -253,19 +246,17 @@ describe("Epoch Tests (GHST Only)", async function () {
     expect(currentEpoch).to.equal("3");
 
     const rates = await stakingFacet.poolRatesInEpoch(currentEpoch);
-    expect(rates.length).to.equal(0);
+    expect(rates.length).to.equal(1);
+    expect(rates[0].rate).to.equal(0);
 
     ethers.provider.send("evm_increaseTime", [86400 * 3]);
     ethers.provider.send("evm_mine", []);
 
     const after = await stakingFacet.epochFrens(testAddress);
-    // console.log("after:", after.toString());
 
     const difference = after.sub(before);
-    // console.log("difference:", ethers.utils.formatEther(difference));
     expect(Number(difference.toString())).to.be.lessThan(
       Number(ethers.utils.parseEther("1"))
     );
   });
-  */
 });
