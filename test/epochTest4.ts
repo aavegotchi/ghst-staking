@@ -79,34 +79,39 @@ describe("Testing 100 epochs", async function () {
     let frens = await stakingFacet.epochFrens(testAddress);
     console.log("frens:", frens.toString());
 
-    const pools: PoolObject[] = [
-      {
-        _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
-        _poolReceiptToken: ethers.constants.AddressZero,
-        _rate: "1",
-        _poolName: "GHST",
-      },
-      {
-        _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
-        _poolReceiptToken: "0xA02d547512Bb90002807499F05495Fe9C4C3943f",
-        _rate: "83",
-        _poolName: "GHST-QUICK",
-      },
-      {
-        _poolAddress: "0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4",
-        _poolReceiptToken: "0x04439eC4ba8b09acfae0E9b5D75A82cC63b19f09",
-        _rate: "74000000",
-        _poolName: "GHST-USDC",
-      },
-      {
-        _poolAddress: "0xccb9d2100037f1253e6c1682adf7dc9944498aff",
-        _poolReceiptToken: "0x388E2a3d389F27504212030c2D42Abf0a8188cd1",
-        _rate: "12000000",
-        _poolName: "GHST-WETH",
-      },
-    ];
-
     for (let index = 0; index < 10; index++) {
+      const rand1 = Math.floor(Math.random() * 10000).toString();
+      const rand2 = Math.floor(Math.random() * 10000).toString();
+      const rand3 = Math.floor(Math.random() * 10000).toString();
+      const rand4 = Math.floor(Math.random() * 10000).toString();
+
+      const pools: PoolObject[] = [
+        {
+          _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
+          _poolReceiptToken: ethers.constants.AddressZero,
+          _rate: rand1,
+          _poolName: "GHST",
+        },
+        {
+          _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
+          _poolReceiptToken: "0xA02d547512Bb90002807499F05495Fe9C4C3943f",
+          _rate: rand2,
+          _poolName: "GHST-QUICK",
+        },
+        {
+          _poolAddress: "0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4",
+          _poolReceiptToken: "0x04439eC4ba8b09acfae0E9b5D75A82cC63b19f09",
+          _rate: rand3,
+          _poolName: "GHST-USDC",
+        },
+        {
+          _poolAddress: "0xccb9d2100037f1253e6c1682adf7dc9944498aff",
+          _poolReceiptToken: "0x388E2a3d389F27504212030c2D42Abf0a8188cd1",
+          _rate: rand4,
+          _poolName: "GHST-WETH",
+        },
+      ];
+
       console.log("going ahead in time, current index is:", index);
       ethers.provider.send("evm_increaseTime", [86400]);
       ethers.provider.send("evm_mine", []);

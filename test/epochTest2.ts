@@ -6,16 +6,10 @@ import { network } from "hardhat";
 import { BigNumberish } from "@ethersproject/bignumber";
 import { Signer } from "@ethersproject/abstract-signer";
 import { ethers } from "hardhat";
+import { PoolObject } from "../types";
 
 // const { ethers } = require("hardhat");
 const { upgrade } = require("../scripts/upgrades/upgrade-epoch.ts");
-
-interface PoolObject {
-  _poolAddress: string;
-  _poolReceiptToken: string;
-  _rate: BigNumberish;
-  _poolName: string;
-}
 
 const testAddress = "0x027Ffd3c119567e85998f4E6B9c3d83D5702660c";
 const rateManager = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";

@@ -78,7 +78,7 @@ contract StakingFacet {
         return s.currentEpoch;
     }
 
-    function stakedInCurrentEpoch(address _account) external view returns (StakedOutput[] memory _staked) {
+    function stakedInCurrentEpoch(address _account) public view returns (StakedOutput[] memory _staked) {
         //Used for compatibility between migrated and non-migrated users
         if (!hasMigrated(_account)) {
             Account storage account = s.accounts[_account];
@@ -291,6 +291,7 @@ contract StakingFacet {
         s.accounts[sender].accountStakedTokens[_poolContractAddress] -= _amount;
 
         if (_poolContractAddress == s.ghstContract) {
+            s.accounts[sender].ghst -= uint96(_amount);
             // console.log("ghst contract, do nothing");
         } else if (_poolContractAddress == s.poolContract) {
             s.accounts[sender].ghstStakingTokens -= _amount;
@@ -298,6 +299,9 @@ contract StakingFacet {
 
             uint256 accountPoolTokens = s.accounts[sender].poolTokens;
             require(accountPoolTokens >= _amount, "Can't withdraw more poolTokens than in account");
+
+            s.accounts[sender].poolTokens -= _amount;
+
             emit Transfer(sender, address(0), _amount);
         } else {
             IERC20Mintable(receiptTokenAddress).burn(sender, _amount);
@@ -413,10 +417,17 @@ contract StakingFacet {
             uint256 ghstWethPoolToken_
         )
     {
-        ghst_ = s.accounts[_account].ghst;
-        poolTokens_ = s.accounts[_account].poolTokens;
-        ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
-        ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
+        if (hasMigrated(_account)) {
+            ghst_ = s.accounts[_account].accountStakedTokens[s.ghstContract];
+            poolTokens_ = s.accounts[_account].accountStakedTokens[s.poolContract];
+            ghstUsdcPoolToken_ = s.accounts[_account].accountStakedTokens[s.ghstUsdcPoolToken];
+            ghstWethPoolToken_ = s.accounts[_account].accountStakedTokens[s.ghstWethPoolToken];
+        } else {
+            ghst_ = s.accounts[_account].ghst;
+            poolTokens_ = s.accounts[_account].poolTokens;
+            ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
+            ghstWethPoolToken_ = s.accounts[_account].ghstWethPoolTokens;
+        }
     }
 
     /***********************************|
