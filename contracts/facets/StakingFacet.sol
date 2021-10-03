@@ -60,6 +60,8 @@ contract StakingFacet {
     struct PoolRateOutput {
         address poolAddress;
         uint256 rate;
+        string poolName;
+        string poolUrl;
     }
 
     /***********************************|
@@ -135,7 +137,9 @@ contract StakingFacet {
         for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
             address poolAddress = epoch.supportedPools[index];
             uint256 rate = s.pools[poolAddress].epochPoolRate[_epoch];
-            _rates[index] = PoolRateOutput(poolAddress, rate);
+            string memory poolName = s.pools[poolAddress].name;
+            string memory url = s.pools[poolAddress].url;
+            _rates[index] = PoolRateOutput(poolAddress, rate, poolName, url);
         }
     }
 

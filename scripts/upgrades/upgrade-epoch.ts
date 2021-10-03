@@ -14,9 +14,10 @@ async function upgrade() {
   const diamondUpgrader = "0x35fe3df776474a7b24b3b1ec6e745a830fdad351";
 
   const poolInfoTuple =
-    "tuple(address _poolAddress, address _poolReceiptToken, uint256 _rate, string _poolName)";
+    "tuple(address _poolAddress, address _poolReceiptToken, uint256 _rate, string _poolName, string _poolUrl)";
 
-  const poolRateTuple = "tuple(address poolAddress, uint256 rate)";
+  const poolRateTuple =
+    "tuple(address poolAddress, uint256 rate, string name, string url)";
 
   const stakedOutputTuple =
     "tuple(address poolAddress, string poolName, uint256 amount)";
