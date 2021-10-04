@@ -1,13 +1,10 @@
-import { Contract } from "@ethersproject/contracts";
 import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
-import { IERC20, StakingFacet } from "../typechain";
+import { StakingFacet } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
-import { BigNumberish } from "@ethersproject/bignumber";
 import { ethers } from "hardhat";
 import { PoolObject } from "../types";
 
-// const { ethers } = require("hardhat");
 const { upgrade } = require("../scripts/upgrades/upgrade-epoch.ts");
 
 const testAddress = "0x027Ffd3c119567e85998f4E6B9c3d83D5702660c";
@@ -122,7 +119,6 @@ describe("Testing 100 epochs", async function () {
 
     const currentEpoch = await stakingFacet.currentEpoch();
     console.log("current:", currentEpoch.toString());
-    // expect(currentEpoch).to.equal(100);
 
     const hasMigrated = await stakingFacet.hasMigrated(testAddress);
     expect(hasMigrated).to.equal(false);
