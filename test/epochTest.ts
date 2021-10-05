@@ -1,14 +1,10 @@
-import { Contract } from "@ethersproject/contracts";
 import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
 import { StakingFacet } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
-import { BigNumber, BigNumberish } from "@ethersproject/bignumber";
-import { Signer } from "@ethersproject/abstract-signer";
 import { ethers } from "hardhat";
 import { PoolObject } from "../types";
 
-// const { ethers } = require("hardhat");
 const { upgrade } = require("../scripts/upgrades/upgrade-epoch.ts");
 
 const testAddress = "0x51208e5cC9215c6360210C48F81C8270637a5218";
