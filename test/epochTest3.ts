@@ -1,10 +1,7 @@
-import { Contract } from "@ethersproject/contracts";
 import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
 import { IERC20, StakingFacet } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
-import { BigNumberish } from "@ethersproject/bignumber";
-import { Signer } from "@ethersproject/abstract-signer";
 import { ethers } from "hardhat";
 import { PoolObject } from "../types";
 

@@ -1,4 +1,3 @@
-import { Contract } from "@ethersproject/contracts";
 import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
 import { IERC20, StakingFacet } from "../typechain";
 import { expect } from "chai";
@@ -6,7 +5,6 @@ import { network } from "hardhat";
 import { ethers } from "hardhat";
 import { PoolObject } from "../types";
 
-// const { ethers } = require("hardhat");
 const { upgrade } = require("../scripts/upgrades/upgrade-epoch.ts");
 
 const testAddress = "0x027Ffd3c119567e85998f4E6B9c3d83D5702660c";
@@ -47,14 +45,10 @@ describe("Epoch Tests (Other Tokens)", async function () {
     let frens = await stakingFacet.frens(testAddress);
 
     let epochFrens = await stakingFacet.epochFrens(testAddress);
-    // console.log("epoch:", epochFrens.toString());
 
     for (let index = 0; index < stakedPools.length; index++) {
       const pool = stakedPools[index];
-
-      // console.log("index:", index);
-
-      //Withdraw GHST-QUICK
+      // Withdraw GHST-QUICK
       await stakingFacet.withdrawFromPool(pool.poolAddress, pool.amount);
     }
 
@@ -68,17 +62,13 @@ describe("Epoch Tests (Other Tokens)", async function () {
     }
 
     frens = await stakingFacet.frens(testAddress);
-    // console.log("frens after:", frens.toString());
     epochFrens = await stakingFacet.epochFrens(testAddress);
-    // console.log("epoch after:", epochFrens.toString());
 
     const hasMigrated = await stakingFacet.hasMigrated(testAddress);
     expect(hasMigrated).to.equal(true);
   });
   it("Balance of receipt tokens should be zero after withdrawing", async function () {
-    // let stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress);
     const currentEpoch = await stakingFacet.currentEpoch();
-    // const ghstQUICK = stakedPools[1];
 
     let stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress);
 
