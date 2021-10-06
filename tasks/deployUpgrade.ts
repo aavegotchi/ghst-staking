@@ -15,7 +15,6 @@ import { IDiamondCut } from "../typechain/IDiamondCut";
 import { getSelectors, getSighashes } from "../scripts/helperFunctions";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DiamondLoupeFacet } from "../typechain";
 
 export interface FacetsAndAddSelectors {
   facetName: string;
@@ -32,6 +31,8 @@ export interface DeployUpgradeTaskArgs {
   facetsAndAddSelectors: string;
   useMultisig: boolean;
   useLedger: boolean;
+  initAddress: string;
+  initCalldata: string;
   // verifyFacets: boolean;
   // updateDiamondABI: boolean;
 }
@@ -89,6 +90,8 @@ task(
     "facetsAndAddSelectors",
     "Stringified array of facet names to upgrade, along with an array of add Selectors"
   )
+  .addParam("initAddress", "The facet address to call init function on")
+  .addParam("initCalldata", "The calldata for init function")
   .addFlag(
     "useMultisig",
     "Set to true if multisig should be used for deploying"
@@ -105,6 +108,8 @@ task(
       const diamondAddress: string = taskArgs.diamondAddress;
       const useMultisig = taskArgs.useMultisig;
       const useLedger = taskArgs.useLedger;
+      const initAddress = taskArgs.initAddress;
+      const initCalldata = taskArgs.initCalldata;
 
       //Instantiate the Signer
       let signer: Signer;
@@ -166,14 +171,6 @@ task(
           }
         }
 
-        //Check if remove selectors exist in current diamond
-        // const diamondLoupeFacet = (await hre.ethers.getContractAt(
-        //   "DiamondLoupeFacet",
-        //   diamondAddress
-        // )) as DiamondLoupeFacet;
-
-        // const oldSelectors = await diamondLoupeFacet.facetFunctionSelectors;
-
         let existingSelectors = getSelectors(deployedFacet);
         existingSelectors = existingSelectors.filter(
           (selector) => !newSelectors.includes(selector)
@@ -217,8 +214,8 @@ task(
         console.log("Diamond cut");
         const tx: ContractTransaction = await diamondCut.diamondCut(
           cut,
-          AddressZero,
-          "0x",
+          initAddress,
+          initCalldata,
           { gasLimit: 8000000 }
         );
         console.log("Diamond cut tx:", tx.hash);
@@ -234,16 +231,16 @@ task(
           const tx: PopulatedTransaction =
             await diamondCut.populateTransaction.diamondCut(
               cut,
-              hre.ethers.constants.AddressZero,
-              "0x",
+              initAddress,
+              initCalldata,
               { gasLimit: 800000 }
             );
           await sendToMultisig(diamondUpgrader, signer, tx, hre.ethers);
         } else {
           const tx: ContractTransaction = await diamondCut.diamondCut(
             cut,
-            AddressZero,
-            "0x",
+            initAddress,
+            initCalldata,
             { gasLimit: 800000 }
           );
 

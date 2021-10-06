@@ -35,56 +35,10 @@ describe("Epoch Tests (GHST Only)", async function () {
     );
   });
 
-  it("Cannot initiate with zero pools", async function () {
-    const pools: PoolObject[] = [];
-    await expect(stakingFacet.initiateEpoch(pools)).to.be.revertedWith(
-      "StakingFacet: Pools length cannot be zero"
-    );
-  });
-
-  it("Cannot add pool without a receipt token (except GHST)", async function () {
-    const pools: PoolObject[] = [
-      {
-        _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
-        _poolReceiptToken: ethers.constants.AddressZero,
-        _rate: "83",
-        _poolName: "GHST-QUICK",
-        _poolUrl: "",
-      },
-    ];
-
-    await expect(stakingFacet.initiateEpoch(pools)).to.be.revertedWith(
-      "StakingFacet: Pool must have receipt token"
-    );
-  });
-
-  it("Can initiate epoch", async function () {
-    const pools = [];
-    pools.push({
-      _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
-      _poolReceiptToken: ethers.constants.AddressZero,
-      _rate: "1",
-      _poolName: "GHST",
-    });
-
-    const tx = await stakingFacet.initiateEpoch(pools);
-    await tx.wait();
-    const currentEpoch = await stakingFacet.currentEpoch();
-    expect(currentEpoch).to.equal("0");
-  });
-
-  it("Cannot re-initiate epoch 0", async function () {
-    const pools = [];
-    pools.push({
-      _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
-      _poolReceiptToken: ethers.constants.AddressZero,
-      _rate: "1",
-      _poolName: "GHST",
-    });
-
-    await expect(stakingFacet.initiateEpoch(pools)).to.be.revertedWith(
-      "StakingFacet: Can only be called on first epoch"
-    );
+  it("Pools should be created on diamondCut", async function () {
+    let rates = await stakingFacet.poolRatesInEpoch("0");
+    console.log("rates:", rates);
+    expect(rates[0].rate).to.equal("1");
   });
 
   it("Can migrate user", async function () {
@@ -120,12 +74,9 @@ describe("Epoch Tests (GHST Only)", async function () {
 
   it("Epoch rates should be correct", async function () {
     let rates = await stakingFacet.poolRatesInEpoch("0");
-    console.log("rates:", rates[0].toString());
     expect(rates[0].rate).to.equal("1");
-
     rates = await stakingFacet.poolRatesInEpoch("1");
     expect(rates[0].rate).to.equal("2");
-    console.log("rates:", rates[0].toString());
   });
 
   it("Should accrue 2x the FRENS over 24 hrs", async function () {

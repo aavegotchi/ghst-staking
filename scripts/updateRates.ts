@@ -35,14 +35,14 @@ async function main() {
     {
       _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
       _poolReceiptToken: ethers.constants.AddressZero,
-      _rate: "4",
+      _rate: "1000",
       _poolName: "GHST",
       _poolUrl: "",
     },
     {
       _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
       _poolReceiptToken: "0xA02d547512Bb90002807499F05495Fe9C4C3943f",
-      _rate: "83",
+      _rate: "1",
       _poolName: "GHST-QUICK",
       _poolUrl: "",
     },

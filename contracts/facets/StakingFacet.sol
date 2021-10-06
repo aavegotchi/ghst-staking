@@ -9,6 +9,7 @@ import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/LibMeta.sol";
 import {Epoch} from "../libraries/AppStorage.sol";
+
 import "hardhat/console.sol";
 
 interface IERC1155Marketplace {
@@ -211,9 +212,12 @@ contract StakingFacet {
         emit PoolAddedInEpoch(poolAddress, _epoch);
     }
 
-    function initiateEpoch(PoolInput[] calldata _pools) external onlyRateManager {
+    function initiateEpoch(PoolInput[] calldata _pools) external {
+        LibDiamond.enforceIsContractOwner();
         require(s.epochs[0].supportedPools.length == 0, "StakingFacet: Can only be called on first epoch");
         require(_pools.length > 0, "StakingFacet: Pools length cannot be zero");
+
+        console.log("initiating epoch!");
 
         Epoch storage firstEpoch = s.epochs[0];
         firstEpoch.beginTime = block.timestamp;
