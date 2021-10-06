@@ -61,6 +61,7 @@ describe("Epoch Tests (GHST Only)", async function () {
       _poolReceiptToken: ethers.constants.AddressZero,
       _rate: "1",
       _poolName: "GHST",
+      _poolUrl: ""
     });
 
     const tx = await stakingFacet.initiateEpoch(pools);
@@ -76,6 +77,7 @@ describe("Epoch Tests (GHST Only)", async function () {
       _poolReceiptToken: ethers.constants.AddressZero,
       _rate: "1",
       _poolName: "GHST",
+      _poolUrl: ""
     });
 
     await expect(stakingFacet.initiateEpoch(pools)).to.be.revertedWith(
