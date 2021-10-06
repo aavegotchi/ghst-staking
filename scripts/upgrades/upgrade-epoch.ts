@@ -97,15 +97,13 @@ async function upgrade() {
 
   const calldata = iface.encodeFunctionData("initiateEpoch", [initPools]);
 
-  console.log("calldata:", calldata);
-
   const args: DeployUpgradeTaskArgs = {
     diamondUpgrader: diamondUpgrader,
     diamondAddress: maticStakingAddress,
     facetsAndAddSelectors: joined,
     useLedger: false,
     useMultisig: false,
-    initAddress: maticStakingAddress, //ethers.constants.AddressZero,
+    initAddress: maticStakingAddress,
     initCalldata: calldata,
   };
 

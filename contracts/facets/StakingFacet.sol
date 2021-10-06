@@ -265,6 +265,7 @@ contract StakingFacet {
         s.accounts[sender].accountStakedTokens[_poolContractAddress] += _amount;
 
         if (_poolContractAddress == s.ghstContract) {
+            s.accounts[sender].ghst += uint96(_amount);
             //Do nothing for original GHST contract
         } else if (_poolContractAddress == s.poolContract) {
             s.accounts[sender].ghstStakingTokens += _amount;
