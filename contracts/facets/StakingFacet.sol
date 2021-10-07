@@ -145,7 +145,7 @@ contract StakingFacet {
     }
 
     ///@dev Useful for testing but will be set to internal in production
-    function epochFrens(address _account) public view returns (uint256 frens_) {
+    function epochFrens(address _account) internal view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
         frens_ = account.frens;
 

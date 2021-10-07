@@ -42,10 +42,6 @@ describe("Epoch Tests (Other Tokens)", async function () {
 
     let stakedPools = await stakingFacet.stakedInCurrentEpoch(testAddress);
 
-    let frens = await stakingFacet.frens(testAddress);
-
-    let epochFrens = await stakingFacet.epochFrens(testAddress);
-
     for (let index = 0; index < stakedPools.length; index++) {
       const pool = stakedPools[index];
       // Withdraw GHST-QUICK
@@ -60,9 +56,6 @@ describe("Epoch Tests (Other Tokens)", async function () {
         expect(pool.amount).to.equal(0);
       }
     }
-
-    frens = await stakingFacet.frens(testAddress);
-    epochFrens = await stakingFacet.epochFrens(testAddress);
 
     const hasMigrated = await stakingFacet.hasMigrated(testAddress);
     expect(hasMigrated).to.equal(true);
@@ -93,10 +86,10 @@ describe("Epoch Tests (Other Tokens)", async function () {
   });
 
   it("Should stop receiving FRENS after withdrawing from pool", async function () {
-    const epochFrensBefore = await stakingFacet.epochFrens(testAddress);
+    const epochFrensBefore = await stakingFacet.frens(testAddress);
     ethers.provider.send("evm_increaseTime", [86400 * 3]);
     ethers.provider.send("evm_mine", []);
-    const epochFrensAfter = await stakingFacet.epochFrens(testAddress);
+    const epochFrensAfter = await stakingFacet.frens(testAddress);
     expect(epochFrensBefore).to.equal(epochFrensAfter);
   });
 });

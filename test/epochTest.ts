@@ -33,22 +33,21 @@ describe("Epoch Tests (GHST Only)", async function () {
 
   it("Pools should be created on diamondCut", async function () {
     let rates = await stakingFacet.poolRatesInEpoch("0");
-    console.log("rates:", rates);
     expect(rates[0].rate).to.equal("1");
   });
 
-  it("Can migrate user", async function () {
+  it("Can migrate user without radically changing FRENS", async function () {
     // Check add and view function works
 
-    let frens = await stakingFacet.frens(testAddress);
-    let epochFrens = await stakingFacet.epochFrens(testAddress);
-
+    const frensBefore = await stakingFacet.frens(testAddress);
     const tx = await stakingFacet.migrateToV2([testAddress]);
     await tx.wait();
+    const frensAfter = await stakingFacet.frens(testAddress);
 
-    frens = await stakingFacet.frens(testAddress);
-    epochFrens = await stakingFacet.epochFrens(testAddress);
-
+    const difference = Number(
+      ethers.utils.formatEther(frensAfter.sub(frensBefore))
+    );
+    expect(difference).to.lessThanOrEqual(10);
     const hasMigrated = await stakingFacet.hasMigrated(testAddress);
     expect(hasMigrated).to.equal(true);
   });
@@ -85,12 +84,12 @@ describe("Epoch Tests (GHST Only)", async function () {
     expect(rates[0].rate).to.equal("2");
 
     const staked = await stakingFacet.stakedInEpoch(testAddress, currentEpoch);
-    const before = await stakingFacet.epochFrens(testAddress);
+    const before = await stakingFacet.frens(testAddress);
 
     ethers.provider.send("evm_increaseTime", [86400]);
     ethers.provider.send("evm_mine", []);
 
-    const after = await stakingFacet.epochFrens(testAddress);
+    const after = await stakingFacet.frens(testAddress);
     const difference = after.sub(before);
     expect(difference.div(staked[0].amount)).to.equal(frensRate);
   });
@@ -116,12 +115,12 @@ describe("Epoch Tests (GHST Only)", async function () {
     expect(rates[0].rate).to.equal("4");
 
     const staked = await stakingFacet.stakedInEpoch(testAddress, currentEpoch);
-    const before = await stakingFacet.epochFrens(testAddress);
+    const before = await stakingFacet.frens(testAddress);
 
     ethers.provider.send("evm_increaseTime", [86400]);
     ethers.provider.send("evm_mine", []);
 
-    const after = await stakingFacet.epochFrens(testAddress);
+    const after = await stakingFacet.frens(testAddress);
     const difference = after.sub(before);
     expect(difference.div(staked[0].amount)).to.equal(frensRate);
   });
@@ -175,7 +174,7 @@ describe("Epoch Tests (GHST Only)", async function () {
       _poolUrl: "",
     });
 
-    const before = await stakingFacet.epochFrens(testAddress);
+    const before = await stakingFacet.frens(testAddress);
 
     stakingFacet = (await impersonate(
       rateManager,
@@ -197,7 +196,7 @@ describe("Epoch Tests (GHST Only)", async function () {
     ethers.provider.send("evm_increaseTime", [86400 * 3]);
     ethers.provider.send("evm_mine", []);
 
-    const after = await stakingFacet.epochFrens(testAddress);
+    const after = await stakingFacet.frens(testAddress);
 
     const difference = after.sub(before);
     expect(Number(difference.toString())).to.be.lessThan(

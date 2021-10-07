@@ -33,7 +33,7 @@ describe("Testing 100 epochs", async function () {
   });
 
   it("Can go 100 epochs ahead in time without user migrating", async function () {
-    let frens = await stakingFacet.epochFrens(testAddress);
+    let frens = await stakingFacet.frens(testAddress);
     console.log("frens:", frens.toString());
 
     for (let index = 0; index < 10; index++) {
@@ -85,16 +85,13 @@ describe("Testing 100 epochs", async function () {
     const hasMigrated = await stakingFacet.hasMigrated(testAddress);
     expect(hasMigrated).to.equal(false);
 
-    frens = await stakingFacet.epochFrens(testAddress);
+    frens = await stakingFacet.frens(testAddress);
 
     console.log("frens:", frens.toString());
   });
 
   it("Can withdraw + migrate without disrupting current FRENS balance", async function () {
-    let beforeEpochFrens = await stakingFacet.epochFrens(testAddress);
-    let beforeNormalFrens = await stakingFacet.frens(testAddress);
-
-    expect(beforeEpochFrens).to.equal(beforeNormalFrens);
+    let beforeFrens = await stakingFacet.frens(testAddress);
 
     stakingFacet = await impersonate(
       testAddress,
@@ -109,13 +106,10 @@ describe("Testing 100 epochs", async function () {
       const pool = stakedPools[index];
       await stakingFacet.withdrawFromPool(pool.poolAddress, pool.amount);
     }
+    let afterFrens = await stakingFacet.frens(testAddress);
+    // console.log("normal frens:", normalFrens.toString());
 
-    let normalFrens = await stakingFacet.frens(testAddress);
-    console.log("normal frens:", normalFrens.toString());
-
-    let epochFrens = await stakingFacet.epochFrens(testAddress);
-    console.log("epoch frens:", epochFrens.toString());
-    expect(normalFrens).to.equal(epochFrens);
+    expect(beforeFrens).to.equal(afterFrens);
 
     const hasMigrated = await stakingFacet.hasMigrated(testAddress);
     expect(hasMigrated).to.equal(true);

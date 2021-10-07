@@ -84,10 +84,10 @@ describe("Epoch Tests (Deprecated Functions)", async function () {
   });
 
   it("Should stop receiving FRENS after withdrawing from pool", async function () {
-    const epochFrensBefore = await stakingFacet.epochFrens(testAddress);
+    const epochFrensBefore = await stakingFacet.frens(testAddress);
     ethers.provider.send("evm_increaseTime", [86400 * 3]);
     ethers.provider.send("evm_mine", []);
-    const epochFrensAfter = await stakingFacet.epochFrens(testAddress);
+    const epochFrensAfter = await stakingFacet.frens(testAddress);
     expect(epochFrensBefore).to.equal(epochFrensAfter);
   });
 });
