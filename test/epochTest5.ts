@@ -81,15 +81,23 @@ describe("More checks", async function () {
     userEpoch = await stakingFacet.userEpoch(testAddress);
 
     current = await stakingFacet.currentEpoch();
+    await stakingFacet.bumpEpoch(testAddress, current.sub(2));
 
+    let afterFrens = ethers.utils.formatEther(
+      await stakingFacet.frens(testAddress)
+    );
+
+    console.log("frens after first bump:", afterFrens);
+    current = await stakingFacet.currentEpoch();
     await stakingFacet.bumpEpoch(testAddress, current);
 
     userEpoch = await stakingFacet.userEpoch(testAddress);
     expect(userEpoch).to.equal(current);
 
-    const afterFrens = ethers.utils.formatEther(
+    afterFrens = ethers.utils.formatEther(
       await stakingFacet.frens(testAddress)
     );
+    console.log("frens after second bump:", afterFrens);
     expect(Number(afterFrens) - Number(beforeFrens)).to.lessThan(10);
   });
 
