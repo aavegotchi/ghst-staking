@@ -73,6 +73,10 @@ contract StakingFacet {
         return s.accounts[_account].hasMigrated;
     }
 
+    function userEpoch(address _account) external view returns (uint256) {
+        return s.accounts[_account].userCurrentEpoch;
+    }
+
     function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (PoolInput memory _poolInfo) {
         Pool storage pool = s.pools[_poolAddress];
         return PoolInput(_poolAddress, pool.receiptToken, pool.epochPoolRate[_epoch], pool.name, pool.url);
@@ -253,10 +257,31 @@ contract StakingFacet {
         emit EpochIncreased(s.currentEpoch);
     }
 
+    //Escape hatch mechanism callable by anyone to bump a user to a certain epoch.
+    function bumpEpoch(address _account, uint256 _epoch) external {
+        Account storage account = s.accounts[_account];
+        require(account.hasMigrated == true, "StakingFacet: Can only bump migrated user");
+        require(_epoch > account.userCurrentEpoch, "StakingFacet: Cannot bump to lower epoch");
+        updateFrens(_account, _epoch);
+        account.userCurrentEpoch = _epoch;
+    }
+
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
-        updateFrens(sender);
+        updateFrens(sender, s.currentEpoch);
         if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
+
+        //Validate that pool exists in epoch
+        bool validPool = false;
+        Epoch memory epoch = s.epochs[s.currentEpoch];
+        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
+            address pool = epoch.supportedPools[index];
+            if (_poolContractAddress == pool) {
+                validPool = true;
+                break;
+            }
+        }
+        require(validPool == true, "StakingFacet: Pool is not valid in this epoch");
 
         //Transfer the LP tokens into the Diamond
         LibERC20.transferFrom(_poolContractAddress, sender, address(this), _amount);
@@ -265,14 +290,14 @@ contract StakingFacet {
         s.accounts[sender].accountStakedTokens[_poolContractAddress] += _amount;
 
         if (_poolContractAddress == s.ghstContract) {
-            s.accounts[sender].ghst += uint96(_amount);
             //Do nothing for original GHST contract
         } else if (_poolContractAddress == s.poolContract) {
+            //Keep the GHST-QUICK staking token balance up to date
             s.accounts[sender].ghstStakingTokens += _amount;
             s.ghstStakingTokensTotalSupply += _amount;
             emit Transfer(address(0), sender, _amount);
         } else {
-            //Use mintable for minting stkGHST- token
+            //Use mintable for minting other stkGHST- tokens
             address stkTokenAddress = s.pools[_poolContractAddress].receiptToken;
             IERC20Mintable(stkTokenAddress).mint(sender, _amount);
         }
@@ -283,7 +308,7 @@ contract StakingFacet {
     function withdrawFromPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
 
-        updateFrens(sender);
+        updateFrens(sender, s.currentEpoch);
 
         if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
 
@@ -291,18 +316,17 @@ contract StakingFacet {
         address receiptTokenAddress = s.pools[_poolContractAddress].receiptToken;
         uint256 stakedBalance = s.accounts[sender].accountStakedTokens[_poolContractAddress];
 
+        //GHST does not have a receipt token
         if (receiptTokenAddress != address(0)) {
             require(IERC20(receiptTokenAddress).balanceOf(sender) >= _amount, "StakingFacet: Receipt token insufficient");
         }
 
-        //This is actually only required for receipt tokens
         require(stakedBalance >= _amount, "StakingFacet: Can't withdraw more tokens than staked");
-        require(s.accounts[sender].accountStakedTokens[_poolContractAddress] >= _amount, "Can't withdraw more poolTokens than in account");
 
         s.accounts[sender].accountStakedTokens[_poolContractAddress] -= _amount;
 
         if (_poolContractAddress == s.ghstContract) {
-            s.accounts[sender].ghst -= uint96(_amount);
+            // s.accounts[sender].ghst -= uint96(_amount);
             // console.log("ghst contract, do nothing");
         } else if (_poolContractAddress == s.poolContract) {
             s.accounts[sender].ghstStakingTokens -= _amount;
@@ -330,13 +354,13 @@ contract StakingFacet {
         }
     }
 
-    function updateFrens(address _sender) internal {
+    function updateFrens(address _sender, uint256 _epoch) internal {
         Account storage account = s.accounts[_sender];
         account.frens = epochFrens(_sender);
         account.lastFrensUpdate = uint40(block.timestamp);
 
-        //Bring this user to the latest epoch now;
-        s.accounts[_sender].userCurrentEpoch = s.currentEpoch;
+        //Bring this user to the specified epoch;
+        s.accounts[_sender].userCurrentEpoch = _epoch;
     }
 
     function _migrateToV2(address _account) private {
@@ -449,7 +473,7 @@ contract StakingFacet {
         require(_ids.length == _values.length, "Staking: _ids not the same length as _values");
 
         address sender = LibMeta.msgSender();
-        updateFrens(sender);
+        updateFrens(sender, s.currentEpoch);
         uint256 frensBal = s.accounts[sender].frens;
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];

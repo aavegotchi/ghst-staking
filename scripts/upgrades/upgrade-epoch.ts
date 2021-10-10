@@ -27,8 +27,9 @@ async function upgrade() {
       addSelectors: [
         `function initiateEpoch(${poolInfoTuple}[] calldata _pools) external`,
         `function updateRates(${poolInfoTuple}[] calldata _pools) external`,
-        // "function epochFrens(address _account) public view returns (uint256 frens_)",
+        `function userEpoch(address _account) external view returns (uint256)`,
         "function stakeIntoPool(address _poolContractAddress, uint256 _amount) public",
+        "function bumpEpoch(address _account, uint256 _epoch) external",
         "function withdrawFromPool(address _poolContractAddress, uint256 _amount) public returns (bool)",
         "function migrateToV2(address[] _accounts) external",
         `function poolRatesInEpoch(uint256 _epoch) external view returns (${poolRateTuple}[] memory _rates)`,
