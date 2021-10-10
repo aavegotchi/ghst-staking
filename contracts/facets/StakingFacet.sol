@@ -263,7 +263,6 @@ contract StakingFacet {
         require(account.hasMigrated == true, "StakingFacet: Can only bump migrated user");
         require(_epoch > account.userCurrentEpoch, "StakingFacet: Cannot bump to lower epoch");
         updateFrens(_account, _epoch);
-        account.userCurrentEpoch = _epoch;
     }
 
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
