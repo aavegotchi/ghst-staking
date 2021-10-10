@@ -92,4 +92,17 @@ describe("More checks", async function () {
     );
     expect(Number(afterFrens) - Number(beforeFrens)).to.lessThan(10);
   });
+
+  it("Cannot bump user lower than their current epoch", async function () {
+    const current = await stakingFacet.userEpoch(testAddress);
+    await expect(
+      stakingFacet.bumpEpoch(testAddress, current.sub(1))
+    ).to.be.revertedWith("StakingFacet: Cannot bump to lower epoch");
+  });
+
+  it("Cannot bump user higher than current epoch", async function () {
+    await expect(stakingFacet.bumpEpoch(testAddress, "100")).to.be.revertedWith(
+      "StakingFacet: Epoch must be lower than current epoch"
+    );
+  });
 });

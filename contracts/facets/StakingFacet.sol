@@ -148,8 +148,8 @@ contract StakingFacet {
         }
     }
 
-    ///@dev Useful for testing but will be set to internal in production
-    function epochFrens(address _account) internal view returns (uint256 frens_) {
+    //Gets the amount of FRENS for a given user up to a specific epoch.
+    function epochFrens(address _account, uint256 _epoch) internal view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
         frens_ = account.frens;
 
@@ -157,21 +157,23 @@ contract StakingFacet {
         if (!account.hasMigrated) {
             frens_ = frens(_account);
         } else {
-            uint256 epochsBehind = s.currentEpoch - account.userCurrentEpoch;
+            require(_epoch >= account.userCurrentEpoch, "StakingFacet: Epoch must be greater than user epoch");
+            uint256 epochsBehind = _epoch - account.userCurrentEpoch;
 
             //Get frens for current epoch
-            frens_ += _frensForEpoch(_account, s.currentEpoch);
+            frens_ += _frensForEpoch(_account, _epoch);
 
             for (uint256 i = 1; i <= epochsBehind; i++) {
-                uint256 historicEpoch = s.currentEpoch - i;
+                uint256 historicEpoch = _epoch - i;
                 frens_ += _frensForEpoch(_account, historicEpoch);
             }
         }
     }
 
+    //Get the amount of FRENS for a given user by latest epoch
     function frens(address _account) public view returns (uint256 frens_) {
         //Use epochFrens after a user has migrated
-        if (s.accounts[_account].hasMigrated) return epochFrens(_account);
+        if (s.accounts[_account].hasMigrated) return epochFrens(_account, s.currentEpoch);
 
         //Old implementation
 
@@ -262,6 +264,7 @@ contract StakingFacet {
         Account storage account = s.accounts[_account];
         require(account.hasMigrated == true, "StakingFacet: Can only bump migrated user");
         require(_epoch > account.userCurrentEpoch, "StakingFacet: Cannot bump to lower epoch");
+        require(_epoch <= s.currentEpoch, "StakingFacet: Epoch must be lower than current epoch");
         updateFrens(_account, _epoch);
     }
 
@@ -355,7 +358,7 @@ contract StakingFacet {
 
     function updateFrens(address _sender, uint256 _epoch) internal {
         Account storage account = s.accounts[_sender];
-        account.frens = epochFrens(_sender);
+        account.frens = epochFrens(_sender, _epoch);
         account.lastFrensUpdate = uint40(block.timestamp);
 
         //Bring this user to the specified epoch;
