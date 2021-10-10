@@ -9,6 +9,37 @@ import { StakingFacetInterface } from "../../typechain/StakingFacet";
 import { PoolObject } from "../../types";
 import { maticStakingAddress } from "../helperFunctions";
 
+export const initPools: PoolObject[] = [
+  {
+    _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
+    _poolReceiptToken: ethers.constants.AddressZero,
+    _rate: "1",
+    _poolName: "GHST",
+    _poolUrl: "",
+  },
+  {
+    _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
+    _poolReceiptToken: "0xA02d547512Bb90002807499F05495Fe9C4C3943f",
+    _rate: "83",
+    _poolName: "GHST-QUICK",
+    _poolUrl: "",
+  },
+  {
+    _poolAddress: "0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4",
+    _poolReceiptToken: "0x04439eC4ba8b09acfae0E9b5D75A82cC63b19f09",
+    _rate: "74000000",
+    _poolName: "GHST-USDC",
+    _poolUrl: "",
+  },
+  {
+    _poolAddress: "0xccb9d2100037f1253e6c1682adf7dc9944498aff",
+    _poolReceiptToken: "0x388E2a3d389F27504212030c2D42Abf0a8188cd1",
+    _rate: "12000000",
+    _poolName: "GHST-WETH",
+    _poolUrl: "",
+  },
+];
+
 async function upgrade() {
   const diamondUpgrader = "0x35fe3df776474a7b24b3b1ec6e745a830fdad351";
 
@@ -64,37 +95,6 @@ async function upgrade() {
   let iface: StakingFacetInterface = new ethers.utils.Interface(
     StakingFacet__factory.abi
   ) as StakingFacetInterface;
-
-  const initPools: PoolObject[] = [
-    {
-      _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
-      _poolReceiptToken: ethers.constants.AddressZero,
-      _rate: "1",
-      _poolName: "GHST",
-      _poolUrl: "",
-    },
-    {
-      _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
-      _poolReceiptToken: "0xA02d547512Bb90002807499F05495Fe9C4C3943f",
-      _rate: "83",
-      _poolName: "GHST-QUICK",
-      _poolUrl: "",
-    },
-    {
-      _poolAddress: "0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4",
-      _poolReceiptToken: "0x04439eC4ba8b09acfae0E9b5D75A82cC63b19f09",
-      _rate: "74000000",
-      _poolName: "GHST-USDC",
-      _poolUrl: "",
-    },
-    {
-      _poolAddress: "0xccb9d2100037f1253e6c1682adf7dc9944498aff",
-      _poolReceiptToken: "0x388E2a3d389F27504212030c2D42Abf0a8188cd1",
-      _rate: "12000000",
-      _poolName: "GHST-WETH",
-      _poolUrl: "",
-    },
-  ];
 
   const calldata = iface.encodeFunctionData("initiateEpoch", [initPools]);
 

@@ -283,9 +283,6 @@ contract StakingFacet {
         }
         require(validPool == true, "StakingFacet: Pool is not valid in this epoch");
 
-        //Transfer the LP tokens into the Diamond
-        LibERC20.transferFrom(_poolContractAddress, sender, address(this), _amount);
-
         //Credit the user's with their new LP token balance
         s.accounts[sender].accountStakedTokens[_poolContractAddress] += _amount;
 
@@ -301,6 +298,9 @@ contract StakingFacet {
             address stkTokenAddress = s.pools[_poolContractAddress].receiptToken;
             IERC20Mintable(stkTokenAddress).mint(sender, _amount);
         }
+
+        //Transfer the LP tokens into the Diamond
+        LibERC20.transferFrom(_poolContractAddress, sender, address(this), _amount);
 
         emit StakeInEpoch(sender, _poolContractAddress, s.currentEpoch, _amount);
     }
