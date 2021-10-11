@@ -277,13 +277,13 @@ contract StakingFacet {
         require(account.hasMigrated == true, "StakingFacet: Can only bump migrated user");
         require(_epoch > account.userCurrentEpoch, "StakingFacet: Cannot bump to lower epoch");
         require(_epoch <= s.currentEpoch, "StakingFacet: Epoch must be lower than current epoch");
-        updateFrens(_account, _epoch);
+        _updateFrens(_account, _epoch);
     }
 
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
 
-        updateFrens(sender, s.currentEpoch);
+        _updateFrens(sender, s.currentEpoch);
 
         if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
 
@@ -324,7 +324,7 @@ contract StakingFacet {
     function withdrawFromPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
 
-        updateFrens(sender, s.currentEpoch);
+        _updateFrens(sender, s.currentEpoch);
 
         if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
 
@@ -370,7 +370,7 @@ contract StakingFacet {
         }
     }
 
-    function updateFrens(address _sender, uint256 _epoch) internal {
+    function _updateFrens(address _sender, uint256 _epoch) internal {
         Account storage account = s.accounts[_sender];
         account.frens = _epochFrens(_sender, _epoch);
         account.lastFrensUpdate = uint40(block.timestamp);
@@ -489,7 +489,7 @@ contract StakingFacet {
         require(_ids.length == _values.length, "Staking: _ids not the same length as _values");
 
         address sender = LibMeta.msgSender();
-        updateFrens(sender, s.currentEpoch);
+        _updateFrens(sender, s.currentEpoch);
         uint256 frensBal = s.accounts[sender].frens;
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
