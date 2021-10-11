@@ -174,7 +174,9 @@ describe("Epoch Tests (GHST Only)", async function () {
       _poolUrl: "",
     });
 
-    const before = await stakingFacet.frens(testAddress);
+    const before = ethers.utils.formatEther(
+      await stakingFacet.frens(testAddress)
+    );
 
     stakingFacet = (await impersonate(
       rateManager,
@@ -196,10 +198,12 @@ describe("Epoch Tests (GHST Only)", async function () {
     ethers.provider.send("evm_increaseTime", [86400 * 3]);
     ethers.provider.send("evm_mine", []);
 
-    const after = await stakingFacet.frens(testAddress);
+    const after = ethers.utils.formatEther(
+      await stakingFacet.frens(testAddress)
+    );
 
-    const difference = after.sub(before);
-    expect(Number(difference.toString())).to.be.lessThan(
+    const difference = Number(after) - Number(before);
+    expect(Number(difference)).to.be.lessThan(
       Number(ethers.utils.parseEther("1"))
     );
   });
