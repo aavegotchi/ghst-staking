@@ -113,12 +113,24 @@ contract StakingFacet {
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
         Epoch memory epoch = s.epochs[_epoch];
         address[] memory supportedPools = epoch.supportedPools;
+        uint256 lastFrensUpdate = s.accounts[_account].lastFrensUpdate;
 
         uint256 duration = 0;
+
+        //When epoch is not over yet
         if (epoch.endTime == 0) {
-            //This epoch has not ended yet, so use the duration between beginTime and now
-            duration = block.timestamp - epoch.beginTime;
-        } else {
+            uint256 epochDuration = block.timestamp - epoch.beginTime;
+            uint256 timeSinceLastFrensUpdate = block.timestamp - lastFrensUpdate;
+            //Time since last update is longer than the current epoch, so only use epoch time
+            if (timeSinceLastFrensUpdate > epochDuration) {
+                duration = epochDuration;
+            } else {
+                //Otherwise use timeSinceLastFrensUpdate
+                duration = timeSinceLastFrensUpdate;
+            }
+        }
+        //When epoch is over
+        else {
             duration = epoch.endTime - epoch.beginTime;
         }
 
@@ -149,7 +161,7 @@ contract StakingFacet {
     }
 
     //Gets the amount of FRENS for a given user up to a specific epoch.
-    function epochFrens(address _account, uint256 _epoch) internal view returns (uint256 frens_) {
+    function _epochFrens(address _account, uint256 _epoch) internal view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
         frens_ = account.frens;
 
@@ -158,6 +170,8 @@ contract StakingFacet {
             frens_ = frens(_account);
         } else {
             require(_epoch >= account.userCurrentEpoch, "StakingFacet: Epoch must be greater than user epoch");
+
+            //This will underflow if the given epoch is lower than the user's current epoch.
             uint256 epochsBehind = _epoch - account.userCurrentEpoch;
 
             //Get frens for current epoch
@@ -173,7 +187,7 @@ contract StakingFacet {
     //Get the amount of FRENS for a given user by latest epoch
     function frens(address _account) public view returns (uint256 frens_) {
         //Use epochFrens after a user has migrated
-        if (s.accounts[_account].hasMigrated) return epochFrens(_account, s.currentEpoch);
+        if (s.accounts[_account].hasMigrated) return _epochFrens(_account, s.currentEpoch);
 
         //Old implementation
 
@@ -223,8 +237,6 @@ contract StakingFacet {
         require(s.epochs[0].supportedPools.length == 0, "StakingFacet: Can only be called on first epoch");
         require(_pools.length > 0, "StakingFacet: Pools length cannot be zero");
 
-        console.log("initiating epoch!");
-
         Epoch storage firstEpoch = s.epochs[0];
         firstEpoch.beginTime = block.timestamp;
 
@@ -270,7 +282,9 @@ contract StakingFacet {
 
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
+
         updateFrens(sender, s.currentEpoch);
+
         if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
 
         //Validate that pool exists in epoch
@@ -358,7 +372,7 @@ contract StakingFacet {
 
     function updateFrens(address _sender, uint256 _epoch) internal {
         Account storage account = s.accounts[_sender];
-        account.frens = epochFrens(_sender, _epoch);
+        account.frens = _epochFrens(_sender, _epoch);
         account.lastFrensUpdate = uint40(block.timestamp);
 
         //Bring this user to the specified epoch;
