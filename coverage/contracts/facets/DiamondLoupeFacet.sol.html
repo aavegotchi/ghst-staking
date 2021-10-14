@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/facets/DiamondLoupeFacet.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">all files</a> / <a href="index.html">contracts/facets/</a> DiamondLoupeFacet.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>0/59</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/18</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/5</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>0/77</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
+&nbsp;
+/******************************************************************************\
+* Author: Nick Mudge &lt;nick@perfectabstractions.com&gt; (https://twitter.com/mudgen)
+* Uses the diamond-2 version 1.3.4 implementation:
+* https://github.com/mudgen/diamond-2
+/******************************************************************************/
+&nbsp;
+import "../libraries/LibDiamond.sol";
+import "../interfaces/IDiamondLoupe.sol";
+import "../interfaces/IERC165.sol";
+&nbsp;
+contract DiamondLoupeFacet is IDiamondLoupe, IERC165 {
+    // Diamond Loupe Functions
+    ////////////////////////////////////////////////////////////////////
+    /// These functions are expected to be called frequently by tools.
+    //
+    // struct Facet {
+    //     address facetAddress;
+    //     bytes4[] functionSelectors;
+    // }
+    /// @notice Gets all facets and their selectors.
+    /// @return facets_ Facet
+<span class="fstat-no" title="function not covered" >    function facets() external override view returns (Facet[] memory facets_) {</span>
+<span class="cstat-no" title="statement not covered" >        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();</span>
+<span class="cstat-no" title="statement not covered" >        facets_ = new Facet[](ds.selectorCount)</span>;
+<span class="cstat-no" title="statement not covered" >        uint8[] memory numFacetSelectors = new uint8[](ds.selectorCount);</span>
+<span class="cstat-no" title="statement not covered" >        uint256 numFacets;</span>
+<span class="cstat-no" title="statement not covered" >        uint256 selectorIndex;</span>
+        // loop through function selectors
+<span class="cstat-no" title="statement not covered" >        for (uint256 slotIndex; selectorIndex &lt; ds.selectorCount; slotIndex++) {</span>
+<span class="cstat-no" title="statement not covered" >            bytes32 slot = ds.selectorSlots[slotIndex];</span>
+<span class="cstat-no" title="statement not covered" >            for (uint256 selectorSlotIndex; selectorSlotIndex &lt; 8; selectorSlotIndex++) {</span>
+                selectorIndex++;
+<span class="cstat-no" title="statement not covered" >                if (selectorIndex &gt; ds.selectorCount) {</span>
+                    break;
+                }
+<span class="cstat-no" title="statement not covered" >                bytes4 selector = bytes4(slot &lt;&lt; (selectorSlotIndex * 32));</span>
+<span class="cstat-no" title="statement not covered" >                address facetAddress_ = address(bytes20(ds.facets[selector]));</span>
+<span class="cstat-no" title="statement not covered" >                bool continueLoop = false;</span>
+<span class="cstat-no" title="statement not covered" >                for (uint256 facetIndex; facetIndex &lt; numFacets; facetIndex++) {</span>
+<span class="cstat-no" title="statement not covered" >                    if (facets_[facetIndex].facetAddress == facetAddress_) {</span>
+<span class="cstat-no" title="statement not covered" >                        facets_[facetIndex].functionSelectors[numFacetSelectors[facetIndex]] = selector</span>;
+                        // probably will never have more than 256 functions from one facet contract
+<span class="cstat-no" title="statement not covered" >                        require(numFacetSelectors[facetIndex] &lt; 255)</span>;
+                        numFacetSelectors[facetIndex]++;
+<span class="cstat-no" title="statement not covered" >                        continueLoop = true</span>;
+                        break;
+                    }
+                }
+<span class="cstat-no" title="statement not covered" >                if (continueLoop) {</span>
+<span class="cstat-no" title="statement not covered" >                    continueLoop = false</span>;
+                    continue;
+                }
+<span class="cstat-no" title="statement not covered" >                facets_[numFacets].facetAddress = facetAddress_</span>;
+<span class="cstat-no" title="statement not covered" >                facets_[numFacets].functionSelectors = new bytes4[](ds.selectorCount)</span>;
+<span class="cstat-no" title="statement not covered" >                facets_[numFacets].functionSelectors[0] = selector</span>;
+<span class="cstat-no" title="statement not covered" >                numFacetSelectors[numFacets] = 1</span>;
+                numFacets++;
+            }
+        }
+<span class="cstat-no" title="statement not covered" >        for (uint256 facetIndex; facetIndex &lt; numFacets; facetIndex++) {</span>
+<span class="cstat-no" title="statement not covered" >            uint256 numSelectors = numFacetSelectors[facetIndex];</span>
+<span class="cstat-no" title="statement not covered" >            bytes4[] memory selectors = facets_[facetIndex].functionSelectors;</span>
+            // setting the number of selectors
+            assembly {
+                mstore(selectors, numSelectors)
+            }
+        }
+        // setting the number of facets
+        assembly {
+            mstore(facets_, numFacets)
+        }
+    }
+&nbsp;
+    /// @notice Gets all the function selectors supported by a specific facet.
+    /// @param _facet The facet address.
+    /// @return _facetFunctionSelectors The selectors associated with a facet address.
+<span class="fstat-no" title="function not covered" >    function facetFunctionSelectors(address _facet) external override view returns (bytes4[] memory _facetFunctionSelectors) {</span>
+<span class="cstat-no" title="statement not covered" >        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();</span>
+<span class="cstat-no" title="statement not covered" >        uint256 numSelectors;</span>
+<span class="cstat-no" title="statement not covered" >        _facetFunctionSelectors = new bytes4[](ds.selectorCount)</span>;
+<span class="cstat-no" title="statement not covered" >        uint256 selectorIndex;</span>
+        // loop through function selectors
+<span class="cstat-no" title="statement not covered" >        for (uint256 slotIndex; selectorIndex &lt; ds.selectorCount; slotIndex++) {</span>
+<span class="cstat-no" title="statement not covered" >            bytes32 slot = ds.selectorSlots[slotIndex];</span>
+<span class="cstat-no" title="statement not covered" >            for (uint256 selectorSlotIndex; selectorSlotIndex &lt; 8; selectorSlotIndex++) {</span>
+                selectorIndex++;
+<span class="cstat-no" title="statement not covered" >                if (selectorIndex &gt; ds.selectorCount) {</span>
+                    break;
+                }
+<span class="cstat-no" title="statement not covered" >                bytes4 selector = bytes4(slot &lt;&lt; (selectorSlotIndex * 32));</span>
+<span class="cstat-no" title="statement not covered" >                address facet = address(bytes20(ds.facets[selector]));</span>
+<span class="cstat-no" title="statement not covered" >                if (_facet == facet) {</span>
+<span class="cstat-no" title="statement not covered" >                    _facetFunctionSelectors[numSelectors] = selector</span>;
+                    numSelectors++;
+                }
+            }
+        }
+        // Set the number of selectors in the array
+        assembly {
+            mstore(_facetFunctionSelectors, numSelectors)
+        }
+    }
+&nbsp;
+    /// @notice Get all the facet addresses used by a diamond.
+    /// @return facetAddresses_
+<span class="fstat-no" title="function not covered" >    function facetAddresses() external override view returns (address[] memory facetAddresses_) {</span>
+<span class="cstat-no" title="statement not covered" >        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();</span>
+<span class="cstat-no" title="statement not covered" >        facetAddresses_ = new address[](ds.selectorCount)</span>;
+<span class="cstat-no" title="statement not covered" >        uint256 numFacets;</span>
+<span class="cstat-no" title="statement not covered" >        uint256 selectorIndex;</span>
+        // loop through function selectors
+<span class="cstat-no" title="statement not covered" >        for (uint256 slotIndex; selectorIndex &lt; ds.selectorCount; slotIndex++) {</span>
+<span class="cstat-no" title="statement not covered" >            bytes32 slot = ds.selectorSlots[slotIndex];</span>
+<span class="cstat-no" title="statement not covered" >            for (uint256 selectorSlotIndex; selectorSlotIndex &lt; 8; selectorSlotIndex++) {</span>
+                selectorIndex++;
+<span class="cstat-no" title="statement not covered" >                if (selectorIndex &gt; ds.selectorCount) {</span>
+                    break;
+                }
+<span class="cstat-no" title="statement not covered" >                bytes4 selector = bytes4(slot &lt;&lt; (selectorSlotIndex * 32));</span>
+<span class="cstat-no" title="statement not covered" >                address facetAddress_ = address(bytes20(ds.facets[selector]));</span>
+<span class="cstat-no" title="statement not covered" >                bool continueLoop = false;</span>
+<span class="cstat-no" title="statement not covered" >                for (uint256 facetIndex; facetIndex &lt; numFacets; facetIndex++) {</span>
+<span class="cstat-no" title="statement not covered" >                    if (facetAddress_ == facetAddresses_[facetIndex]) {</span>
+<span class="cstat-no" title="statement not covered" >                        continueLoop = true</span>;
+                        break;
+                    }
+                }
+<span class="cstat-no" title="statement not covered" >                if (continueLoop) {</span>
+<span class="cstat-no" title="statement not covered" >                    continueLoop = false</span>;
+                    continue;
+                }
+<span class="cstat-no" title="statement not covered" >                facetAddresses_[numFacets] = facetAddress_</span>;
+                numFacets++;
+            }
+        }
+        // Set the number of facet addresses in the array
+        assembly {
+            mstore(facetAddresses_, numFacets)
+        }
+    }
+&nbsp;
+    /// @notice Gets the facet that supports the given selector.
+    /// @dev If facet is not found return address(0).
+    /// @param _functionSelector The function selector.
+    /// @return facetAddress_ The facet address.
+<span class="fstat-no" title="function not covered" >    function facetAddress(bytes4 _functionSelector) external override view returns (address facetAddress_) {</span>
+<span class="cstat-no" title="statement not covered" >        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();</span>
+<span class="cstat-no" title="statement not covered" >        facetAddress_ = address(bytes20(ds.facets[_functionSelector]))</span>;
+    }
+&nbsp;
+    // This implements ERC-165.
+<span class="fstat-no" title="function not covered" >    function supportsInterface(bytes4 _interfaceId) external override view returns (bool) {</span>
+<span class="cstat-no" title="statement not covered" >        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();</span>
+<span class="cstat-no" title="statement not covered" >        return ds.supportedInterfaces[_interfaceId];</span>
+    }
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Thu Oct 14 2021 07:57:27 GMT+0100 (Western European Summer Time)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>

@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/libraries/LibDiamond.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">all files</a> / <a href="index.html">contracts/libraries/</a> LibDiamond.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>0/91</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/60</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/9</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>0/98</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
+&nbsp;
+/******************************************************************************\
+* Author: Nick Mudge
+*
+* Implementation of Diamond facet.
+* Uses the diamond-2 version 1.3.4 implementation:
+* https://github.com/mudgen/diamond-2
+*
+* This is gas optimized by reducing storage reads and storage writes.
+* This code is as complex as it is to reduce gas costs.
+/******************************************************************************/
+&nbsp;
+import "../interfaces/IDiamondCut.sol";
+&nbsp;
+library LibDiamond {
+    bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.diamond.storage");
+&nbsp;
+    struct DiamondStorage {
+        // maps function selectors to the facets that execute the functions.
+        // and maps the selectors to their position in the selectorSlots array.
+        // func selector =&gt; address facet, selector position
+        mapping(bytes4 =&gt; bytes32) facets;
+        // array of slots of function selectors.
+        // each slot holds 8 function selectors.
+        mapping(uint256 =&gt; bytes32) selectorSlots;
+        // The number of function selectors in selectorSlots
+        uint16 selectorCount;
+        // owner of the contract
+        // Used to query if a contract implements an interface.
+        // Used to implement ERC-165.
+        mapping(bytes4 =&gt; bool) supportedInterfaces;
+        // owner of the contract
+        address contractOwner;
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function diamondStorage() internal pure returns (DiamondStorage storage ds) {</span>
+<span class="cstat-no" title="statement not covered" >        bytes32 position = DIAMOND_STORAGE_POSITION;</span>
+        assembly {
+            ds.slot := position
+        }
+    }
+&nbsp;
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function setContractOwner(address _newOwner) internal {</span>
+<span class="cstat-no" title="statement not covered" >        DiamondStorage storage ds = diamondStorage();</span>
+<span class="cstat-no" title="statement not covered" >        address previousOwner = ds.contractOwner;</span>
+<span class="cstat-no" title="statement not covered" >        ds.contractOwner = _newOwner</span>;
+<span class="cstat-no" title="statement not covered" >        emit OwnershipTransferred(previousOwner, _newOwner);</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function contractOwner() internal view returns (address contractOwner_) {</span>
+<span class="cstat-no" title="statement not covered" >        contractOwner_ = diamondStorage().contractOwner</span>;
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function enforceIsContractOwner() internal view {</span>
+<span class="cstat-no" title="statement not covered" >        require(msg.sender == diamondStorage().contractOwner, "LibDiamond: Must be contract owner")</span>;
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    modifier onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        require(msg.sender == diamondStorage().contractOwner, "LibDiamond: Must be contract owner")</span>;
+        _;
+    }
+&nbsp;
+    event DiamondCut(IDiamondCut.FacetCut[] _diamondCut, address _init, bytes _calldata);
+&nbsp;
+    bytes32 constant CLEAR_ADDRESS_MASK = bytes32(uint256(0xffffffffffffffffffffffff));
+    bytes32 constant CLEAR_SELECTOR_MASK = bytes32(uint256(0xffffffff &lt;&lt; 224));
+&nbsp;
+    // Internal function version of diamondCut
+    // This code is almost the same as the external diamondCut,
+    // except it is using 'Facet[] memory _diamondCut' instead of
+    // 'Facet[] calldata _diamondCut'.
+    // The code is duplicated to prevent copying calldata to memory which
+    // causes an error for a two dimensional array.
+<span class="fstat-no" title="function not covered" >    function diamondCut(</span>
+        IDiamondCut.FacetCut[] memory _diamondCut,
+        address _init,
+        bytes memory _calldata
+    ) internal {
+<span class="cstat-no" title="statement not covered" >        DiamondStorage storage ds = diamondStorage();</span>
+<span class="cstat-no" title="statement not covered" >        uint256 originalSelectorCount = ds.selectorCount;</span>
+<span class="cstat-no" title="statement not covered" >        uint256 selectorCount = originalSelectorCount;</span>
+<span class="cstat-no" title="statement not covered" >        bytes32 selectorSlot;</span>
+        // Check if last selector slot is not full
+<span class="cstat-no" title="statement not covered" >        if (selectorCount % 8 &gt; 0) {</span>
+            // get last selectorSlot
+<span class="cstat-no" title="statement not covered" >            selectorSlot = ds.selectorSlots[selectorCount / 8]</span>;
+        }
+        // loop through diamond cut
+<span class="cstat-no" title="statement not covered" >        for (uint256 facetIndex; facetIndex &lt; _diamondCut.length; facetIndex++) {</span>
+<span class="cstat-no" title="statement not covered" >            (selectorCount, selectorSlot) = addReplaceRemoveFacetSelectors(</span>
+                selectorCount,
+                selectorSlot,
+                _diamondCut[facetIndex].facetAddress,
+                _diamondCut[facetIndex].action,
+                _diamondCut[facetIndex].functionSelectors
+            );
+        }
+<span class="cstat-no" title="statement not covered" >        if (selectorCount != originalSelectorCount) {</span>
+<span class="cstat-no" title="statement not covered" >            ds.selectorCount = uint16(selectorCount)</span>;
+        }
+        // If last selector slot is not full
+<span class="cstat-no" title="statement not covered" >        if (selectorCount % 8 &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >            ds.selectorSlots[selectorCount / 8] = selectorSlot</span>;
+        }
+<span class="cstat-no" title="statement not covered" >        emit DiamondCut(_diamondCut, _init, _calldata);</span>
+<span class="cstat-no" title="statement not covered" >        initializeDiamondCut(_init, _calldata)</span>;
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function addReplaceRemoveFacetSelectors(</span>
+        uint256 _selectorCount,
+        bytes32 _selectorSlot,
+        address _newFacetAddress,
+        IDiamondCut.FacetCutAction _action,
+        bytes4[] memory _selectors
+    ) internal returns (uint256, bytes32) {
+<span class="cstat-no" title="statement not covered" >        DiamondStorage storage ds = diamondStorage();</span>
+<span class="cstat-no" title="statement not covered" >        require(_selectors.length &gt; 0, "LibDiamondCut: No selectors in facet to cut")</span>;
+<span class="cstat-no" title="statement not covered" >        if (_action == IDiamondCut.FacetCutAction.Add) {</span>
+<span class="cstat-no" title="statement not covered" >            require(_newFacetAddress != address(0), "LibDiamondCut: Add facet can't be address(0)")</span>;
+<span class="cstat-no" title="statement not covered" >            enforceHasContractCode(_newFacetAddress, "LibDiamondCut: Add facet has no code")</span>;
+<span class="cstat-no" title="statement not covered" >            for (uint256 selectorIndex; selectorIndex &lt; _selectors.length; selectorIndex++) {</span>
+<span class="cstat-no" title="statement not covered" >                bytes4 selector = _selectors[selectorIndex];</span>
+<span class="cstat-no" title="statement not covered" >                bytes32 oldFacet = ds.facets[selector];</span>
+<span class="cstat-no" title="statement not covered" >                require(address(bytes20(oldFacet)) == address(0), "LibDiamondCut: Can't add function that already exists")</span>;
+                // add facet for selector
+<span class="cstat-no" title="statement not covered" >                ds.facets[selector] = bytes20(_newFacetAddress) | bytes32(_selectorCount)</span>;
+<span class="cstat-no" title="statement not covered" >                uint256 selectorInSlotPosition = (_selectorCount % 8) * 32;</span>
+                // clear selector position in slot and add selector
+<span class="cstat-no" title="statement not covered" >                _selectorSlot = (_selectorSlot &amp; ~(CLEAR_SELECTOR_MASK &gt;&gt; selectorInSlotPosition)) | (bytes32(selector) &gt;&gt; selectorInSlotPosition)</span>;
+                // if slot is full then write it to storage
+<span class="cstat-no" title="statement not covered" >                if (selectorInSlotPosition == 224) {</span>
+<span class="cstat-no" title="statement not covered" >                    ds.selectorSlots[_selectorCount / 8] = _selectorSlot</span>;
+<span class="cstat-no" title="statement not covered" >                    _selectorSlot = 0</span>;
+                }
+                _selectorCount++;
+            }
+        } else <span class="cstat-no" title="statement not covered" >if (_action == IDiamondCut.FacetCutAction.Replace) {</span>
+<span class="cstat-no" title="statement not covered" >            require(_newFacetAddress != address(0), "LibDiamondCut: Replace facet can't be address(0)")</span>;
+<span class="cstat-no" title="statement not covered" >            enforceHasContractCode(_newFacetAddress, "LibDiamondCut: Replace facet has no code")</span>;
+<span class="cstat-no" title="statement not covered" >            for (uint256 selectorIndex; selectorIndex &lt; _selectors.length; selectorIndex++) {</span>
+<span class="cstat-no" title="statement not covered" >                bytes4 selector = _selectors[selectorIndex];</span>
+<span class="cstat-no" title="statement not covered" >                bytes32 oldFacet = ds.facets[selector];</span>
+<span class="cstat-no" title="statement not covered" >                address oldFacetAddress = address(bytes20(oldFacet));</span>
+                // only useful if immutable functions exist
+<span class="cstat-no" title="statement not covered" >                require(oldFacetAddress != address(this), "LibDiamondCut: Can't replace immutable function")</span>;
+<span class="cstat-no" title="statement not covered" >                require(oldFacetAddress != _newFacetAddress, "LibDiamondCut: Can't replace function with same function")</span>;
+<span class="cstat-no" title="statement not covered" >                require(oldFacetAddress != address(0), "LibDiamondCut: Can't replace function that doesn't exist")</span>;
+                // replace old facet address
+<span class="cstat-no" title="statement not covered" >                ds.facets[selector] = (oldFacet &amp; CLEAR_ADDRESS_MASK) | bytes20(_newFacetAddress)</span>;
+            }
+        } else <span class="cstat-no" title="statement not covered" >if (_action == IDiamondCut.FacetCutAction.Remove) {</span>
+<span class="cstat-no" title="statement not covered" >            require(_newFacetAddress == address(0), "LibDiamondCut: Remove facet address must be address(0)")</span>;
+<span class="cstat-no" title="statement not covered" >            uint256 selectorSlotCount = _selectorCount / 8;</span>
+<span class="cstat-no" title="statement not covered" >            uint256 selectorInSlotIndex = (_selectorCount % 8) - 1;</span>
+<span class="cstat-no" title="statement not covered" >            for (uint256 selectorIndex; selectorIndex &lt; _selectors.length; selectorIndex++) {</span>
+<span class="cstat-no" title="statement not covered" >                if (_selectorSlot == 0) {</span>
+                    // get last selectorSlot
+                    selectorSlotCount--;
+<span class="cstat-no" title="statement not covered" >                    _selectorSlot = ds.selectorSlots[selectorSlotCount]</span>;
+<span class="cstat-no" title="statement not covered" >                    selectorInSlotIndex = 7</span>;
+                }
+<span class="cstat-no" title="statement not covered" >                bytes4 lastSelector;</span>
+<span class="cstat-no" title="statement not covered" >                uint256 oldSelectorsSlotCount;</span>
+<span class="cstat-no" title="statement not covered" >                uint256 oldSelectorInSlotPosition;</span>
+                // adding a block here prevents stack too deep error
+                {
+<span class="cstat-no" title="statement not covered" >                    bytes4 selector = _selectors[selectorIndex];</span>
+<span class="cstat-no" title="statement not covered" >                    bytes32 oldFacet = ds.facets[selector];</span>
+<span class="cstat-no" title="statement not covered" >                    require(address(bytes20(oldFacet)) != address(0), "LibDiamondCut: Can't remove function that doesn't exist")</span>;
+                    // only useful if immutable functions exist
+<span class="cstat-no" title="statement not covered" >                    require(address(bytes20(oldFacet)) != address(this), "LibDiamondCut: Can't remove immutable function")</span>;
+                    // replace selector with last selector in ds.facets
+                    // gets the last selector
+<span class="cstat-no" title="statement not covered" >                    lastSelector = bytes4(_selectorSlot &lt;&lt; (selectorInSlotIndex * 32))</span>;
+<span class="cstat-no" title="statement not covered" >                    if (lastSelector != selector) {</span>
+                        // update last selector slot position info
+<span class="cstat-no" title="statement not covered" >                        ds.facets[lastSelector] = (oldFacet &amp; CLEAR_ADDRESS_MASK) | bytes20(ds.facets[lastSelector])</span>;
+                    }
+                    delete ds.facets[selector];
+<span class="cstat-no" title="statement not covered" >                    uint256 oldSelectorCount = uint16(uint256(oldFacet));</span>
+<span class="cstat-no" title="statement not covered" >                    oldSelectorsSlotCount = oldSelectorCount / 8</span>;
+<span class="cstat-no" title="statement not covered" >                    oldSelectorInSlotPosition = (oldSelectorCount % 8) * 32</span>;
+                }
+<span class="cstat-no" title="statement not covered" >                if (oldSelectorsSlotCount != selectorSlotCount) {</span>
+<span class="cstat-no" title="statement not covered" >                    bytes32 oldSelectorSlot = ds.selectorSlots[oldSelectorsSlotCount];</span>
+                    // clears the selector we are deleting and puts the last selector in its place.
+<span class="cstat-no" title="statement not covered" >                    oldSelectorSlot =</span>
+                        (oldSelectorSlot &amp; ~(CLEAR_SELECTOR_MASK &gt;&gt; oldSelectorInSlotPosition)) |
+                        (bytes32(lastSelector) &gt;&gt; oldSelectorInSlotPosition);
+                    // update storage with the modified slot
+<span class="cstat-no" title="statement not covered" >                    ds.selectorSlots[oldSelectorsSlotCount] = oldSelectorSlot</span>;
+                } else {
+                    // clears the selector we are deleting and puts the last selector in its place.
+<span class="cstat-no" title="statement not covered" >                    _selectorSlot =</span>
+                        (_selectorSlot &amp; ~(CLEAR_SELECTOR_MASK &gt;&gt; oldSelectorInSlotPosition)) |
+                        (bytes32(lastSelector) &gt;&gt; oldSelectorInSlotPosition);
+                }
+<span class="cstat-no" title="statement not covered" >                if (selectorInSlotIndex == 0) {</span>
+                    delete ds.selectorSlots[selectorSlotCount];
+<span class="cstat-no" title="statement not covered" >                    _selectorSlot = 0</span>;
+                }
+                selectorInSlotIndex--;
+            }
+<span class="cstat-no" title="statement not covered" >            _selectorCount = selectorSlotCount * 8 + selectorInSlotIndex + 1</span>;
+        } else {
+<span class="cstat-no" title="statement not covered" >            revert("LibDiamondCut: Incorrect FacetCutAction")</span>;
+        }
+<span class="cstat-no" title="statement not covered" >        return (_selectorCount, _selectorSlot);</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function initializeDiamondCut(address _init, bytes memory _calldata) internal {</span>
+<span class="cstat-no" title="statement not covered" >        if (_init == address(0)) {</span>
+<span class="cstat-no" title="statement not covered" >            require(_calldata.length == 0, "LibDiamondCut: _init is address(0) but_calldata is not empty")</span>;
+        } else {
+<span class="cstat-no" title="statement not covered" >            require(_calldata.length &gt; 0, "LibDiamondCut: _calldata is empty but _init is not address(0)")</span>;
+<span class="cstat-no" title="statement not covered" >            if (_init != address(this)) {</span>
+<span class="cstat-no" title="statement not covered" >                enforceHasContractCode(_init, "LibDiamondCut: _init address has no code")</span>;
+            }
+<span class="cstat-no" title="statement not covered" >            (bool success, bytes memory error) = _init.delegatecall(_calldata);</span>
+<span class="cstat-no" title="statement not covered" >            if (success == false) {</span>
+<span class="cstat-no" title="statement not covered" >                if (error.length &gt; 0) {</span>
+                    // bubble up the error
+<span class="cstat-no" title="statement not covered" >                    revert(string(error))</span>;
+                } else {
+<span class="cstat-no" title="statement not covered" >                    revert("LibDiamondCut: _init function reverted")</span>;
+                }
+            }
+        }
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function enforceHasContractCode(address _contract, string memory _errorMessage) internal view {</span>
+<span class="cstat-no" title="statement not covered" >        uint256 contractSize;</span>
+        assembly {
+            contractSize := extcodesize(_contract)
+        }
+<span class="cstat-no" title="statement not covered" >        require(contractSize &gt; 0, _errorMessage)</span>;
+    }
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Thu Oct 14 2021 07:57:27 GMT+0100 (Western European Summer Time)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>
