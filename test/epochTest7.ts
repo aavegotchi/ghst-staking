@@ -71,7 +71,7 @@ const stakersList = [
 
 let stakingFacet: StakingFacet;
 
-describe("Stake in different pools and different epochs", async function () {
+describe("More tests", async function () {
   const diamondAddress = maticStakingAddress;
 
   before(async function () {
@@ -138,11 +138,28 @@ describe("Stake in different pools and different epochs", async function () {
       const difference = Number(
         ethers.utils.formatEther(frensAfter.sub(frensBeforeArr[i]))
       );
-      // check that the frens difference is less than 1.2%
+      // check that the frens difference is less than 2%
       const tinyPercent =
-        (Number(ethers.utils.formatUnits(frensAfter)) * 0.012 +
-          Number(ethers.utils.formatUnits(frensBeforeArr[i])) * 0.012) /
+        (Number(ethers.utils.formatUnits(frensAfter)) * 0.02 +
+          Number(ethers.utils.formatUnits(frensBeforeArr[i])) * 0.02) /
         2;
+      // check that the frens difference is less than 0.05%
+      const tiniestPercent =
+        (Number(ethers.utils.formatUnits(frensAfter)) * 0.0005 +
+          Number(ethers.utils.formatUnits(frensBeforeArr[i])) * 0.0005) /
+        2;
+      const percDiff =
+        difference /
+        ((Number(ethers.utils.formatUnits(frensAfter)) +
+          Number(ethers.utils.formatUnits(frensBeforeArr[i]))) /
+          2);
+      if (difference > tiniestPercent) {
+        console.log("address", stakersList[i]);
+        console.log("frensBefore", ethers.utils.formatUnits(frensBeforeArr[i]));
+        console.log("frensAfter", ethers.utils.formatUnits(frensAfter));
+        console.log("difference", difference);
+        console.log("percdiff", percDiff);
+      }
       expect(difference).to.lessThanOrEqual(tinyPercent);
     }
   });
