@@ -1,5 +1,5 @@
 import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
-import { StakingFacet } from "../typechain";
+import { StakingFacet, ERC20 } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
 import { ethers } from "hardhat";
@@ -8,7 +8,9 @@ import { initPools } from "../scripts/upgrades/upgrade-epoch";
 const { upgrade } = require("../scripts/upgrades/upgrade-epoch.ts");
 
 const testAddress = "0x3Da7D21f1A06C7Ce19EE593f76148FAe6e952ca3";
+const testAddress2 = "0xC99DF6B7A5130Dce61bA98614A2457DAA8d92d1c";
 const rateManager = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
+const ghstAddress = "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7";
 // top 20 addresses for pools: GHST-QUICK GHST-USDC GHST-WETH
 const stakersList = [
   "0xa132fad61ede08f1f288a35ff4c10dcd1cb9e107",
@@ -71,6 +73,7 @@ const stakersList = [
 ];
 
 let stakingFacet: StakingFacet;
+let ghstToken: ERC20;
 
 describe("More tests", async function () {
   const diamondAddress = maticStakingAddress;
@@ -84,6 +87,8 @@ describe("More tests", async function () {
       diamondAddress
     )) as StakingFacet;
 
+    ghstToken = (await ethers.getContractAt("ERC20", ghstAddress)) as ERC20;
+
     stakingFacet = (await impersonate(
       testAddress,
       stakingFacet,
@@ -91,7 +96,7 @@ describe("More tests", async function () {
       network
     )) as StakingFacet;
   });
-  xit("Stake and withdraw loop GHST and GHST-QUICK", async function () {
+  it("Stake and withdraw loop GHST and GHST-QUICK", async function () {
     await network.provider.send("evm_setAutomine", [false]);
     const pools = await stakingFacet.poolRatesInEpoch("0");
     const frensBefore = await stakingFacet.frens(testAddress);
@@ -163,5 +168,42 @@ describe("More tests", async function () {
       }
       expect(difference).to.lessThanOrEqual(tinyPercent);
     }
+  });
+  it("Withdrawh funds from pool after epoch has ended, new epoch doesn't contain that pool", async function () {
+    stakingFacet = (await impersonate(
+      rateManager,
+      stakingFacet,
+      ethers,
+      network
+    )) as StakingFacet;
+    const currentEpoch = await stakingFacet.currentEpoch();
+    const staked = await stakingFacet.stakedInCurrentEpoch(testAddress2);
+    const ghstStaked = staked[0].amount;
+    await stakingFacet.migrateToV2([testAddress2], currentEpoch);
+    const pool = {
+      _poolAddress: testAddress2,
+      _poolReceiptToken: testAddress2,
+      _rate: "0",
+      _poolName: "TEST",
+      _poolUrl: "test",
+    };
+    await stakingFacet.updateRates([pool]);
+    stakingFacet = (await impersonate(
+      testAddress2,
+      stakingFacet,
+      ethers,
+      network
+    )) as StakingFacet;
+    const balanceBeforeWithdraw = await ghstToken.balanceOf(testAddress2);
+    await stakingFacet.withdrawFromPool(ghstAddress, ghstStaked);
+    const stakedAfterWithdraw = await stakingFacet.stakedInEpoch(
+      testAddress2,
+      0
+    );
+    const balanceAfterWithdraw = await ghstToken.balanceOf(testAddress2);
+    expect(balanceAfterWithdraw.sub(balanceBeforeWithdraw)).to.equal(
+      ghstStaked
+    );
+    expect(stakedAfterWithdraw[0].amount).to.equal(0);
   });
 });
