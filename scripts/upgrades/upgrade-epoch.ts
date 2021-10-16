@@ -22,21 +22,24 @@ export const initPools: PoolObject[] = [
     _poolReceiptToken: "0xA02d547512Bb90002807499F05495Fe9C4C3943f",
     _rate: "83",
     _poolName: "GHST-QUICK",
-    _poolUrl: "",
+    _poolUrl:
+      "https://quickswap.exchange/#/add/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7/0x831753DD7087CaC61aB5644b308642cc1c33Dc13",
   },
   {
     _poolAddress: "0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4",
     _poolReceiptToken: "0x04439eC4ba8b09acfae0E9b5D75A82cC63b19f09",
-    _rate: "74000000",
+    _rate: "74062104",
     _poolName: "GHST-USDC",
-    _poolUrl: "",
+    _poolUrl:
+      "https://quickswap.exchange/#/add/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7/0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
   },
   {
     _poolAddress: "0xccb9d2100037f1253e6c1682adf7dc9944498aff",
     _poolReceiptToken: "0x388E2a3d389F27504212030c2D42Abf0a8188cd1",
-    _rate: "12000000",
+    _rate: "12077243",
     _poolName: "GHST-WETH",
-    _poolUrl: "",
+    _poolUrl:
+      "https://quickswap.exchange/#/add/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7/0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
   },
 ];
 
