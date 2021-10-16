@@ -11,7 +11,7 @@ const testAddress = "0x3Da7D21f1A06C7Ce19EE593f76148FAe6e952ca3";
 const rateManager = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
 // top 20 addresses for pools: GHST-QUICK GHST-USDC GHST-WETH
 const stakersList = [
-  "0xa132fad61ede08f1f288a35ff4c10dcd1cb9e107",
+  /* "0xa132fad61ede08f1f288a35ff4c10dcd1cb9e107",
   "0x7af23cc86f3d96f079d5a56d0a89ebcb281060d5",
   "0x174b079bb5aeb7a7ffa2a6407b906a844738428d",
   "0x20ec02894d748c59c01b6bf08fe283d7bb75a5d2",
@@ -66,7 +66,8 @@ const stakersList = [
   "0x2afb58a22e7d3c241ab7b9a1f68b9e8e74ec9d68",
   "0x6d98d039a4b3437c8fb19ef2fadecb3626b207ad",
   "0x17849f5232aeb12d6f279281385f8031bfba2856",
-  "0x94bbaf0999db51f5d957fa638520d562bbe114ed",
+  "0x94bbaf0999db51f5d957fa638520d562bbe114ed",*/
+  "0xa532f169cee0e551d4da641031ac78fd85461035",
 ];
 
 let stakingFacet: StakingFacet;
@@ -90,6 +91,7 @@ describe("More tests", async function () {
       network
     )) as StakingFacet;
   });
+  /*
   it("Stake and withdraw loop GHST and GHST-QUICK", async function () {
     await network.provider.send("evm_setAutomine", [false]);
     const pools = await stakingFacet.poolRatesInEpoch("0");
@@ -120,6 +122,7 @@ describe("More tests", async function () {
     expect(frensBefore).to.equal(frensAfter2);
     await network.provider.send("evm_setAutomine", [true]);
   });
+  */
   it("Migrate big list of users and check frens before and after", async function () {
     stakingFacet = (await impersonate(
       rateManager,
@@ -132,7 +135,10 @@ describe("More tests", async function () {
       const frensBefore = await stakingFacet.frens(stakersList[i]);
       frensBeforeArr.push(frensBefore);
     }
-    await stakingFacet.migrateToV2(stakersList);
+
+    const currentEpoch = await stakingFacet.currentEpoch();
+
+    await stakingFacet.migrateToV2(stakersList, currentEpoch);
     for (let i = 0; i < stakersList.length; i++) {
       const frensAfter = await stakingFacet.frens(stakersList[i]);
       const difference = Number(
@@ -149,10 +155,11 @@ describe("More tests", async function () {
           Number(ethers.utils.formatUnits(frensBeforeArr[i])) * 0.0005) /
         2;
       const percDiff =
-        difference /
-        ((Number(ethers.utils.formatUnits(frensAfter)) +
-          Number(ethers.utils.formatUnits(frensBeforeArr[i]))) /
-          2);
+        (difference /
+          ((Number(ethers.utils.formatUnits(frensAfter)) +
+            Number(ethers.utils.formatUnits(frensBeforeArr[i]))) /
+            2)) *
+        100;
       if (difference > tiniestPercent) {
         console.log("address", stakersList[i]);
         console.log("frensBefore", ethers.utils.formatUnits(frensBeforeArr[i]));

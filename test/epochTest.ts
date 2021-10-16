@@ -39,8 +39,10 @@ describe("Epoch Tests (GHST Only)", async function () {
   it("Can migrate user without radically changing FRENS", async function () {
     // Check add and view function works
 
+    const currentEpoch = await stakingFacet.currentEpoch();
+
     const frensBefore = await stakingFacet.frens(testAddress);
-    const tx = await stakingFacet.migrateToV2([testAddress]);
+    const tx = await stakingFacet.migrateToV2([testAddress], currentEpoch);
     await tx.wait();
     const frensAfter = await stakingFacet.frens(testAddress);
 
@@ -53,6 +55,7 @@ describe("Epoch Tests (GHST Only)", async function () {
   });
   it("Can update rate and create new epoch", async function () {
     const pools: PoolObject[] = [];
+    const currentEpoch = await stakingFacet.currentEpoch();
     pools.push({
       _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
       _poolReceiptToken: ethers.constants.AddressZero,
@@ -63,7 +66,6 @@ describe("Epoch Tests (GHST Only)", async function () {
     const tx = await stakingFacet.updateRates(pools);
     await tx.wait();
 
-    const currentEpoch = await stakingFacet.currentEpoch();
     expect(currentEpoch).to.equal("1");
   });
 

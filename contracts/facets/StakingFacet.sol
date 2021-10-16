@@ -285,7 +285,7 @@ contract StakingFacet {
 
         _updateFrens(sender, s.currentEpoch);
 
-        if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
+        if (!s.accounts[sender].hasMigrated) _migrateToV2(sender, s.currentEpoch);
 
         //Validate that pool exists in epoch
         bool validPool = false;
@@ -326,7 +326,7 @@ contract StakingFacet {
 
         _updateFrens(sender, s.currentEpoch);
 
-        if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
+        if (!s.accounts[sender].hasMigrated) _migrateToV2(sender, s.currentEpoch);
 
         // uint256 bal;
         address receiptTokenAddress = s.pools[_poolContractAddress].receiptToken;
@@ -364,9 +364,9 @@ contract StakingFacet {
     }
 
     ////@dev Used for migrating accounts by rateManager
-    function migrateToV2(address[] memory _accounts) external onlyRateManager {
+    function migrateToV2(address[] memory _accounts, uint256 _epoch) external onlyRateManager {
         for (uint256 index = 0; index < _accounts.length; index++) {
-            _migrateToV2(_accounts[index]);
+            _migrateToV2(_accounts[index], _epoch);
         }
     }
 
@@ -379,7 +379,7 @@ contract StakingFacet {
         s.accounts[_sender].userCurrentEpoch = _epoch;
     }
 
-    function _migrateToV2(address _account) private {
+    function _migrateToV2(address _account, uint256 _epoch) private {
         uint256 ghst_ = s.accounts[_account].ghst;
         uint256 poolTokens_ = s.accounts[_account].poolTokens;
         uint256 ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
@@ -392,9 +392,11 @@ contract StakingFacet {
         s.accounts[_account].accountStakedTokens[s.ghstWethPoolToken] = ghstWethPoolToken_;
 
         //Update FRENS with last balance
-        s.accounts[_account].frens = frens(_account);
-        s.accounts[_account].lastFrensUpdate = uint40(block.timestamp);
-        s.accounts[_account].userCurrentEpoch = s.currentEpoch;
+
+        _updateFrens(_account, _epoch);
+        // s.accounts[_account].frens = _epochFrens(_account, _epoch);
+        // s.accounts[_account].lastFrensUpdate = uint40(block.timestamp);
+        // s.accounts[_account].userCurrentEpoch = _epoch;
 
         //Set migrated to true
         s.accounts[_account].hasMigrated = true;

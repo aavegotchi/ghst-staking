@@ -62,7 +62,7 @@ async function upgrade() {
         "function stakeIntoPool(address _poolContractAddress, uint256 _amount) public",
         "function bumpEpoch(address _account, uint256 _epoch) external",
         "function withdrawFromPool(address _poolContractAddress, uint256 _amount) public returns (bool)",
-        "function migrateToV2(address[] _accounts) external",
+        "function migrateToV2(address[] _accounts, uint256 _epoch) external",
         `function poolRatesInEpoch(uint256 _epoch) external view returns (${poolRateTuple}[] memory _rates)`,
         `function stakedInEpoch(address _account, uint256 _epoch) external view returns (${stakedOutputTuple}[] memory _staked)`,
         `function stakedInCurrentEpoch(address _account) public view returns (${stakedOutputTuple}[] memory _staked)`,
