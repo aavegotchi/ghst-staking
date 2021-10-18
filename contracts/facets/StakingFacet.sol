@@ -147,6 +147,35 @@ contract StakingFacet {
         return accumulatedFrens;
     }
 
+    // same logic with _frensForEpoch, but from special time instead of lastFrensUpdate, and GHST pool only
+    function _frensForEpochFromTime(uint256 _amount, uint256 _time, uint256 _epoch) internal view returns (uint256) {
+        Epoch memory epoch = s.epochs[_epoch];
+
+        uint256 duration = 0;
+
+        //When epoch is not over yet
+        if (epoch.endTime == 0) {
+            uint256 epochDuration = block.timestamp - epoch.beginTime;
+            uint256 timeSince = block.timestamp - _time;
+            //Time since last update is longer than the current epoch, so only use epoch time
+            if (timeSince > epochDuration) {
+                duration = epochDuration;
+            } else {
+                //Otherwise use timeSince
+                duration = timeSince;
+            }
+        }
+        //When epoch is over
+        else {
+            duration = epoch.endTime - epoch.beginTime;
+        }
+
+        uint256 poolHistoricRate = s.pools[s.ghstContract].epochPoolRate[_epoch];
+        uint256 accumulatedFrens = (_amount * poolHistoricRate * duration) / 24 hours;
+
+        return accumulatedFrens;
+    }
+
     function poolRatesInEpoch(uint256 _epoch) external view returns (PoolRateOutput[] memory _rates) {
         Epoch storage epoch = s.epochs[_epoch];
         _rates = new PoolRateOutput[](epoch.supportedPools.length);
@@ -368,6 +397,20 @@ contract StakingFacet {
         for (uint256 index = 0; index < _accounts.length; index++) {
             _migrateToV2(_accounts[index], _epoch);
         }
+    }
+
+    function increaseFrens(address _account, uint256 _amount, uint256 _time) external {
+        require(msg.sender == s.aavegotchiDiamond, "StakingFacet: Must be diamond");
+
+        if (!s.accounts[_account].hasMigrated) _migrateToV2(_account, s.currentEpoch);
+
+        Account storage account = s.accounts[_account];
+        uint256 accumulatedFrens;
+
+        for (uint256 i = 0; i <= s.currentEpoch; i++) {
+            accumulatedFrens += _frensForEpochFromTime(_amount, _time, i);
+        }
+        account.frens += accumulatedFrens;
     }
 
     function _updateFrens(address _sender, uint256 _epoch) internal {
