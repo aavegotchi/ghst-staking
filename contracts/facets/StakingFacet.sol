@@ -10,8 +10,6 @@ import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/LibMeta.sol";
 import {Epoch} from "../libraries/AppStorage.sol";
 
-import "hardhat/console.sol";
-
 interface IERC1155Marketplace {
     function updateBatchERC1155Listing(
         address _erc1155TokenAddress,

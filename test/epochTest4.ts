@@ -4,6 +4,7 @@ import { expect } from "chai";
 import { network } from "hardhat";
 import { ethers } from "hardhat";
 import { PoolObject } from "../types";
+import { BigNumber } from "@ethersproject/bignumber";
 
 const { upgrade } = require("../scripts/upgrades/upgrade-epoch.ts");
 
@@ -34,13 +35,16 @@ describe("Testing 100 epochs", async function () {
 
   it("Can go 100 epochs ahead in time without user migrating", async function () {
     let frens = await stakingFacet.frens(testAddress);
-    console.log("frens:", frens.toString());
+    console.log("frens:", ethers.utils.formatEther(frens));
 
+    let totalEarnedFrens = 0;
+
+    const staked = await stakingFacet.staked(testAddress);
+    const stakedGhst = ethers.utils.formatEther(staked[0]);
+
+    console.log("staked ghst:", stakedGhst);
     for (let index = 0; index < 10; index++) {
       const rand1 = Math.floor(Math.random() * 10000).toString();
-      const rand2 = Math.floor(Math.random() * 10000).toString();
-      const rand3 = Math.floor(Math.random() * 10000).toString();
-      const rand4 = Math.floor(Math.random() * 10000).toString();
 
       const pools: PoolObject[] = [
         {
@@ -50,34 +54,18 @@ describe("Testing 100 epochs", async function () {
           _poolName: "GHST",
           _poolUrl: "",
         },
-        {
-          _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
-          _poolReceiptToken: "0xA02d547512Bb90002807499F05495Fe9C4C3943f",
-          _rate: rand2,
-          _poolName: "GHST-QUICK",
-          _poolUrl: "",
-        },
-        {
-          _poolAddress: "0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4",
-          _poolReceiptToken: "0x04439eC4ba8b09acfae0E9b5D75A82cC63b19f09",
-          _rate: rand3,
-          _poolName: "GHST-USDC",
-          _poolUrl: "",
-        },
-        {
-          _poolAddress: "0xccb9d2100037f1253e6c1682adf7dc9944498aff",
-          _poolReceiptToken: "0x388E2a3d389F27504212030c2D42Abf0a8188cd1",
-          _rate: rand4,
-          _poolName: "GHST-WETH",
-          _poolUrl: "",
-        },
       ];
+
+      await stakingFacet.updateRates(pools);
 
       console.log("going ahead in time, current index is:", index);
       ethers.provider.send("evm_increaseTime", [86400]);
       ethers.provider.send("evm_mine", []);
-      await stakingFacet.updateRates(pools);
+      const earned = Number(stakedGhst) * Number(rand1);
+      console.log(`Earned ${earned} FRENS with rate ${rand1}`);
+      totalEarnedFrens = totalEarnedFrens + earned;
     }
+    console.log("total earned frens:", totalEarnedFrens);
 
     const currentEpoch = await stakingFacet.currentEpoch();
     console.log("current:", currentEpoch.toString());
@@ -87,7 +75,7 @@ describe("Testing 100 epochs", async function () {
 
     frens = await stakingFacet.frens(testAddress);
 
-    console.log("frens:", frens.toString());
+    console.log("frens:", ethers.utils.formatEther(frens));
   });
 
   it("Can withdraw + migrate without disrupting current FRENS balance", async function () {
@@ -113,5 +101,60 @@ describe("Testing 100 epochs", async function () {
 
     const hasMigrated = await stakingFacet.hasMigrated(testAddress);
     expect(hasMigrated).to.equal(true);
+  });
+
+  it("Earned FRENS equals the correct rate over many epochs", async function () {
+    let currentEpoch = await stakingFacet.currentEpoch();
+
+    const pools = await stakingFacet.poolRatesInEpoch(currentEpoch);
+    await stakingFacet.stakeIntoPool(
+      pools[0].poolAddress,
+      ethers.utils.parseEther("100")
+    );
+
+    let totalEarnedFrens = 0;
+    let frens = await stakingFacet.frens(testAddress);
+    console.log("frens:", ethers.utils.formatEther(frens));
+
+    stakingFacet = await impersonate(
+      rateManager,
+      stakingFacet,
+      ethers,
+      network
+    );
+
+    const staked = await stakingFacet.staked(testAddress);
+    const stakedGhst = ethers.utils.formatEther(staked[0]);
+    console.log("staked ghst:", stakedGhst);
+    for (let index = 0; index < 10; index++) {
+      const rand1 = Math.floor(Math.random() * 10000).toString();
+
+      const pools: PoolObject[] = [
+        {
+          _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
+          _poolReceiptToken: ethers.constants.AddressZero,
+          _rate: rand1,
+          _poolName: "GHST",
+          _poolUrl: "",
+        },
+      ];
+
+      await stakingFacet.updateRates(pools);
+
+      console.log("going ahead in time, current index is:", index);
+      ethers.provider.send("evm_increaseTime", [86400]);
+      ethers.provider.send("evm_mine", []);
+      const earned = Number(stakedGhst) * Number(rand1);
+      console.log(`Earned ${earned} FRENS with rate ${rand1}`);
+      totalEarnedFrens = totalEarnedFrens + earned;
+    }
+    console.log("total earned frens:", totalEarnedFrens);
+
+    currentEpoch = await stakingFacet.currentEpoch();
+    console.log("current epoch:", currentEpoch.toString());
+
+    frens = await stakingFacet.frens(testAddress);
+
+    console.log("after frens:", ethers.utils.formatEther(frens));
   });
 });
