@@ -33,7 +33,7 @@ describe("Testing 100 epochs", async function () {
     );
   });
 
-  it("Can go 100 epochs ahead in time without user migrating", async function () {
+  xit("Can go 100 epochs ahead in time without user migrating", async function () {
     let frens = await stakingFacet.frens(testAddress);
     console.log("frens:", ethers.utils.formatEther(frens));
 

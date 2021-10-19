@@ -111,7 +111,7 @@ contract StakingFacet {
     }
 
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
-        console.log("epochFrensForEpoch", _epoch);
+        // console.log("epochFrensForEpoch", _epoch);
         Epoch memory epoch = s.epochs[_epoch];
         address[] memory supportedPools = epoch.supportedPools;
         uint256 lastFrensUpdate = s.accounts[_account].lastFrensUpdate;
@@ -144,7 +144,7 @@ contract StakingFacet {
             uint256 stakedTokens = s.accounts[_account].accountStakedTokens[poolAddress];
             accumulatedFrens += (stakedTokens * poolHistoricRate * duration) / 24 hours;
         }
-        console.log("accumulatedFrens", accumulatedFrens);
+        // console.log("accumulatedFrens", accumulatedFrens);
         return accumulatedFrens;
     }
 
@@ -165,7 +165,7 @@ contract StakingFacet {
     function _epochFrens(address _account, uint256 _epoch) internal view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
         frens_ = account.frens;
-        console.log("startFrens", frens_);
+        // console.log("startFrens", frens_);
 
         //Use the old FRENS calculation if this user has not yet migrated
         if (!account.hasMigrated) {
@@ -178,13 +178,14 @@ contract StakingFacet {
 
             //Get frens for current epoch
             frens_ += _frensForEpoch(_account, _epoch);
-            console.log("frensAfter+=", frens_);
-            console.log("epochInepochFrens", _epoch);
+            // console.log("frensAfter+=", frens_);
+            // console.log("epochInepochFrens", _epoch);
             for (uint256 i = 1; i <= epochsBehind; i++) {
                 uint256 historicEpoch = _epoch - i;
                 frens_ += _frensForEpoch(_account, historicEpoch);
             }
         }
+        // console.log("endFrens", frens_);
     }
 
     //Get the amount of FRENS for a given user by latest epoch
