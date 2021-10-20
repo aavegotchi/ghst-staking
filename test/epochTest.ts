@@ -39,32 +39,20 @@ describe("Epoch Tests (GHST Only)", async function () {
   it("Can migrate user without radically changing FRENS", async function () {
     // Check add and view function works
 
-    const currentEpoch = await stakingFacet.currentEpoch();
-
     const frensBefore = await stakingFacet.frens(testAddress);
-    const tx = await stakingFacet.migrateToV2([testAddress], currentEpoch);
+    const tx = await stakingFacet.migrateToV2([testAddress]);
     await tx.wait();
     const frensAfter = await stakingFacet.frens(testAddress);
 
     const difference = Number(
       ethers.utils.formatEther(frensAfter.sub(frensBefore))
     );
-
-    const staked = await stakingFacet.stakedInCurrentEpoch(testAddress);
-
-    staked.forEach((pool) => {
-      console.log(
-        `${ethers.utils.formatEther(pool.amount)} staked in ${pool.poolName}`
-      );
-    });
-
     expect(difference).to.lessThanOrEqual(10);
     const hasMigrated = await stakingFacet.hasMigrated(testAddress);
     expect(hasMigrated).to.equal(true);
   });
   it("Can update rate and create new epoch", async function () {
     const pools: PoolObject[] = [];
-    let currentEpoch = await stakingFacet.currentEpoch();
     pools.push({
       _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
       _poolReceiptToken: ethers.constants.AddressZero,
@@ -74,8 +62,8 @@ describe("Epoch Tests (GHST Only)", async function () {
     });
     const tx = await stakingFacet.updateRates(pools);
     await tx.wait();
-    currentEpoch = await stakingFacet.currentEpoch();
 
+    const currentEpoch = await stakingFacet.currentEpoch();
     expect(currentEpoch).to.equal("1");
   });
 

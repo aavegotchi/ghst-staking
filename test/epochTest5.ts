@@ -66,13 +66,11 @@ describe("More checks", async function () {
 
     let current = await stakingFacet.currentEpoch();
 
-    const currentEpoch = await stakingFacet.currentEpoch();
-
     await expect(
       stakingFacet.bumpEpoch(testAddress, current)
     ).to.be.revertedWith("StakingFacet: Can only bump migrated user");
 
-    await stakingFacet.migrateToV2([testAddress], currentEpoch);
+    await stakingFacet.migrateToV2([testAddress]);
 
     //Add a few epochs, then try using bump function
     for (let index = 0; index < 3; index++) {

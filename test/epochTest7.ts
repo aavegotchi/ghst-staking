@@ -134,11 +134,10 @@ describe("More tests", async function () {
       network
     )) as StakingFacet;
     let frensBeforeArr = [];
-    const currentEpoch = await stakingFacet.currentEpoch();
     for (let i = 0; i < stakersList.length; i++) {
       const frensBefore = await stakingFacet.frens(stakersList[i]);
       frensBeforeArr.push(frensBefore);
-      await stakingFacet.migrateToV2([stakersList[i]], currentEpoch);
+      await stakingFacet.migrateToV2([stakersList[i]]);
       const frensAfter = await stakingFacet.frens(stakersList[i]);
       const difference = Number(
         ethers.utils.formatEther(frensAfter.sub(frensBeforeArr[i]))
@@ -176,10 +175,9 @@ describe("More tests", async function () {
       ethers,
       network
     )) as StakingFacet;
-    const currentEpoch = await stakingFacet.currentEpoch();
     const staked = await stakingFacet.stakedInCurrentEpoch(testAddress2);
     const ghstStaked = staked[0].amount;
-    await stakingFacet.migrateToV2([testAddress2], currentEpoch);
+    await stakingFacet.migrateToV2([testAddress2]);
     const pool = {
       _poolAddress: testAddress2,
       _poolReceiptToken: testAddress2,

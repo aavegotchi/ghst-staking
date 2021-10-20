@@ -111,7 +111,6 @@ contract StakingFacet {
     }
 
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
-        // console.log("epochFrensForEpoch", _epoch);
         Epoch memory epoch = s.epochs[_epoch];
         address[] memory supportedPools = epoch.supportedPools;
         uint256 lastFrensUpdate = s.accounts[_account].lastFrensUpdate;
@@ -144,7 +143,7 @@ contract StakingFacet {
             uint256 stakedTokens = s.accounts[_account].accountStakedTokens[poolAddress];
             accumulatedFrens += (stakedTokens * poolHistoricRate * duration) / 24 hours;
         }
-        // console.log("accumulatedFrens", accumulatedFrens);
+
         return accumulatedFrens;
     }
 
@@ -165,7 +164,6 @@ contract StakingFacet {
     function _epochFrens(address _account, uint256 _epoch) internal view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
         frens_ = account.frens;
-        // console.log("startFrens", frens_);
 
         //Use the old FRENS calculation if this user has not yet migrated
         if (!account.hasMigrated) {
@@ -178,14 +176,12 @@ contract StakingFacet {
 
             //Get frens for current epoch
             frens_ += _frensForEpoch(_account, _epoch);
-            // console.log("frensAfter+=", frens_);
-            // console.log("epochInepochFrens", _epoch);
+
             for (uint256 i = 1; i <= epochsBehind; i++) {
                 uint256 historicEpoch = _epoch - i;
                 frens_ += _frensForEpoch(_account, historicEpoch);
             }
         }
-        // console.log("endFrens", frens_);
     }
 
     //Get the amount of FRENS for a given user by latest epoch
@@ -287,11 +283,9 @@ contract StakingFacet {
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
 
-        if (s.accounts[sender].hasMigrated) {
-            _updateFrens(sender, s.currentEpoch);
-        } else {
-            _migrateToV2(sender, s.currentEpoch);
-        }
+        _updateFrens(sender, s.currentEpoch);
+
+        if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
 
         //Validate that pool exists in epoch
         bool validPool = false;
@@ -330,12 +324,11 @@ contract StakingFacet {
     function withdrawFromPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
 
-        if (s.accounts[sender].hasMigrated) {
-            _updateFrens(sender, s.currentEpoch);
-        } else {
-            _migrateToV2(sender, s.currentEpoch);
-        }
+        _updateFrens(sender, s.currentEpoch);
 
+        if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
+
+        // uint256 bal;
         address receiptTokenAddress = s.pools[_poolContractAddress].receiptToken;
         uint256 stakedBalance = s.accounts[sender].accountStakedTokens[_poolContractAddress];
 
@@ -355,11 +348,6 @@ contract StakingFacet {
             s.accounts[sender].ghstStakingTokens -= _amount;
             s.ghstStakingTokensTotalSupply -= _amount;
 
-            uint256 accountPoolTokens = s.accounts[sender].poolTokens;
-            require(accountPoolTokens >= _amount, "Can't withdraw more poolTokens than in account");
-
-            s.accounts[sender].poolTokens -= _amount;
-
             emit Transfer(sender, address(0), _amount);
         } else {
             IERC20Mintable(receiptTokenAddress).burn(sender, _amount);
@@ -371,9 +359,9 @@ contract StakingFacet {
     }
 
     ////@dev Used for migrating accounts by rateManager
-    function migrateToV2(address[] memory _accounts, uint256 _epoch) external onlyRateManager {
+    function migrateToV2(address[] memory _accounts) external onlyRateManager {
         for (uint256 index = 0; index < _accounts.length; index++) {
-            _migrateToV2(_accounts[index], _epoch);
+            _migrateToV2(_accounts[index]);
         }
     }
 
@@ -386,7 +374,7 @@ contract StakingFacet {
         s.accounts[_sender].userCurrentEpoch = _epoch;
     }
 
-    function _migrateToV2(address _account, uint256 _epoch) private {
+    function _migrateToV2(address _account) private {
         uint256 ghst_ = s.accounts[_account].ghst;
         uint256 poolTokens_ = s.accounts[_account].poolTokens;
         uint256 ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;
@@ -398,8 +386,10 @@ contract StakingFacet {
         s.accounts[_account].accountStakedTokens[s.ghstUsdcPoolToken] = ghstUsdcPoolToken_;
         s.accounts[_account].accountStakedTokens[s.ghstWethPoolToken] = ghstWethPoolToken_;
 
-        //Update FRENS with balance in specified epoch
-        _updateFrens(_account, _epoch);
+        //Update FRENS with last balance
+        s.accounts[_account].frens = frens(_account);
+        s.accounts[_account].lastFrensUpdate = uint40(block.timestamp);
+        s.accounts[_account].userCurrentEpoch = s.currentEpoch;
 
         //Set migrated to true
         s.accounts[_account].hasMigrated = true;
