@@ -283,9 +283,11 @@ contract StakingFacet {
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
 
-        _updateFrens(sender, s.currentEpoch);
-
-        if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
+        if (s.accounts[sender].hasMigrated) {
+            _updateFrens(sender, s.currentEpoch);
+        } else {
+            _migrateToV2(sender);
+        }
 
         //Validate that pool exists in epoch
         bool validPool = false;
@@ -324,9 +326,11 @@ contract StakingFacet {
     function withdrawFromPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
 
-        _updateFrens(sender, s.currentEpoch);
-
-        if (!s.accounts[sender].hasMigrated) _migrateToV2(sender);
+        if (s.accounts[sender].hasMigrated) {
+            _updateFrens(sender, s.currentEpoch);
+        } else {
+            _migrateToV2(sender);
+        }
 
         // uint256 bal;
         address receiptTokenAddress = s.pools[_poolContractAddress].receiptToken;
@@ -387,9 +391,7 @@ contract StakingFacet {
         s.accounts[_account].accountStakedTokens[s.ghstWethPoolToken] = ghstWethPoolToken_;
 
         //Update FRENS with last balance
-        s.accounts[_account].frens = frens(_account);
-        s.accounts[_account].lastFrensUpdate = uint40(block.timestamp);
-        s.accounts[_account].userCurrentEpoch = s.currentEpoch;
+        _updateFrens(_account, s.currentEpoch);
 
         //Set migrated to true
         s.accounts[_account].hasMigrated = true;
