@@ -50,17 +50,12 @@ contract StakingFacet {
         string _poolUrl;
     }
 
-    struct StakedOutput {
+    struct PoolStakedOutput {
         address poolAddress;
-        string poolName;
-        uint256 amount;
-    }
-
-    struct PoolRateOutput {
-        address poolAddress;
-        uint256 rate;
         string poolName;
         string poolUrl;
+        uint256 rate;
+        uint256 amount;
     }
 
     /***********************************|
@@ -76,16 +71,16 @@ contract StakingFacet {
         return PoolInput(_poolAddress, pool.receiptToken, pool.epochPoolRate[_epoch], pool.name, pool.url);
     }
 
-    function poolRatesInEpoch(uint256 _epoch) external view returns (PoolRateOutput[] memory _rates) {
+    function poolRatesInEpoch(uint256 _epoch) external view returns (PoolStakedOutput[] memory _rates) {
         Epoch storage epoch = s.epochs[_epoch];
-        _rates = new PoolRateOutput[](epoch.supportedPools.length);
+        _rates = new PoolStakedOutput[](epoch.supportedPools.length);
 
         for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
             address poolAddress = epoch.supportedPools[index];
             uint256 rate = s.pools[poolAddress].epochPoolRate[_epoch];
             string memory poolName = s.pools[poolAddress].name;
             string memory url = s.pools[poolAddress].url;
-            _rates[index] = PoolRateOutput(poolAddress, rate, poolName, url);
+            _rates[index] = PoolStakedOutput(poolAddress, poolName, url, rate, 0);
         }
     }
 
@@ -97,25 +92,15 @@ contract StakingFacet {
         return s.accounts[_account].hasMigrated;
     }
 
-    function stakedInCurrentEpoch(address _account) public view returns (StakedOutput[] memory _staked) {
-        //Used for compatibility between migrated and non-migrated users
-        if (!hasMigrated(_account)) {
-            Account storage account = s.accounts[_account];
-            _staked = new StakedOutput[](4);
-            _staked[0] = StakedOutput(s.ghstContract, "GHST", account.ghst);
-            _staked[1] = StakedOutput(s.poolContract, "GHST-QUICK", account.poolTokens);
-            _staked[2] = StakedOutput(s.ghstUsdcPoolToken, "GHST-USDC", account.ghstUsdcPoolTokens);
-            _staked[3] = StakedOutput(s.ghstWethPoolToken, "GHST-WETH", account.ghstWethPoolTokens);
-        } else return stakedInEpoch(_account, s.currentEpoch);
+    function stakedInCurrentEpoch(address _account) external view returns (PoolStakedOutput[] memory _staked) {
+        return stakedInEpoch(_account, s.currentEpoch);
     }
 
     /***********************************|
    |    Public Epoch Read Functions      |
    |__________________________________*/
 
-    //Get the amount of FRENS for a given user by latest epoch
     function frens(address _account) public view returns (uint256 frens_) {
-        //Use epochFrens after a user has migrated
         if (s.accounts[_account].hasMigrated) return _epochFrens(_account);
         else return _deprecatedFrens(_account);
     }
@@ -127,15 +112,16 @@ contract StakingFacet {
         }
     }
 
-    function stakedInEpoch(address _account, uint256 _epoch) public view returns (StakedOutput[] memory _staked) {
+    function stakedInEpoch(address _account, uint256 _epoch) public view returns (PoolStakedOutput[] memory _staked) {
         Epoch storage epoch = s.epochs[_epoch];
-        _staked = new StakedOutput[](epoch.supportedPools.length);
+        _staked = new PoolStakedOutput[](epoch.supportedPools.length);
 
         for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
             address poolAddress = epoch.supportedPools[index];
+            Pool storage pool = s.pools[poolAddress];
+            uint256 rate = pool.epochPoolRate[_epoch];
             uint256 amount = s.accounts[_account].accountStakedTokens[poolAddress];
-            string memory poolName = s.pools[poolAddress].name;
-            _staked[index] = StakedOutput(poolAddress, poolName, amount);
+            _staked[index] = PoolStakedOutput(poolAddress, pool.name, pool.url, rate, amount);
         }
     }
 
@@ -278,6 +264,7 @@ contract StakingFacet {
         Account storage account = s.accounts[_account];
         require(account.hasMigrated == true, "StakingFacet: Can only bump migrated user");
         require(_epoch > account.userCurrentEpoch, "StakingFacet: Cannot bump to lower epoch");
+        require(_epoch <= s.currentEpoch, "StakingFacet: Epoch must be lower than current epoch");
         _updateFrens(_account, _epoch);
     }
 
@@ -288,10 +275,11 @@ contract StakingFacet {
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
 
-        require(IERC20(_poolContractAddress).balanceOf(sender) >= _amount, "StakingFacet: Insufficient token balance");
-        _migrateOrUpdate(sender);
-
         require(_validPool(_poolContractAddress) == true, "StakingFacet: Pool is not valid in this epoch");
+
+        require(IERC20(_poolContractAddress).balanceOf(sender) >= _amount, "StakingFacet: Insufficient token balance");
+
+        _migrateOrUpdate(sender);
 
         //Credit the user's with their new LP token balance
         s.accounts[sender].accountStakedTokens[_poolContractAddress] += _amount;
@@ -330,6 +318,7 @@ contract StakingFacet {
 
         require(stakedBalance >= _amount, "StakingFacet: Can't withdraw more tokens than staked");
 
+        //Reduce user balance of staked token
         s.accounts[sender].accountStakedTokens[_poolContractAddress] -= _amount;
 
         if (_poolContractAddress == s.ghstContract) {
