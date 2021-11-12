@@ -9,3 +9,4 @@ bin
 .local.config.js
 .env
 typechain
+coverage
