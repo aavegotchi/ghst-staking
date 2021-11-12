@@ -161,33 +161,23 @@ contract StakingFacet {
     //Gets the amount of FRENS for a given user up to a specific epoch.
     function _epochFrens(address _account, uint256 _epoch) internal view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
+
+        require(_epoch >= account.userCurrentEpoch, "StakingFacet: Epoch must be greater than user epoch");
+
         frens_ = account.frens;
 
-        //Use the old FRENS calculation if this user has not yet migrated
-        if (!account.hasMigrated) {
-            frens_ = frens(_account);
-        } else {
-            require(_epoch >= account.userCurrentEpoch, "StakingFacet: Epoch must be greater than user epoch");
+        uint256 epochsBehind = _epoch - account.userCurrentEpoch;
 
-            uint256 epochsBehind = _epoch - account.userCurrentEpoch;
+        //Get frens for current epoch
+        frens_ += _frensForEpoch(_account, _epoch);
 
-            //Get frens for current epoch
-            frens_ += _frensForEpoch(_account, _epoch);
-
-            for (uint256 i = 1; i <= epochsBehind; i++) {
-                uint256 historicEpoch = _epoch - i;
-                frens_ += _frensForEpoch(_account, historicEpoch);
-            }
+        for (uint256 i = 1; i <= epochsBehind; i++) {
+            uint256 historicEpoch = _epoch - i;
+            frens_ += _frensForEpoch(_account, historicEpoch);
         }
     }
 
-    //Get the amount of FRENS for a given user by latest epoch
-    function frens(address _account) public view returns (uint256 frens_) {
-        //Use epochFrens after a user has migrated
-        if (s.accounts[_account].hasMigrated) return _epochFrens(_account, s.currentEpoch);
-
-        //Old implementation
-
+    function _deprecatedFrens(address _account) internal view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
         // this cannot underflow or overflow
         uint256 timePeriod = block.timestamp - account.lastFrensUpdate;
@@ -202,6 +192,14 @@ contract StakingFacet {
 
         //Add in frens for GHST-WETH
         frens_ += ((account.ghstWethPoolTokens * s.ghstWethRate) * timePeriod) / 24 hours;
+        return frens_;
+    }
+
+    //Get the amount of FRENS for a given user by latest epoch
+    function frens(address _account) public view returns (uint256 frens_) {
+        //Use epochFrens after a user has migrated
+        if (s.accounts[_account].hasMigrated) return _epochFrens(_account, s.currentEpoch);
+        else return _deprecatedFrens(_account);
     }
 
     function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
@@ -229,6 +227,12 @@ contract StakingFacet {
         emit PoolAddedInEpoch(poolAddress, _epoch);
     }
 
+    function _addPoolsInEpoch(PoolInput[] memory _pools, uint256 _epoch) internal {
+        for (uint256 index = 0; index < _pools.length; index++) {
+            _addPoolInEpoch(_pools[index], s.currentEpoch);
+        }
+    }
+
     function initiateEpoch(PoolInput[] calldata _pools) external {
         LibDiamond.enforceIsContractOwner();
         require(s.epochs[0].supportedPools.length == 0, "StakingFacet: Can only be called on first epoch");
@@ -238,10 +242,7 @@ contract StakingFacet {
         firstEpoch.beginTime = block.timestamp;
 
         //Update the pool rates for each pool in this epoch
-        for (uint256 index = 0; index < _pools.length; index++) {
-            _addPoolInEpoch(_pools[index], 0);
-        }
-
+        _addPoolsInEpoch(_pools, 0);
         emit EpochIncreased(0);
     }
 
@@ -262,11 +263,7 @@ contract StakingFacet {
         newEpoch.beginTime = block.timestamp;
 
         //Add pools
-        for (uint256 index = 0; index < _newPools.length; index++) {
-            PoolInput memory newPool = _newPools[index];
-            _addPoolInEpoch(newPool, s.currentEpoch);
-        }
-
+        _addPoolsInEpoch(_newPools, s.currentEpoch);
         emit EpochIncreased(s.currentEpoch);
     }
 
@@ -277,6 +274,20 @@ contract StakingFacet {
         require(_epoch > account.userCurrentEpoch, "StakingFacet: Cannot bump to lower epoch");
         require(_epoch <= s.currentEpoch, "StakingFacet: Epoch must be lower than current epoch");
         _updateFrens(_account, _epoch);
+    }
+
+    function _validPool(address _poolContractAddress) internal view returns (bool) {
+        //Validate that pool exists in current epoch
+        bool validPool = false;
+        Epoch memory epoch = s.epochs[s.currentEpoch];
+        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
+            address pool = epoch.supportedPools[index];
+            if (_poolContractAddress == pool) {
+                validPool = true;
+                break;
+            }
+        }
+        return validPool;
     }
 
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
@@ -290,17 +301,7 @@ contract StakingFacet {
             _migrateToV2(sender);
         }
 
-        //Validate that pool exists in current epoch
-        bool validPool = false;
-        Epoch memory epoch = s.epochs[s.currentEpoch];
-        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
-            address pool = epoch.supportedPools[index];
-            if (_poolContractAddress == pool) {
-                validPool = true;
-                break;
-            }
-        }
-        require(validPool == true, "StakingFacet: Pool is not valid in this epoch");
+        require(_validPool(_poolContractAddress) == true, "StakingFacet: Pool is not valid in this epoch");
 
         //Credit the user's with their new LP token balance
         s.accounts[sender].accountStakedTokens[_poolContractAddress] += _amount;
@@ -356,8 +357,8 @@ contract StakingFacet {
             IERC20Mintable(receiptTokenAddress).burn(sender, _amount);
         }
 
+        //Transfer stake tokens from GHST diamond
         LibERC20.transfer(_poolContractAddress, sender, _amount);
-
         emit WithdrawInEpoch(sender, _poolContractAddress, s.currentEpoch, _amount);
     }
 
@@ -370,7 +371,7 @@ contract StakingFacet {
 
     function _updateFrens(address _sender, uint256 _epoch) internal {
         Account storage account = s.accounts[_sender];
-        account.frens = _epochFrens(_sender, _epoch);
+        account.frens = frens(_sender);
         account.lastFrensUpdate = uint40(block.timestamp);
 
         //Bring this user to the specified epoch;
@@ -378,9 +379,6 @@ contract StakingFacet {
     }
 
     function _migrateToV2(address _account) private {
-        if (s.accounts[_account].hasMigrated == true) {
-            console.log("account", _account);
-        }
         require(s.accounts[_account].hasMigrated == false, "StakingFacet: Already migrated");
         uint256 ghst_ = s.accounts[_account].ghst;
         uint256 poolTokens_ = s.accounts[_account].poolTokens;
