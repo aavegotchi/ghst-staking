@@ -64,12 +64,8 @@ contract StakingFacet {
     }
 
     /***********************************|
-   |       Epoch Read Functions         |
+   |  External Epoch Read Functions     |
    |__________________________________*/
-
-    function hasMigrated(address _account) public view returns (bool) {
-        return s.accounts[_account].hasMigrated;
-    }
 
     function userEpoch(address _account) external view returns (uint256) {
         return s.accounts[_account].userCurrentEpoch;
@@ -80,8 +76,25 @@ contract StakingFacet {
         return PoolInput(_poolAddress, pool.receiptToken, pool.epochPoolRate[_epoch], pool.name, pool.url);
     }
 
+    function poolRatesInEpoch(uint256 _epoch) external view returns (PoolRateOutput[] memory _rates) {
+        Epoch storage epoch = s.epochs[_epoch];
+        _rates = new PoolRateOutput[](epoch.supportedPools.length);
+
+        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
+            address poolAddress = epoch.supportedPools[index];
+            uint256 rate = s.pools[poolAddress].epochPoolRate[_epoch];
+            string memory poolName = s.pools[poolAddress].name;
+            string memory url = s.pools[poolAddress].url;
+            _rates[index] = PoolRateOutput(poolAddress, rate, poolName, url);
+        }
+    }
+
     function currentEpoch() external view returns (uint256) {
         return s.currentEpoch;
+    }
+
+    function hasMigrated(address _account) public view returns (bool) {
+        return s.accounts[_account].hasMigrated;
     }
 
     function stakedInCurrentEpoch(address _account) public view returns (StakedOutput[] memory _staked) {
@@ -96,6 +109,24 @@ contract StakingFacet {
         } else return stakedInEpoch(_account, s.currentEpoch);
     }
 
+    /***********************************|
+   |    Public Epoch Read Functions      |
+   |__________________________________*/
+
+    //Get the amount of FRENS for a given user by latest epoch
+    function frens(address _account) public view returns (uint256 frens_) {
+        //Use epochFrens after a user has migrated
+        if (s.accounts[_account].hasMigrated) return _epochFrens(_account);
+        else return _deprecatedFrens(_account);
+    }
+
+    function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
+        frens_ = new uint256[](_accounts.length);
+        for (uint256 i; i < _accounts.length; i++) {
+            frens_[i] = frens(_accounts[i]);
+        }
+    }
+
     function stakedInEpoch(address _account, uint256 _epoch) public view returns (StakedOutput[] memory _staked) {
         Epoch storage epoch = s.epochs[_epoch];
         _staked = new StakedOutput[](epoch.supportedPools.length);
@@ -107,6 +138,10 @@ contract StakingFacet {
             _staked[index] = StakedOutput(poolAddress, poolName, amount);
         }
     }
+
+    /***********************************|
+   |  Internal Epoch Read Functions    |
+   |__________________________________*/
 
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
         Epoch memory epoch = s.epochs[_epoch];
@@ -145,34 +180,19 @@ contract StakingFacet {
         return accumulatedFrens;
     }
 
-    function poolRatesInEpoch(uint256 _epoch) external view returns (PoolRateOutput[] memory _rates) {
-        Epoch storage epoch = s.epochs[_epoch];
-        _rates = new PoolRateOutput[](epoch.supportedPools.length);
-
-        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
-            address poolAddress = epoch.supportedPools[index];
-            uint256 rate = s.pools[poolAddress].epochPoolRate[_epoch];
-            string memory poolName = s.pools[poolAddress].name;
-            string memory url = s.pools[poolAddress].url;
-            _rates[index] = PoolRateOutput(poolAddress, rate, poolName, url);
-        }
-    }
-
     //Gets the amount of FRENS for a given user up to a specific epoch.
-    function _epochFrens(address _account, uint256 _epoch) internal view returns (uint256 frens_) {
+    function _epochFrens(address _account) internal view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
-
-        require(_epoch >= account.userCurrentEpoch, "StakingFacet: Epoch must be greater than user epoch");
 
         frens_ = account.frens;
 
-        uint256 epochsBehind = _epoch - account.userCurrentEpoch;
+        uint256 epochsBehind = s.currentEpoch - account.userCurrentEpoch;
 
         //Get frens for current epoch
-        frens_ += _frensForEpoch(_account, _epoch);
+        frens_ += _frensForEpoch(_account, s.currentEpoch);
 
         for (uint256 i = 1; i <= epochsBehind; i++) {
-            uint256 historicEpoch = _epoch - i;
+            uint256 historicEpoch = s.currentEpoch - i;
             frens_ += _frensForEpoch(_account, historicEpoch);
         }
     }
@@ -195,41 +215,27 @@ contract StakingFacet {
         return frens_;
     }
 
-    //Get the amount of FRENS for a given user by latest epoch
-    function frens(address _account) public view returns (uint256 frens_) {
-        //Use epochFrens after a user has migrated
-        if (s.accounts[_account].hasMigrated) return _epochFrens(_account, s.currentEpoch);
-        else return _deprecatedFrens(_account);
-    }
-
-    function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
-        frens_ = new uint256[](_accounts.length);
-        for (uint256 i; i < _accounts.length; i++) {
-            frens_[i] = frens(_accounts[i]);
+    function _validPool(address _poolContractAddress) internal view returns (bool) {
+        //Validate that pool exists in current epoch
+        bool validPool = false;
+        Epoch memory epoch = s.epochs[s.currentEpoch];
+        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
+            address pool = epoch.supportedPools[index];
+            if (_poolContractAddress == pool) {
+                validPool = true;
+                break;
+            }
         }
+        return validPool;
     }
 
     /***********************************|
-   |       Epoch Write Functions        |
+   |   External Epoch Write Functions   |
    |__________________________________*/
 
-    function _addPoolInEpoch(PoolInput memory _pool, uint256 _epoch) internal {
-        address poolAddress = _pool._poolAddress;
-        if (poolAddress != s.ghstContract) {
-            require(_pool._poolReceiptToken != address(0), "StakingFacet: Pool must have receipt token");
-        }
-        s.pools[_pool._poolAddress].name = _pool._poolName;
-        s.pools[_pool._poolAddress].receiptToken = _pool._poolReceiptToken;
-        s.pools[_pool._poolAddress].epochPoolRate[_epoch] = _pool._rate;
-        s.pools[_pool._poolAddress].url = _pool._poolUrl;
-
-        s.epochs[_epoch].supportedPools.push(poolAddress);
-        emit PoolAddedInEpoch(poolAddress, _epoch);
-    }
-
-    function _addPoolsInEpoch(PoolInput[] memory _pools, uint256 _epoch) internal {
-        for (uint256 index = 0; index < _pools.length; index++) {
-            _addPoolInEpoch(_pools[index], s.currentEpoch);
+    function migrateToV2(address[] memory _accounts) external {
+        for (uint256 index = 0; index < _accounts.length; index++) {
+            _migrateAndUpdateFrens(_accounts[index]);
         }
     }
 
@@ -242,7 +248,7 @@ contract StakingFacet {
         firstEpoch.beginTime = block.timestamp;
 
         //Update the pool rates for each pool in this epoch
-        _addPoolsInEpoch(_pools, 0);
+        _addPools(_pools);
         emit EpochIncreased(0);
     }
 
@@ -263,7 +269,7 @@ contract StakingFacet {
         newEpoch.beginTime = block.timestamp;
 
         //Add pools
-        _addPoolsInEpoch(_newPools, s.currentEpoch);
+        _addPools(_newPools);
         emit EpochIncreased(s.currentEpoch);
     }
 
@@ -272,34 +278,18 @@ contract StakingFacet {
         Account storage account = s.accounts[_account];
         require(account.hasMigrated == true, "StakingFacet: Can only bump migrated user");
         require(_epoch > account.userCurrentEpoch, "StakingFacet: Cannot bump to lower epoch");
-        require(_epoch <= s.currentEpoch, "StakingFacet: Epoch must be lower than current epoch");
         _updateFrens(_account, _epoch);
     }
 
-    function _validPool(address _poolContractAddress) internal view returns (bool) {
-        //Validate that pool exists in current epoch
-        bool validPool = false;
-        Epoch memory epoch = s.epochs[s.currentEpoch];
-        for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
-            address pool = epoch.supportedPools[index];
-            if (_poolContractAddress == pool) {
-                validPool = true;
-                break;
-            }
-        }
-        return validPool;
-    }
+    /***********************************|
+   |     Public Epoch Write Functions    |
+   |__________________________________*/
 
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
 
         require(IERC20(_poolContractAddress).balanceOf(sender) >= _amount, "StakingFacet: Insufficient token balance");
-
-        if (s.accounts[sender].hasMigrated) {
-            _updateFrens(sender, s.currentEpoch);
-        } else {
-            _migrateToV2(sender);
-        }
+        _migrateOrUpdate(sender);
 
         require(_validPool(_poolContractAddress) == true, "StakingFacet: Pool is not valid in this epoch");
 
@@ -328,11 +318,7 @@ contract StakingFacet {
     function withdrawFromPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
 
-        if (s.accounts[sender].hasMigrated) {
-            _updateFrens(sender, s.currentEpoch);
-        } else {
-            _migrateToV2(sender);
-        }
+        _migrateOrUpdate(sender);
 
         address receiptTokenAddress = s.pools[_poolContractAddress].receiptToken;
         uint256 stakedBalance = s.accounts[sender].accountStakedTokens[_poolContractAddress];
@@ -362,10 +348,35 @@ contract StakingFacet {
         emit WithdrawInEpoch(sender, _poolContractAddress, s.currentEpoch, _amount);
     }
 
-    ////@dev Used for migrating accounts
-    function migrateToV2(address[] memory _accounts) external {
-        for (uint256 index = 0; index < _accounts.length; index++) {
-            _migrateToV2(_accounts[index]);
+    /***********************************|
+   |    Internal Epoch Write Functions   |
+   |__________________________________*/
+
+    function _migrateOrUpdate(address _account) internal {
+        if (hasMigrated(_account)) {
+            _updateFrens(_account, s.currentEpoch);
+        } else {
+            _migrateAndUpdateFrens(_account);
+        }
+    }
+
+    function _addPool(PoolInput memory _pool) internal {
+        address poolAddress = _pool._poolAddress;
+        if (poolAddress != s.ghstContract) {
+            require(_pool._poolReceiptToken != address(0), "StakingFacet: Pool must have receipt token");
+        }
+        s.pools[poolAddress].name = _pool._poolName;
+        s.pools[poolAddress].receiptToken = _pool._poolReceiptToken;
+        s.pools[poolAddress].epochPoolRate[s.currentEpoch] = _pool._rate;
+        s.pools[poolAddress].url = _pool._poolUrl;
+
+        s.epochs[s.currentEpoch].supportedPools.push(poolAddress);
+        emit PoolAddedInEpoch(poolAddress, s.currentEpoch);
+    }
+
+    function _addPools(PoolInput[] memory _pools) internal {
+        for (uint256 index = 0; index < _pools.length; index++) {
+            _addPool(_pools[index]);
         }
     }
 
@@ -378,7 +389,7 @@ contract StakingFacet {
         s.accounts[_sender].userCurrentEpoch = _epoch;
     }
 
-    function _migrateToV2(address _account) private {
+    function _migrateAndUpdateFrens(address _account) internal {
         require(s.accounts[_account].hasMigrated == false, "StakingFacet: Already migrated");
         uint256 ghst_ = s.accounts[_account].ghst;
         uint256 poolTokens_ = s.accounts[_account].poolTokens;
@@ -393,8 +404,6 @@ contract StakingFacet {
 
         //Update FRENS with last balance
         _updateFrens(_account, s.currentEpoch);
-
-        //Set migrated to true
         s.accounts[_account].hasMigrated = true;
 
         emit UserMigrated(_account);
