@@ -60,10 +60,11 @@ describe("Epoch Tests (GHST Only)", async function () {
       _poolName: "GHST",
       _poolUrl: "",
     });
-    const tx = await stakingFacet.updateRates(pools);
+    let currentEpoch = await stakingFacet.currentEpoch();
+    const tx = await stakingFacet.updateRates(currentEpoch, pools);
     await tx.wait();
 
-    const currentEpoch = await stakingFacet.currentEpoch();
+    currentEpoch = await stakingFacet.currentEpoch();
     expect(currentEpoch).to.equal("1");
   });
 
@@ -103,10 +104,11 @@ describe("Epoch Tests (GHST Only)", async function () {
       _poolName: "GHST",
       _poolUrl: "",
     });
-    const tx = await stakingFacet.updateRates(pools);
+    let currentEpoch = await stakingFacet.currentEpoch();
+    const tx = await stakingFacet.updateRates(currentEpoch, pools);
     await tx.wait();
 
-    const currentEpoch = await stakingFacet.currentEpoch();
+    currentEpoch = await stakingFacet.currentEpoch();
     expect(currentEpoch).to.equal("2");
 
     //Get the current for this epoch
@@ -185,10 +187,11 @@ describe("Epoch Tests (GHST Only)", async function () {
       network
     )) as StakingFacet;
 
-    const tx = await stakingFacet.updateRates(pools);
+    let currentEpoch = await stakingFacet.currentEpoch();
+    const tx = await stakingFacet.updateRates(currentEpoch, pools);
     await tx.wait();
 
-    const currentEpoch = await stakingFacet.currentEpoch();
+    currentEpoch = await stakingFacet.currentEpoch();
     expect(currentEpoch).to.equal("3");
 
     const rates = await stakingFacet.poolRatesInEpoch(currentEpoch);

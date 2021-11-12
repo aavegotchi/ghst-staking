@@ -57,7 +57,8 @@ describe("User re-staking within the same epoch", async function () {
     frens = await stakingFacet.frens(testAddress);
     console.log("frens:", ethers.utils.formatEther(frens));
 
-    await stakingFacet.updateRates(initPools);
+    let currentEpoch = await stakingFacet.currentEpoch();
+    await stakingFacet.updateRates(currentEpoch, initPools);
 
     stakingFacet = (await impersonate(
       testAddress,
@@ -67,7 +68,7 @@ describe("User re-staking within the same epoch", async function () {
     )) as StakingFacet;
 
     const stakeAmount = ethers.utils.parseEther("10");
-    const currentEpoch = await stakingFacet.currentEpoch();
+    currentEpoch = await stakingFacet.currentEpoch();
     const pools = await stakingFacet.poolRatesInEpoch(currentEpoch);
 
     const userPools = await stakingFacet.stakedInEpoch(

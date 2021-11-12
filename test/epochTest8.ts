@@ -81,7 +81,8 @@ describe("Testing 10 epochs after migrating", async function () {
         },
       ];
 
-      await stakingFacet.updateRates(pools);
+      const currentEpoch = await stakingFacet.currentEpoch();
+      await stakingFacet.updateRates(currentEpoch, pools);
       const frensBefore = await stakingFacet.frens(testAddress);
       console.log("going ahead in time, current index is:", index);
       ethers.provider.send("evm_increaseTime", [86400]);

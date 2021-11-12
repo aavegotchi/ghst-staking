@@ -56,7 +56,8 @@ describe("Testing 100 epochs", async function () {
         },
       ];
 
-      await stakingFacet.updateRates(pools);
+      let currentEpoch = await stakingFacet.currentEpoch();
+      await stakingFacet.updateRates(currentEpoch, pools);
 
       console.log("going ahead in time, current index is:", index);
       ethers.provider.send("evm_increaseTime", [86400]);

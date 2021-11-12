@@ -42,7 +42,6 @@ const stakersList = [
   "0xed3bbbe2e3eace311a94b059508bbdda9149ab23",
   "0x0e05fc644943aae89dd3fec282c3f86431a7d090",
   "0xdf6a8625466987bfc31a112def0d83dfd5618636",
-  "0x20ec02894d748c59c01b6bf08fe283d7bb75a5d2",
   "0x53a9d15e093dcc049a22e13621962be4d5f302f9",
   "0x3f7c10cbbb1ea1046a80b738b9eaf3217410c7f6",
   "0xe2cde57a083b46b0df49658b3ad7507e4e1381fa",
@@ -69,7 +68,6 @@ const stakersList = [
   "0x6d98d039a4b3437c8fb19ef2fadecb3626b207ad",
   "0x17849f5232aeb12d6f279281385f8031bfba2856",
   "0x94bbaf0999db51f5d957fa638520d562bbe114ed",
-  "0xa532f169cee0e551d4da641031ac78fd85461035",
 ];
 
 let stakingFacet: StakingFacet;
@@ -96,36 +94,36 @@ describe("More tests", async function () {
       network
     )) as StakingFacet;
   });
-  it("Stake and withdraw loop GHST and GHST-QUICK", async function () {
-    await network.provider.send("evm_setAutomine", [false]);
-    const pools = await stakingFacet.poolRatesInEpoch("0");
-    const frensBefore = await stakingFacet.frens(testAddress);
-    for (let i = 0; i < 5; i++) {
-      await stakingFacet.stakeIntoPool(
-        pools[1].poolAddress,
-        ethers.utils.parseUnits("1")
-      );
-      await stakingFacet.withdrawFromPool(
-        pools[1].poolAddress,
-        ethers.utils.parseUnits("1")
-      );
-    }
-    const frensAfter = await stakingFacet.frens(testAddress);
-    expect(frensBefore).to.equal(frensAfter);
-    for (let i = 0; i < 5; i++) {
-      await stakingFacet.stakeIntoPool(
-        pools[0].poolAddress,
-        ethers.utils.parseUnits("1")
-      );
-      await stakingFacet.withdrawFromPool(
-        pools[0].poolAddress,
-        ethers.utils.parseUnits("1")
-      );
-    }
-    const frensAfter2 = await stakingFacet.frens(testAddress);
-    expect(frensBefore).to.equal(frensAfter2);
-    await network.provider.send("evm_setAutomine", [true]);
-  });
+  // it("Stake and withdraw loop GHST and GHST-QUICK", async function () {
+  //   await network.provider.send("evm_setAutomine", [false]);
+  //   const pools = await stakingFacet.poolRatesInEpoch("0");
+  //   const frensBefore = await stakingFacet.frens(testAddress);
+  //   for (let i = 0; i < 5; i++) {
+  //     await stakingFacet.stakeIntoPool(
+  //       pools[1].poolAddress,
+  //       ethers.utils.parseUnits("1")
+  //     );
+  //     await stakingFacet.withdrawFromPool(
+  //       pools[1].poolAddress,
+  //       ethers.utils.parseUnits("1")
+  //     );
+  //   }
+  //   const frensAfter = await stakingFacet.frens(testAddress);
+  //   expect(frensBefore).to.equal(frensAfter);
+  //   for (let i = 0; i < 5; i++) {
+  //     await stakingFacet.stakeIntoPool(
+  //       pools[0].poolAddress,
+  //       ethers.utils.parseUnits("1")
+  //     );
+  //     await stakingFacet.withdrawFromPool(
+  //       pools[0].poolAddress,
+  //       ethers.utils.parseUnits("1")
+  //     );
+  //   }
+  //   const frensAfter2 = await stakingFacet.frens(testAddress);
+  //   expect(frensBefore).to.equal(frensAfter2);
+  //   await network.provider.send("evm_setAutomine", [true]);
+  // });
   it("Migrate big list of users and check frens before and after", async function () {
     stakingFacet = (await impersonate(
       rateManager,
@@ -185,7 +183,9 @@ describe("More tests", async function () {
       _poolName: "TEST",
       _poolUrl: "test",
     };
-    await stakingFacet.updateRates([pool]);
+
+    const currentEpoch = await stakingFacet.currentEpoch();
+    await stakingFacet.updateRates(currentEpoch, [pool]);
     stakingFacet = (await impersonate(
       testAddress2,
       stakingFacet,

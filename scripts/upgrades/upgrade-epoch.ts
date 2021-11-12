@@ -60,7 +60,7 @@ async function upgrade() {
       facetName: "StakingFacet",
       addSelectors: [
         `function initiateEpoch(${poolInfoTuple}[] calldata _pools) external`,
-        `function updateRates(${poolInfoTuple}[] calldata _pools) external`,
+        `function updateRates(uint256 _epoch, ${poolInfoTuple}[] calldata _pools) external`,
         `function userEpoch(address _account) external view returns (uint256)`,
         "function stakeIntoPool(address _poolContractAddress, uint256 _amount) public",
         "function bumpEpoch(address _account, uint256 _epoch) external",

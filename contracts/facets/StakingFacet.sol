@@ -10,8 +10,6 @@ import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/LibMeta.sol";
 import {Epoch} from "../libraries/AppStorage.sol";
 
-import "hardhat/console.sol";
-
 interface IERC1155Marketplace {
     function updateBatchERC1155Listing(
         address _erc1155TokenAddress,
@@ -171,7 +169,6 @@ contract StakingFacet {
         } else {
             require(_epoch >= account.userCurrentEpoch, "StakingFacet: Epoch must be greater than user epoch");
 
-            //This will underflow if the given epoch is lower than the user's current epoch.
             uint256 epochsBehind = _epoch - account.userCurrentEpoch;
 
             //Get frens for current epoch
@@ -248,8 +245,10 @@ contract StakingFacet {
         emit EpochIncreased(0);
     }
 
-    function updateRates(PoolInput[] calldata _newPools) external onlyRateManager {
+    function updateRates(uint256 _currentEpoch, PoolInput[] calldata _newPools) external onlyRateManager {
         require(_newPools.length > 0, "StakingFacet: Pools length cannot be zero");
+        //Used to prevent duplicate rate updates from happening in bad network conditions
+        require(_currentEpoch == s.currentEpoch, "StakingFacet: Incorrect epoch given");
 
         //End current epoch
         Epoch storage epochNow = s.epochs[s.currentEpoch];
@@ -283,13 +282,15 @@ contract StakingFacet {
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
         address sender = LibMeta.msgSender();
 
+        require(IERC20(_poolContractAddress).balanceOf(sender) >= _amount, "StakingFacet: Insufficient token balance");
+
         if (s.accounts[sender].hasMigrated) {
             _updateFrens(sender, s.currentEpoch);
         } else {
             _migrateToV2(sender);
         }
 
-        //Validate that pool exists in epoch
+        //Validate that pool exists in current epoch
         bool validPool = false;
         Epoch memory epoch = s.epochs[s.currentEpoch];
         for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
@@ -332,7 +333,6 @@ contract StakingFacet {
             _migrateToV2(sender);
         }
 
-        // uint256 bal;
         address receiptTokenAddress = s.pools[_poolContractAddress].receiptToken;
         uint256 stakedBalance = s.accounts[sender].accountStakedTokens[_poolContractAddress];
 
@@ -346,8 +346,7 @@ contract StakingFacet {
         s.accounts[sender].accountStakedTokens[_poolContractAddress] -= _amount;
 
         if (_poolContractAddress == s.ghstContract) {
-            // s.accounts[sender].ghst -= uint96(_amount);
-            // console.log("ghst contract, do nothing");
+            //Do nothing for GHST
         } else if (_poolContractAddress == s.poolContract) {
             s.accounts[sender].ghstStakingTokens -= _amount;
             s.ghstStakingTokensTotalSupply -= _amount;
@@ -362,8 +361,8 @@ contract StakingFacet {
         emit WithdrawInEpoch(sender, _poolContractAddress, s.currentEpoch, _amount);
     }
 
-    ////@dev Used for migrating accounts by rateManager
-    function migrateToV2(address[] memory _accounts) external onlyRateManager {
+    ////@dev Used for migrating accounts
+    function migrateToV2(address[] memory _accounts) external {
         for (uint256 index = 0; index < _accounts.length; index++) {
             _migrateToV2(_accounts[index]);
         }
@@ -379,6 +378,10 @@ contract StakingFacet {
     }
 
     function _migrateToV2(address _account) private {
+        if (s.accounts[_account].hasMigrated == true) {
+            console.log("account", _account);
+        }
+        require(s.accounts[_account].hasMigrated == false, "StakingFacet: Already migrated");
         uint256 ghst_ = s.accounts[_account].ghst;
         uint256 poolTokens_ = s.accounts[_account].poolTokens;
         uint256 ghstUsdcPoolToken_ = s.accounts[_account].ghstUsdcPoolTokens;

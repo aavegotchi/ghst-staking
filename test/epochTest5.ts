@@ -59,9 +59,11 @@ describe("More checks", async function () {
     )) as StakingFacet;
 
     //Add a few epochs, then try using bump function
+
     for (let index = 0; index < 3; index++) {
+      const currentEpoch = await stakingFacet.currentEpoch();
       console.log("Updating rates, current index is:", index);
-      await stakingFacet.updateRates(initPools);
+      await stakingFacet.updateRates(currentEpoch, initPools);
     }
 
     let current = await stakingFacet.currentEpoch();
@@ -75,7 +77,8 @@ describe("More checks", async function () {
     //Add a few epochs, then try using bump function
     for (let index = 0; index < 3; index++) {
       console.log("Updating rates, current index is:", index);
-      await stakingFacet.updateRates(initPools);
+      const currentEpoch = await stakingFacet.currentEpoch();
+      await stakingFacet.updateRates(currentEpoch, initPools);
     }
 
     userEpoch = await stakingFacet.userEpoch(testAddress);

@@ -145,7 +145,6 @@ task(
       for (let index = 0; index < facetsAndAddSelectors.length; index++) {
         const facet = facetsAndAddSelectors[index];
 
-        console.log("facet:", facet);
         const factory = (await hre.ethers.getContractFactory(
           facet.facetName
         )) as ContractFactory;
@@ -192,7 +191,7 @@ task(
         });
 
         if (removeSelectors.length > 0) {
-          console.log("Removing selectors:", removeSelectors);
+          // console.log("Removing selectors:", removeSelectors);
           cut.push({
             facetAddress: hre.ethers.constants.AddressZero,
             action: FacetCutAction.Remove,

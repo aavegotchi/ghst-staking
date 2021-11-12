@@ -3,7 +3,6 @@ import { IERC20, StakingFacet } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
 import { ethers } from "hardhat";
-import { PoolObject } from "../types";
 
 const { upgrade } = require("../scripts/upgrades/upgrade-epoch.ts");
 
