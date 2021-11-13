@@ -3,21 +3,43 @@ import {
   convertPoolsAndRatesToString,
   UpdateRateTaskArgs,
 } from "../../tasks/updateRates";
+import { PoolObject } from "../../types";
 import { impersonate, maticStakingAddress } from "../helperFunctions";
 
-const pools = [
+const examplePools: PoolObject[] = [
   {
     _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
     _poolReceiptToken: ethers.constants.AddressZero,
-    _rate: "100000",
+    _rate: "1",
     _poolName: "GHST",
+    _poolUrl: "",
+  },
+  {
+    _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
+    _poolReceiptToken: "0xA02d547512Bb90002807499F05495Fe9C4C3943f",
+    _rate: "1",
+    _poolName: "GHST-QUICK",
+    _poolUrl: "",
+  },
+  {
+    _poolAddress: "0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4",
+    _poolReceiptToken: "0x04439eC4ba8b09acfae0E9b5D75A82cC63b19f09",
+    _rate: "74000000",
+    _poolName: "GHST-USDC",
+    _poolUrl: "",
+  },
+  {
+    _poolAddress: "0xccb9d2100037f1253e6c1682adf7dc9944498aff",
+    _poolReceiptToken: "0x388E2a3d389F27504212030c2D42Abf0a8188cd1",
+    _rate: "12000000",
+    _poolName: "GHST-WETH",
     _poolUrl: "",
   },
 ];
 
 async function updateRates() {
   const taskArgs: UpdateRateTaskArgs = {
-    poolsAndRates: convertPoolsAndRatesToString(pools),
+    poolsAndRates: convertPoolsAndRatesToString(examplePools),
     epoch: "1",
     rateManagerAddress: "0x258cC4C495Aef8D809944aD94C6722ef41216ef3",
   };
