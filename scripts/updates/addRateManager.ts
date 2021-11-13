@@ -1,6 +1,7 @@
 import { LedgerSigner } from "../../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets";
 import { sendToMultisig } from "../libraries/multisig/multisig";
 import { ethers, network } from "hardhat";
+import { StakingFacet } from "../../typechain";
 
 async function main() {
   const diamondAddress = "0xA02d547512Bb90002807499F05495Fe9C4C3943f";
@@ -21,11 +22,11 @@ async function main() {
     throw Error("Incorrect network selected");
   }
 
-  let stakingFacet = await ethers.getContractAt(
+  let stakingFacet = (await ethers.getContractAt(
     "StakingFacet",
     diamondAddress,
     signer
-  );
+  )) as StakingFacet;
   let tx;
   let receipt;
 
