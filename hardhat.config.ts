@@ -4,11 +4,12 @@ import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-truffle5";
+import "@nomiclabs/hardhat-etherscan";
 require("hardhat-contract-sizer");
 require("dotenv").config();
 require("solidity-coverage");
 // require('./tasks/generateDiamondABI.js')
-require("./tasks/verifyFacet.js");
+// require("./tasks/verifyFacet.js");
 
 // You have to export an object to set up your config
 // This object can have the following optional entries:

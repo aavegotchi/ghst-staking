@@ -156,6 +156,14 @@ task(
         );
         deployedFacets.push(deployedFacet);
 
+        //Verify
+        if (hre.network.name === "matic") {
+          await hre.run("verify:verify", {
+            address: deployedFacet.address,
+            constructorArguments: [],
+          });
+        }
+
         const newSelectors = getSighashes(facet.addSelectors, hre.ethers);
         const removeSelectors = getSighashes(facet.removeSelectors, hre.ethers);
 

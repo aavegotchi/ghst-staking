@@ -44,7 +44,7 @@ contract StakingFacet {
 
     struct PoolInput {
         address _poolAddress;
-        address _poolReceiptToken; //The receipt token for staking into this pool. Can be address(0) if empty
+        address _poolReceiptToken; //The receipt token for staking into this pool.
         uint256 _rate;
         string _poolName;
         string _poolUrl;
@@ -92,8 +92,31 @@ contract StakingFacet {
         return s.accounts[_account].hasMigrated;
     }
 
+    function _stakedOutput(
+        address _poolContractAddress,
+        uint256 _epoch,
+        uint256 _amount
+    ) internal view returns (PoolStakedOutput memory) {
+        return
+            PoolStakedOutput(
+                _poolContractAddress,
+                s.pools[_poolContractAddress].name,
+                s.pools[_poolContractAddress].url,
+                s.pools[_poolContractAddress].epochPoolRate[_epoch],
+                _amount
+            );
+    }
+
     function stakedInCurrentEpoch(address _account) external view returns (PoolStakedOutput[] memory _staked) {
-        return stakedInEpoch(_account, s.currentEpoch);
+        //Used for compatibility between migrated and non-migrated users
+        if (!hasMigrated(_account)) {
+            Account storage account = s.accounts[_account];
+            _staked = new PoolStakedOutput[](4);
+            _staked[0] = _stakedOutput(s.ghstContract, s.currentEpoch, account.ghst);
+            _staked[1] = _stakedOutput(s.poolContract, s.currentEpoch, account.poolTokens);
+            _staked[2] = _stakedOutput(s.ghstUsdcPoolToken, s.currentEpoch, account.ghstUsdcPoolTokens);
+            _staked[3] = _stakedOutput(s.ghstWethPoolToken, s.currentEpoch, account.ghstWethPoolTokens);
+        } else return stakedInEpoch(_account, s.currentEpoch);
     }
 
     /***********************************|
@@ -118,10 +141,8 @@ contract StakingFacet {
 
         for (uint256 index = 0; index < epoch.supportedPools.length; index++) {
             address poolAddress = epoch.supportedPools[index];
-            Pool storage pool = s.pools[poolAddress];
-            uint256 rate = pool.epochPoolRate[_epoch];
             uint256 amount = s.accounts[_account].accountStakedTokens[poolAddress];
-            _staked[index] = PoolStakedOutput(poolAddress, pool.name, pool.url, rate, amount);
+            _staked[index] = _stakedOutput(poolAddress, _epoch, amount);
         }
     }
 
