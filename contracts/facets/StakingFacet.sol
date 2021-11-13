@@ -66,6 +66,10 @@ contract StakingFacet {
         return s.accounts[_account].userCurrentEpoch;
     }
 
+    function currentEpoch() external view returns (uint256) {
+        return s.currentEpoch;
+    }
+
     function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (PoolInput memory _poolInfo) {
         Pool storage pool = s.pools[_poolAddress];
         return PoolInput(_poolAddress, pool.receiptToken, pool.epochPoolRate[_epoch], pool.name, pool.url);
@@ -84,29 +88,6 @@ contract StakingFacet {
         }
     }
 
-    function currentEpoch() external view returns (uint256) {
-        return s.currentEpoch;
-    }
-
-    function hasMigrated(address _account) public view returns (bool) {
-        return s.accounts[_account].hasMigrated;
-    }
-
-    function _stakedOutput(
-        address _poolContractAddress,
-        uint256 _epoch,
-        uint256 _amount
-    ) internal view returns (PoolStakedOutput memory) {
-        return
-            PoolStakedOutput(
-                _poolContractAddress,
-                s.pools[_poolContractAddress].name,
-                s.pools[_poolContractAddress].url,
-                s.pools[_poolContractAddress].epochPoolRate[_epoch],
-                _amount
-            );
-    }
-
     function stakedInCurrentEpoch(address _account) external view returns (PoolStakedOutput[] memory _staked) {
         //Used for compatibility between migrated and non-migrated users
         if (!hasMigrated(_account)) {
@@ -122,6 +103,10 @@ contract StakingFacet {
     /***********************************|
    |    Public Epoch Read Functions      |
    |__________________________________*/
+
+    function hasMigrated(address _account) public view returns (bool) {
+        return s.accounts[_account].hasMigrated;
+    }
 
     function frens(address _account) public view returns (uint256 frens_) {
         if (s.accounts[_account].hasMigrated) return _epochFrens(_account);
@@ -149,6 +134,21 @@ contract StakingFacet {
     /***********************************|
    |  Internal Epoch Read Functions    |
    |__________________________________*/
+
+    function _stakedOutput(
+        address _poolContractAddress,
+        uint256 _epoch,
+        uint256 _amount
+    ) internal view returns (PoolStakedOutput memory) {
+        return
+            PoolStakedOutput(
+                _poolContractAddress,
+                s.pools[_poolContractAddress].name,
+                s.pools[_poolContractAddress].url,
+                s.pools[_poolContractAddress].epochPoolRate[_epoch],
+                _amount
+            );
+    }
 
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
         Epoch memory epoch = s.epochs[_epoch];
