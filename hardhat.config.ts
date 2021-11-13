@@ -10,6 +10,8 @@ require("dotenv").config();
 require("solidity-coverage");
 // require('./tasks/generateDiamondABI.js')
 // require("./tasks/verifyFacet.js");
+require("./tasks/deployReceiptToken");
+require("./tasks/updateRates");
 
 // You have to export an object to set up your config
 // This object can have the following optional entries:
