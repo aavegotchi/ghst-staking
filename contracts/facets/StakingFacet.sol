@@ -370,23 +370,32 @@ contract StakingFacet {
         }
     }
 
-    function _addPool(PoolInput memory _pool) internal {
-        address poolAddress = _pool._poolAddress;
-        if (poolAddress != s.ghstContract) {
-            require(_pool._poolReceiptToken != address(0), "StakingFacet: Pool must have receipt token");
-        }
-        s.pools[poolAddress].name = _pool._poolName;
-        s.pools[poolAddress].receiptToken = _pool._poolReceiptToken;
-        s.pools[poolAddress].epochPoolRate[s.currentEpoch] = _pool._rate;
-        s.pools[poolAddress].url = _pool._poolUrl;
-
-        s.epochs[s.currentEpoch].supportedPools.push(poolAddress);
-        emit PoolAddedInEpoch(poolAddress, s.currentEpoch);
-    }
-
     function _addPools(PoolInput[] memory _pools) internal {
         for (uint256 index = 0; index < _pools.length; index++) {
-            _addPool(_pools[index]);
+            PoolInput memory _pool = _pools[index];
+            address poolAddress = _pool._poolAddress;
+            if (poolAddress != s.ghstContract) {
+                require(_pool._poolReceiptToken != address(0), "StakingFacet: Pool must have receipt token");
+            }
+
+            //GHST token cannot have receipt token
+            if (poolAddress == s.ghstContract) {
+                require(_pool._poolReceiptToken == address(0), "StakingFacet: GHST token cannot have receipt token");
+            }
+
+            //Cannot introduce a new poolReceiptToken to an existing pool
+            require(
+                s.pools[poolAddress].receiptToken == address(0) || _pool._poolReceiptToken == s.pools[poolAddress].receiptToken,
+                "StakingFacet: Cannot override poolReceiptToken"
+            );
+
+            s.pools[poolAddress].name = _pool._poolName;
+            s.pools[poolAddress].receiptToken = _pool._poolReceiptToken;
+            s.pools[poolAddress].epochPoolRate[s.currentEpoch] = _pool._rate;
+            s.pools[poolAddress].url = _pool._poolUrl;
+
+            s.epochs[s.currentEpoch].supportedPools.push(poolAddress);
+            emit PoolAddedInEpoch(poolAddress, s.currentEpoch);
         }
     }
 

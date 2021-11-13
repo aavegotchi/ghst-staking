@@ -30,6 +30,11 @@ task(
       )) as ReceiptToken;
       await token.deployed();
 
+      if (taskArgs.symbol.slice(0, 3) !== "stk") {
+        console.log("sym:", taskArgs.symbol.slice(0, 3));
+        throw new Error("Receipt token symbol must be prefixed with 'stk'");
+      }
+
       const address = token.address;
 
       const minter = await token.minter();
@@ -40,5 +45,6 @@ task(
           `Receipt token with name ${taskArgs.name} and symbol ${taskArgs.symbol} has been deployed to ${address}`
         );
       }
+      return address;
     }
   );
