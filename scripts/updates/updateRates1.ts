@@ -18,7 +18,7 @@ const currentPools: PoolObject[] = [
   {
     _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
     _poolReceiptToken: "0xA02d547512Bb90002807499F05495Fe9C4C3943f",
-    _rate: "1",
+    _rate: "83",
     _poolName: "GHST-QUICK",
     _poolUrl: "",
   },
