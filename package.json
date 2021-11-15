@@ -44,6 +44,7 @@
   },
   "homepage": "https://github.com/aavegotchi/ghst-staking#readme",
   "dependencies": {
+    "@gnosis.pm/safe-core-sdk": "^1.0.0",
     "@ledgerhq/hw-transport-node-hid-noevents": "^6.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.1.7",
     "axios": "^0.21.1",

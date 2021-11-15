@@ -3,7 +3,9 @@
 
 import { Signer } from "@ethersproject/abstract-signer";
 import { PopulatedTransaction } from "@ethersproject/contracts";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { gasPrice } from "../../helperFunctions";
+import { SafeTransactionDataPartial } from "@gnosis.pm/safe-core-sdk-types";
 
 export async function sendToMultisig(
   multisigAddress: string,
@@ -32,6 +34,52 @@ export async function sendToMultisig(
   }
   console.log("Completed sending transaction to multisig:", tx.hash);
   return tx;
+}
+
+export async function sendToGnosisSafe(
+  hre: HardhatRuntimeEnvironment,
+  multisigAddress: string,
+  transaction: PopulatedTransaction,
+  signer: Signer
+) {
+  console.log(
+    `Sending to Gnosis Safe at address: ${multisigAddress} on ${hre.network.name} network`
+  );
+
+  try {
+    const transactions: SafeTransactionDataPartial[] = [
+      {
+        to: multisigAddress,
+        value: transaction.value ? transaction.value.toString() : "0",
+        data: transaction.data ? transaction.data : "0x",
+      },
+    ];
+
+    console.log("transactions:", transactions);
+
+    /*const ethAdapterOwner1 = new EthersAdapter({
+      ethers: hre.ethers,
+      signer: signer,
+    });
+
+    const chainId = await ethAdapterOwner1.getChainId();
+    console.log("chain id:", chainId);
+
+    const safeSdk: Safe = await Safe.create({
+      ethAdapter: ethAdapterOwner1,
+      safeAddress: multisigAddress,
+      contractNetworks: {},
+    });
+
+    const safeTransaction = await safeSdk.createTransaction(...transactions);
+
+    await safeSdk.signTransaction(safeTransaction);
+    */
+
+    console.log("Owner has signed!");
+  } catch (error) {
+    console.log("Error creating txn:", error);
+  }
 }
 
 /// //////////////////////////
