@@ -164,10 +164,10 @@ task(
 
         //Verify
         if (hre.network.name === "matic") {
-          await hre.run("verify:verify", {
-            address: deployedFacet.address,
-            constructorArguments: [],
-          });
+          // await hre.run("verify:verify", {
+          //   address: deployedFacet.address,
+          //   constructorArguments: [],
+          // });
         }
 
         const newSelectors = getSighashes(facet.addSelectors, hre.ethers);

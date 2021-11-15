@@ -9,7 +9,7 @@ require("hardhat-contract-sizer");
 require("dotenv").config();
 require("solidity-coverage");
 // require('./tasks/generateDiamondABI.js')
-// require("./tasks/verifyFacet.js");
+require("./tasks/verifyFacet");
 require("./tasks/deployReceiptToken");
 require("./tasks/updateRates");
 
@@ -20,6 +20,9 @@ require("./tasks/updateRates");
 module.exports = {
   mocha: {
     timeout: 100000000,
+  },
+  etherscan: {
+    apiKey: process.env.POLYGON_API_KEY,
   },
   networks: {
     hardhat: {
@@ -36,7 +39,7 @@ module.exports = {
     },
     matic: {
       url: process.env.MATIC_URL,
-      // accounts: [process.env.SECRET],
+      accounts: [process.env.SECRET],
       blockGasLimit: 200000000000,
       gasPrice: 10000000000,
       timeout: 90000,
@@ -57,15 +60,6 @@ module.exports = {
     compilers: [
       {
         version: "0.7.6",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      {
-        version: "0.7.4",
         settings: {
           optimizer: {
             enabled: true,

@@ -7,7 +7,10 @@ import {
 import { StakingFacet__factory } from "../../typechain";
 import { StakingFacetInterface } from "../../typechain/StakingFacet";
 import { PoolObject } from "../../types";
-import { maticStakingAddress } from "../helperFunctions";
+import {
+  maticStakingAddress,
+  stakingDiamondUpgrader,
+} from "../helperFunctions";
 
 export const initPools: PoolObject[] = [
   {
@@ -44,8 +47,6 @@ export const initPools: PoolObject[] = [
 ];
 
 async function upgrade() {
-  const diamondUpgrader = "0x35fe3df776474a7b24b3b1ec6e745a830fdad351";
-
   const poolInfoTuple =
     "tuple(address _poolAddress, address _poolReceiptToken, uint256 _rate, string _poolName, string _poolUrl)";
 
@@ -102,11 +103,11 @@ async function upgrade() {
   const calldata = iface.encodeFunctionData("initiateEpoch", [initPools]);
 
   const args: DeployUpgradeTaskArgs = {
-    diamondUpgrader: diamondUpgrader,
+    diamondUpgrader: stakingDiamondUpgrader,
     diamondAddress: maticStakingAddress,
     facetsAndAddSelectors: joined,
-    useLedger: false,
-    useMultisig: false,
+    useLedger: true,
+    useMultisig: true,
     initAddress: maticStakingAddress,
     initCalldata: calldata,
   };

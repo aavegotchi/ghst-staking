@@ -10,7 +10,7 @@ function getCompilerVersion() {
   return "v0.7.6+commit.7338295f";
 }
 
-function verifyRequest(guid: string, apikey: string) {
+function verifyRequest(guid: string, apikey: string, sourceCode: string) {
   console.log("Fetching Verify Status...");
   // Check Status
   return axios
@@ -29,13 +29,15 @@ function verifyRequest(guid: string, apikey: string) {
         if (response.data.result == "Pending in queue") {
           return new Promise((resolve, reject) => {
             setTimeout(() => {
-              resolve(verifyRequest(guid, apikey));
+              resolve(verifyRequest(guid, apikey, sourceCode));
             }, 5000);
           });
         }
         console.log("Verification failed");
         console.log("message : " + response.data.message); //OK, NOTOK
         console.log("result : " + response.data.result); //result explanation
+
+        console.log("source code:", sourceCode);
       }
     });
 }
@@ -93,6 +95,16 @@ task(
     sourceCode = sourceCode.replace(
       "solidityindicator",
       "pragma solidity 0.7.6;"
+    );
+
+    sourceCode = sourceCode.replace(
+      "pragma experimental ABIEncoderV2;",
+      "pragmaIndicator"
+    );
+    sourceCode = sourceCode.replace(/pragma experimental ABIEncoderV2;/g, "");
+    sourceCode = sourceCode.replace(
+      "pragmaIndicator",
+      "pragma experimental ABIEncoderV2;"
     );
 
     try {
@@ -174,11 +186,14 @@ task(
         console.log("Request Failed");
         console.log("message : " + response.data.message); //OK, NOTOK
         console.log("result : " + response.data.result); //result explanation
+
+        console.log("code:", sourceCode);
+
         return;
       }
       const guid = response.data.result;
 
-      await verifyRequest(guid, apikey);
+      await verifyRequest(guid, apikey, sourceCode);
     } catch (e) {
       console.log("CONTRACT : " + contractaddress);
       console.log("ERROR", e);
