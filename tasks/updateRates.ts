@@ -24,7 +24,7 @@ export function convertPoolsAndRatesToString(
 
   poolsAndRates.forEach((obj) => {
     finalString = finalString.concat(
-      `#${obj._poolAddress}_${obj._poolReceiptToken}_${obj._rate}_${obj._poolName}_${obj._poolUrl}`
+      `^${obj._poolAddress}_${obj._poolReceiptToken}_${obj._rate}_${obj._poolName}_${obj._poolUrl}`
     );
   });
   return finalString;
@@ -32,7 +32,7 @@ export function convertPoolsAndRatesToString(
 
 export function convertStringToPoolsAndRates(input: string): PoolObject[] {
   const finalArray: PoolObject[] = [];
-  const stringArray = input.split("#");
+  const stringArray = input.split("^");
   stringArray.forEach((objectString) => {
     if (objectString.length > 0) {
       let objectArray = objectString.split("_");
@@ -79,8 +79,6 @@ async function validateReceiptToken(
       address
     )) as ReceiptToken;
 
-    console.log("rt address:", address);
-
     const minter = await receiptToken.minter();
     if (minter !== maticStakingAddress) {
       throw new Error(
@@ -112,17 +110,19 @@ task("updateRates", "Updates the pool rates with specified pools and rates")
         validatePoolToken(pool._poolAddress, hre);
       }
 
-      console.log("pools:", pools);
-
       const stakingFacet = (await hre.ethers.getContractAt(
         "StakingFacet",
         maticStakingAddress,
         signer
       )) as StakingFacet;
 
-      const data = await stakingFacet.populateTransaction.updateRates(taskArgs.epoch, pools, {
-        gasPrice: gasPrice,
-      });
+      const data = await stakingFacet.populateTransaction.updateRates(
+        taskArgs.epoch,
+        pools,
+        {
+          gasPrice: gasPrice,
+        }
+      );
 
       console.log("GNOSIS SAFE DATA");
       console.log(data);

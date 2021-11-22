@@ -42,24 +42,6 @@ const currentPools: PoolObject[] = [
 ];
 
 async function updateRates() {
-  //first deploy GHST-MATIC receipt token
-  // const deployReceiptTokenTaskArgs: DeployReceiptTokenTaskArgs = {
-  //   name: "Staked GHST-MATIC",
-  //   symbol: "stkGHST-MATIC",
-  // };
-  // const tokenAddress = await run(
-  //   "deployReceiptToken",
-  //   deployReceiptTokenTaskArgs
-  // );
-  //
-  // currentPools.push({
-  //   _poolAddress: "0xf69e93771f11aecd8e554aa165c3fe7fd811530c", //tbd
-  //   _poolReceiptToken: tokenAddress,
-  //   _rate: "12000000", //tbd
-  //   _poolName: "GHST-MATIC",
-  //   _poolUrl: "",
-  // });
-
   const taskArgs: UpdateRateTaskArgs = {
     poolsAndRates: convertPoolsAndRatesToString(currentPools),
     epoch: "0",
@@ -77,11 +59,6 @@ async function updateRates() {
       ethers,
       network
     );
-
-    // let tx = await stakingFacet.addRateManagers([
-    //   "0x9b9d0767248e4cDddb552dB92b0136Cc20406876",
-    // ]);
-    // await tx.wait();
   }
 
   await run("updateRates", taskArgs);
