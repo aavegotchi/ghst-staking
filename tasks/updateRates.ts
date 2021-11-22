@@ -120,6 +120,13 @@ task("updateRates", "Updates the pool rates with specified pools and rates")
         signer
       )) as StakingFacet;
 
+      const data = await stakingFacet.populateTransaction.updateRates(taskArgs.epoch, pools, {
+        gasPrice: gasPrice,
+      });
+
+      console.log("GNOSIS SAFE DATA");
+      console.log(data);
+
       const tx = await stakingFacet.updateRates(taskArgs.epoch, pools, {
         gasPrice: gasPrice,
       });
