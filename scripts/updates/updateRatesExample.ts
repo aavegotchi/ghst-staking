@@ -41,7 +41,7 @@ async function updateRates() {
   const taskArgs: UpdateRateTaskArgs = {
     poolsAndRates: convertPoolsAndRatesToString(examplePools),
     epoch: "1",
-    rateManagerAddress: "0x258cC4C495Aef8D809944aD94C6722ef41216ef3",
+    rateManagerAddress: "0x9b9d0767248e4cDddb552dB92b0136Cc20406876",
   };
 
   if (["localhost", "hardhat"].includes(network.name)) {
@@ -50,14 +50,14 @@ async function updateRates() {
       maticStakingAddress
     );
     stakingFacet = await impersonate(
-      "0x258cC4C495Aef8D809944aD94C6722ef41216ef3",
+      "0x9b9d0767248e4cDddb552dB92b0136Cc20406876",
       stakingFacet,
       ethers,
       network
     );
 
     let tx = await stakingFacet.addRateManagers([
-      "0x258cC4C495Aef8D809944aD94C6722ef41216ef3",
+      "0x9b9d0767248e4cDddb552dB92b0136Cc20406876",
     ]);
     await tx.wait();
   }
