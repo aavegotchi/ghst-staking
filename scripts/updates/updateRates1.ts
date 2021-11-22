@@ -1,5 +1,4 @@
 import { run, ethers, network } from "hardhat";
-import { DeployReceiptTokenTaskArgs } from "../../tasks/deployReceiptToken";
 import {
   convertPoolsAndRatesToString,
   UpdateRateTaskArgs,
