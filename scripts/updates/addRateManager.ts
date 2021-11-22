@@ -35,11 +35,12 @@ async function main() {
   if (testing) {
     rateManager = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
   } else {
-    rateManager = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
+    //new frens task force multisig
+    rateManager = "0x9b9d0767248e4cDddb552dB92b0136Cc20406876";
   }
 
   let rateManagers = [rateManager];
-  console.log("Adding item managers");
+  console.log(`Adding item managers ${rateManagers.toString()}`);
 
   if (testing) {
     tx = await stakingFacet.addRateManagers(rateManagers);
