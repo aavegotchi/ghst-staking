@@ -10,6 +10,8 @@ import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/LibMeta.sol";
 import {Epoch} from "../libraries/AppStorage.sol";
 
+import "hardhat/console.sol";
+
 interface IERC1155Marketplace {
     function updateBatchERC1155Listing(
         address _erc1155TokenAddress,
@@ -108,9 +110,13 @@ contract StakingFacet {
         return s.accounts[_account].hasMigrated;
     }
 
-    function frens(address _account) public view returns (uint256 frens_) {
-        //   if (s.accounts[_account].hasMigrated) return _epochFrens(_account);
+    function deprecatedFrens(address _account) public view returns (uint256 frens_) {
         return _deprecatedFrens(_account);
+    }
+
+    function frens(address _account) public view returns (uint256 frens_) {
+        if (s.accounts[_account].hasMigrated) return _epochFrens(_account);
+        else return _deprecatedFrens(_account);
     }
 
     function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
@@ -151,6 +157,9 @@ contract StakingFacet {
     }
 
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
+        if (_epoch == 0) {
+            return 0;
+        }
         Epoch memory epoch = s.epochs[_epoch];
         address[] memory supportedPools = epoch.supportedPools;
         uint256 lastFrensUpdate = s.accounts[_account].lastFrensUpdate;
@@ -184,6 +193,9 @@ contract StakingFacet {
             accumulatedFrens += (stakedTokens * poolHistoricRate * duration) / 24 hours;
         }
 
+        console.log("Accumulaed frens in epich", _epoch);
+        console.log("accumulated frens:", accumulatedFrens / 10e17);
+
         return accumulatedFrens;
     }
 
@@ -191,17 +203,26 @@ contract StakingFacet {
     function _epochFrens(address _account) internal view returns (uint256 frens_) {
         Account storage account = s.accounts[_account];
 
+        //this was set to the balance of the user during migration to epoch 0
         frens_ = account.frens;
+
+        console.log("account frens:", frens_ / 10e17);
 
         uint256 epochsBehind = s.currentEpoch - account.userCurrentEpoch;
 
+        console.log("epoch beind:", epochsBehind);
+
         //Get frens for current epoch
         frens_ += _frensForEpoch(_account, s.currentEpoch);
+
+        console.log("frens after current epoch:", frens_ / 10e17);
 
         for (uint256 i = 1; i <= epochsBehind; i++) {
             uint256 historicEpoch = s.currentEpoch - i;
             frens_ += _frensForEpoch(_account, historicEpoch);
         }
+
+        console.log("frens after old epoch:", frens_ / 10e17);
     }
 
     function _deprecatedFrens(address _account) internal view returns (uint256 frens_) {

@@ -178,23 +178,29 @@ task(
 
         let existingFuncs = getSelectors(deployedFacet);
 
-        const diamondLoupe = await hre.ethers.getContractAt(
-          "DiamondLoupeFacet",
-          "0xa02d547512bb90002807499f05495fe9c4c3943f"
-        );
+        // const diamondLoupe = await hre.ethers.getContractAt(
+        //   "DiamondLoupeFacet",
+        //   "0xa02d547512bb90002807499f05495fe9c4c3943f"
+        // );
 
-        console.log("fetching selectors");
+        // console.log("fetching selectors");
 
-        const selectors = await diamondLoupe.facetFunctionSelectors(
-          "0x2cE9AD2Cd4709B7640C1024BD75b23ffa82215b8"
-        );
-        let extra: string[] = [];
+        // const selectors = await diamondLoupe.facetFunctionSelectors(
+        //   "0x2cE9AD2Cd4709B7640C1024BD75b23ffa82215b8"
+        // );
+        let extra: string[] = [
+          "0xe37ecc3c",
+          "0xdf76df5a",
+          "0x47d3dc2f",
+          "0x3d55abf4",
+          "0x24761a68",
+        ];
 
-        existingFuncs.forEach((selector) => {
-          if (!selectors.includes(selector)) {
-            extra.push(selector);
-          }
-        });
+        // existingFuncs.forEach((selector) => {
+        //   if (!selectors.includes(selector)) {
+        //     extra.push(selector);
+        //   }
+        // });
 
         console.log("extra selectors:", extra);
 
