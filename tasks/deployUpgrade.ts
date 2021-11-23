@@ -35,8 +35,8 @@ export interface DeployUpgradeTaskArgs {
   facetsAndAddSelectors: string;
   useMultisig: boolean;
   useLedger: boolean;
-  initAddress: string;
-  initCalldata: string;
+  initAddress?: string;
+  initCalldata?: string;
   // verifyFacets: boolean;
   // updateDiamondABI: boolean;
 }
@@ -94,8 +94,8 @@ task(
     "facetsAndAddSelectors",
     "Stringified array of facet names to upgrade, along with an array of add Selectors"
   )
-  .addParam("initAddress", "The facet address to call init function on")
-  .addParam("initCalldata", "The calldata for init function")
+  .addOptionalParam("initAddress", "The facet address to call init function on")
+  .addOptionalParam("initCalldata", "The calldata for init function")
   .addFlag(
     "useMultisig",
     "Set to true if multisig should be used for deploying"
@@ -171,9 +171,34 @@ task(
         }
 
         const newSelectors = getSighashes(facet.addSelectors, hre.ethers);
+        console.log("new selec:", newSelectors);
         const removeSelectors = getSighashes(facet.removeSelectors, hre.ethers);
 
+        console.log("rem selecs:", removeSelectors);
+
         let existingFuncs = getSelectors(deployedFacet);
+
+        const diamondLoupe = await hre.ethers.getContractAt(
+          "DiamondLoupeFacet",
+          "0xa02d547512bb90002807499f05495fe9c4c3943f"
+        );
+
+        console.log("fetching selectors");
+
+        const selectors = await diamondLoupe.facetFunctionSelectors(
+          "0x2cE9AD2Cd4709B7640C1024BD75b23ffa82215b8"
+        );
+        let extra: string[] = [];
+
+        existingFuncs.forEach((selector) => {
+          if (!selectors.includes(selector)) {
+            extra.push(selector);
+          }
+        });
+
+        console.log("extra selectors:", extra);
+
+        console.log("existing funcs:", existingFuncs);
         for (const selector of newSelectors) {
           if (!existingFuncs.includes(selector)) {
             const index = newSelectors.findIndex((val) => val == selector);
@@ -184,10 +209,16 @@ task(
           }
         }
 
+        // console.log("funcs:", existingFuncs.length);
+
         let existingSelectors = getSelectors(deployedFacet);
         existingSelectors = existingSelectors.filter(
           (selector) => !newSelectors.includes(selector)
         );
+
+        // console.log("existing selectors:", existingSelectors);
+
+        // console.log("funcs:", existingSelectors.length);
 
         if (newSelectors.length > 0) {
           cut.push({
@@ -198,11 +229,21 @@ task(
         }
 
         //Always replace the existing selectors to prevent duplications
-        cut.push({
-          facetAddress: deployedFacet.address,
-          action: FacetCutAction.Replace,
-          functionSelectors: existingSelectors,
-        });
+
+        //remove extra selectors
+
+        existingSelectors = existingSelectors.filter(
+          (selector) => !extra.includes(selector)
+        );
+
+        console.log("existing length:", existingSelectors.length);
+
+        if (existingSelectors.length > 0)
+          cut.push({
+            facetAddress: deployedFacet.address,
+            action: FacetCutAction.Replace,
+            functionSelectors: existingSelectors,
+          });
 
         if (removeSelectors.length > 0) {
           // console.log("Removing selectors:", removeSelectors);
@@ -227,8 +268,8 @@ task(
         console.log("Diamond cut");
         const tx: ContractTransaction = await diamondCut.diamondCut(
           cut,
-          initAddress,
-          initCalldata,
+          initAddress ? initAddress : hre.ethers.constants.AddressZero,
+          initCalldata ? initCalldata : "0x",
           { gasLimit: 8000000 }
         );
         console.log("Diamond cut tx:", tx.hash);
@@ -244,16 +285,16 @@ task(
           const tx: PopulatedTransaction =
             await diamondCut.populateTransaction.diamondCut(
               cut,
-              initAddress,
-              initCalldata,
+              initAddress ? initAddress : hre.ethers.constants.AddressZero,
+              initCalldata ? initCalldata : "0x",
               { gasLimit: 800000 }
             );
           await sendToMultisig(diamondUpgrader, signer, tx, hre.ethers);
         } else {
           const tx: ContractTransaction = await diamondCut.diamondCut(
             cut,
-            initAddress,
-            initCalldata,
+            initAddress ? initAddress : hre.ethers.constants.AddressZero,
+            initCalldata ? initCalldata : "0x",
             { gasLimit: 800000 }
           );
 

@@ -109,8 +109,8 @@ contract StakingFacet {
     }
 
     function frens(address _account) public view returns (uint256 frens_) {
-        if (s.accounts[_account].hasMigrated) return _epochFrens(_account);
-        else return _deprecatedFrens(_account);
+        //   if (s.accounts[_account].hasMigrated) return _epochFrens(_account);
+        return _deprecatedFrens(_account);
     }
 
     function bulkFrens(address[] calldata _accounts) public view returns (uint256[] memory frens_) {
