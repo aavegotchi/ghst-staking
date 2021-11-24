@@ -4,7 +4,8 @@ import {
   DeployUpgradeTaskArgs,
   FacetsAndAddSelectors,
 } from "../../tasks/deployUpgrade";
-import { StakingFacet } from "../../typechain";
+import { StakingFacet, StakingFacet__factory } from "../../typechain";
+import { StakingFacetInterface } from "../../typechain/StakingFacet";
 import {
   impersonate,
   maticStakingAddress,
@@ -25,25 +26,58 @@ async function upgrade() {
 
   const joined = convertFacetAndSelectorsToString(facets);
 
+  let iface: StakingFacetInterface = new ethers.utils.Interface(
+    StakingFacet__factory.abi
+  ) as StakingFacetInterface;
+
+  //affected by more than one day's worth
+  const stakerAddresses: string[] = [
+    "0xc3c2e1cf099bc6e1fa94ce358562bcbd5cc59fe5",
+    "0x0c341a847f44400b35a5e9bc54e8fba85a720848",
+    "0x0c341a847f44400b35a5e9bc54e8fba85a720848",
+    "0x0c341a847f44400b35a5e9bc54e8fba85a720848",
+  ];
+
+  let frensAdjustment = [415000, 1500, 33000, 5000];
+  let finalAdjustment = frensAdjustment.map((num) =>
+    ethers.utils.parseEther(num.toString())
+  );
+
+  const calldata = iface.encodeFunctionData("adjustFrens", [
+    stakerAddresses,
+    finalAdjustment,
+  ]);
+
   const args: DeployUpgradeTaskArgs = {
     diamondUpgrader: stakingDiamondUpgrader,
     diamondAddress: maticStakingAddress,
     facetsAndAddSelectors: joined,
     useLedger: false,
     useMultisig: false,
+    initAddress: maticStakingAddress,
+    initCalldata: calldata,
   };
 
   await run("deployUpgrade", args);
+
+  const beforeEpochBlock = 21703740;
+  const afterEpochBlock = 21703744;
 
   let stakingFacet = (await ethers.getContractAt(
     "StakingFacet",
     maticStakingAddress
   )) as StakingFacet;
-  const addy = "0xe23DA0Be88c9B56c815C0525E5c1C687A99A8DeF";
+  const addy = "0xbfEE6F098064b1D5eFB1dB1f91c82e9fFAb97db5";
 
   console.log("ADDRESS", addy);
-  let frens = await stakingFacet.frens(addy);
-  console.log("new epoch frens:", ethers.utils.formatEther(frens));
+  let frens = await stakingFacet.frens(addy, { blockTag: beforeEpochBlock });
+  console.log("frens before epoch update:", ethers.utils.formatEther(frens));
+
+  frens = await stakingFacet.frens(addy, { blockTag: afterEpochBlock });
+  console.log("frens AFTER epoch update:", ethers.utils.formatEther(frens));
+
+  frens = await stakingFacet.frens(addy);
+  console.log("current epoch frens:", ethers.utils.formatEther(frens));
 
   let dep = await stakingFacet.deprecatedFrens(addy);
   console.log("deprecated frens:", ethers.utils.formatEther(dep));
@@ -55,13 +89,13 @@ async function upgrade() {
     network
   );
 
-  await stakingFacet.adjustFrens([addy], [ethers.utils.parseEther("100000")]);
+  // await stakingFacet.adjustFrens([addy], [ethers.utils.parseEther("100000")]);
 
-  frens = await stakingFacet.frens(addy);
-  console.log(
-    "new epoch frens after adjusting:",
-    ethers.utils.formatEther(frens)
-  );
+  // frens = await stakingFacet.frens(addy);
+  // console.log(
+  //   "new epoch frens after adjusting:",
+  //   ethers.utils.formatEther(frens)
+  // );
 
   // const addy2 = "0x3e0Bc5987bA73D2e2412363a83AFCABA4c77C203";
   // console.log("ADDRESS", addy2);
