@@ -31,22 +31,6 @@ async function upgrade() {
   ) as StakingFacetInterface;
 
   //affected by more than one day's worth
-  const stakerAddresses: string[] = [
-    "0xc3c2e1cf099bc6e1fa94ce358562bcbd5cc59fe5",
-    "0x0c341a847f44400b35a5e9bc54e8fba85a720848",
-    "0x0c341a847f44400b35a5e9bc54e8fba85a720848",
-    "0x0c341a847f44400b35a5e9bc54e8fba85a720848",
-  ];
-
-  let frensAdjustment = [415000, 1500, 33000, 5000];
-  let finalAdjustment = frensAdjustment.map((num) =>
-    ethers.utils.parseEther(num.toString())
-  );
-
-  const calldata = iface.encodeFunctionData("adjustFrens", [
-    stakerAddresses,
-    finalAdjustment,
-  ]);
 
   const args: DeployUpgradeTaskArgs = {
     diamondUpgrader: stakingDiamondUpgrader,
@@ -54,40 +38,38 @@ async function upgrade() {
     facetsAndAddSelectors: joined,
     useLedger: false,
     useMultisig: false,
-    initAddress: maticStakingAddress,
-    initCalldata: calldata,
   };
 
   await run("deployUpgrade", args);
 
-  const beforeEpochBlock = 21703740;
-  const afterEpochBlock = 21703744;
+  // const beforeEpochBlock = 21703740;
+  // const afterEpochBlock = 21703744;
 
-  let stakingFacet = (await ethers.getContractAt(
-    "StakingFacet",
-    maticStakingAddress
-  )) as StakingFacet;
-  const addy = "0xbfEE6F098064b1D5eFB1dB1f91c82e9fFAb97db5";
+  // let stakingFacet = (await ethers.getContractAt(
+  //   "StakingFacet",
+  //   maticStakingAddress
+  // )) as StakingFacet;
+  // const addy = "0xbfEE6F098064b1D5eFB1dB1f91c82e9fFAb97db5";
 
-  console.log("ADDRESS", addy);
-  let frens = await stakingFacet.frens(addy, { blockTag: beforeEpochBlock });
-  console.log("frens before epoch update:", ethers.utils.formatEther(frens));
+  // console.log("ADDRESS", addy);
+  // let frens = await stakingFacet.frens(addy, { blockTag: beforeEpochBlock });
+  // console.log("frens before epoch update:", ethers.utils.formatEther(frens));
 
-  frens = await stakingFacet.frens(addy, { blockTag: afterEpochBlock });
-  console.log("frens AFTER epoch update:", ethers.utils.formatEther(frens));
+  // frens = await stakingFacet.frens(addy, { blockTag: afterEpochBlock });
+  // console.log("frens AFTER epoch update:", ethers.utils.formatEther(frens));
 
-  frens = await stakingFacet.frens(addy);
-  console.log("current epoch frens:", ethers.utils.formatEther(frens));
+  // frens = await stakingFacet.frens(addy);
+  // console.log("current epoch frens:", ethers.utils.formatEther(frens));
 
-  let dep = await stakingFacet.deprecatedFrens(addy);
-  console.log("deprecated frens:", ethers.utils.formatEther(dep));
+  // let dep = await stakingFacet.deprecatedFrens(addy);
+  // console.log("deprecated frens:", ethers.utils.formatEther(dep));
 
-  stakingFacet = await impersonate(
-    stakingDiamondUpgrader,
-    stakingFacet,
-    ethers,
-    network
-  );
+  // stakingFacet = await impersonate(
+  //   stakingDiamondUpgrader,
+  //   stakingFacet,
+  //   ethers,
+  //   network
+  // );
 
   // await stakingFacet.adjustFrens([addy], [ethers.utils.parseEther("100000")]);
 
