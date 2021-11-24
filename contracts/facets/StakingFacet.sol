@@ -108,7 +108,7 @@ contract StakingFacet {
         return s.accounts[_account].hasMigrated;
     }
 
-    function deprecatedFrens(address _account) public view returns (uint256 frens_) {
+    function deprecatedFrens(address _account) external view returns (uint256 frens_) {
         return _deprecatedFrens(_account);
     }
 

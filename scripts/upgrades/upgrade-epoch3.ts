@@ -17,7 +17,7 @@ async function upgrade() {
     {
       facetName: "StakingFacet",
       addSelectors: [
-        `function deprecatedFrens(address _account) public view returns (uint256 frens_)`,
+        `function deprecatedFrens(address _account) external view returns (uint256 frens_)`,
         "function adjustFrens(address[] calldata _stakers, uint256[] calldata _frens) external",
       ],
       removeSelectors: [],
