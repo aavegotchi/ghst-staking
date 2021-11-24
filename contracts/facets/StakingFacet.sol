@@ -156,6 +156,7 @@ contract StakingFacet {
 
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
         if (_epoch == 0) {
+            //no frens for epoch 0 due to migration
             return 0;
         }
         Epoch memory epoch = s.epochs[_epoch];
