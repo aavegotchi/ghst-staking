@@ -10,8 +10,6 @@ import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/LibMeta.sol";
 import {Epoch} from "../libraries/AppStorage.sol";
 
-import "hardhat/console.sol";
-
 interface IERC1155Marketplace {
     function updateBatchERC1155Listing(
         address _erc1155TokenAddress,
@@ -193,9 +191,6 @@ contract StakingFacet {
             accumulatedFrens += (stakedTokens * poolHistoricRate * duration) / 24 hours;
         }
 
-        console.log("Accumulaed frens in epich", _epoch);
-        console.log("accumulated frens:", accumulatedFrens / 10e17);
-
         return accumulatedFrens;
     }
 
@@ -206,23 +201,15 @@ contract StakingFacet {
         //this was set to the balance of the user during migration to epoch 0
         frens_ = account.frens;
 
-        console.log("account frens:", frens_ / 10e17);
-
         uint256 epochsBehind = s.currentEpoch - account.userCurrentEpoch;
-
-        console.log("epoch beind:", epochsBehind);
 
         //Get frens for current epoch
         frens_ += _frensForEpoch(_account, s.currentEpoch);
-
-        console.log("frens after current epoch:", frens_ / 10e17);
 
         for (uint256 i = 1; i <= epochsBehind; i++) {
             uint256 historicEpoch = s.currentEpoch - i;
             frens_ += _frensForEpoch(_account, historicEpoch);
         }
-
-        console.log("frens after old epoch:", frens_ / 10e17);
     }
 
     function _deprecatedFrens(address _account) internal view returns (uint256 frens_) {
@@ -260,6 +247,15 @@ contract StakingFacet {
     /***********************************|
    |   External Epoch Write Functions   |
    |__________________________________*/
+
+    function adjustFrens(address[] calldata _stakers, uint256[] calldata _frens) external {
+        LibDiamond.enforceIsContractOwner();
+        require(_stakers.length == _frens.length, "StakingFacet: Incorrect array length");
+        for (uint256 index = 0; index < _stakers.length; index++) {
+            Account storage account = s.accounts[_stakers[index]];
+            account.frens += _frens[index];
+        }
+    }
 
     function migrateToV2(address[] memory _accounts) external {
         for (uint256 index = 0; index < _accounts.length; index++) {
