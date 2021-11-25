@@ -60,10 +60,14 @@ async function updateRates() {
     _poolUrl: "",
   });
 
+  const rateManagerAddress = ["localhost", "hardhat"].includes(network.name) ?
+    "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119"
+    :
+    "0x9b9d0767248e4cDddb552dB92b0136Cc20406876"
   const taskArgs: UpdateRateTaskArgs = {
     poolsAndRates: convertPoolsAndRatesToString(currentPools),
     epoch: "1",
-    rateManagerAddress: "0x9b9d0767248e4cDddb552dB92b0136Cc20406876",
+    rateManagerAddress,
   };
 
   if (["localhost", "hardhat"].includes(network.name)) {
@@ -95,3 +99,5 @@ if (require.main === module) {
       process.exit(1);
     });
 }
+
+exports.updateRates = updateRates;
