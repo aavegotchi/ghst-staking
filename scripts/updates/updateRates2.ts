@@ -55,15 +55,15 @@ async function updateRates() {
   currentPools.push({
     _poolAddress: "0xf69e93771f11aecd8e554aa165c3fe7fd811530c", //tbd
     _poolReceiptToken: tokenAddress,
-    _rate: "12000000", //tbd
+    _rate: "3", //tbd
     _poolName: "GHST-MATIC",
-    _poolUrl: "",
+    _poolUrl:
+      "https://app.sushi.com/add/0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
   });
 
-  const rateManagerAddress = ["localhost", "hardhat"].includes(network.name) ?
-    "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119"
-    :
-    "0x9b9d0767248e4cDddb552dB92b0136Cc20406876"
+  const rateManagerAddress = ["localhost", "hardhat"].includes(network.name)
+    ? "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119"
+    : "0x9b9d0767248e4cDddb552dB92b0136Cc20406876";
   const taskArgs: UpdateRateTaskArgs = {
     poolsAndRates: convertPoolsAndRatesToString(currentPools),
     epoch: "1",
