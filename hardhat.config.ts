@@ -8,7 +8,7 @@ import "@nomiclabs/hardhat-etherscan";
 require("hardhat-contract-sizer");
 require("dotenv").config();
 require("solidity-coverage");
-// require('./tasks/generateDiamondABI.js')
+require("./tasks/generateDiamondABI.js");
 require("./tasks/verifyFacet");
 require("./tasks/deployReceiptToken");
 require("./tasks/updateRates");

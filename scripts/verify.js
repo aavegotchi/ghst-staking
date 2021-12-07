@@ -1,7 +1,7 @@
 const { run } = require("hardhat");
 
 async function verify() {
-  const address = "0x2cE9AD2Cd4709B7640C1024BD75b23ffa82215b8"; // deployed address
+  const address = "0xCc78e996FBa84e4f257611D92421360E76e32472"; // deployed address
   const facet = "StakingFacet"; // name of facet
   await run("verifyFacet", {
     apikey: process.env.POLYGON_API_KEY,
