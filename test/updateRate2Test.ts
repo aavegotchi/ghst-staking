@@ -69,8 +69,10 @@ describe("Unstake and re-stake pools tokens", async function () {
   });
 
   it("Check frens calculation", async function () {
-    const stakedDays = 3;
-    const beforeFrens = await stakingFacet.frens(testAddress)
+    const stakedDays = 1;
+    const beforeFrens = await stakingFacet.frens(testAddress);
+
+    console.log("befofre frens:", ethers.utils.formatEther(beforeFrens));
 
     const currentEpoch = await stakingFacet.currentEpoch();
     const rates = await stakingFacet.poolRatesInEpoch(currentEpoch);
@@ -78,13 +80,16 @@ describe("Unstake and re-stake pools tokens", async function () {
     ethers.provider.send("evm_increaseTime", [86400 * stakedDays]);
     ethers.provider.send("evm_mine", []);
 
-    const afterFrens = await stakingFacet.frens(testAddress)
-    const diff = afterFrens.sub(beforeFrens)
-    const estimatedFrens = rates[4].rate.mul(ghstMaticStakeAmount).mul(stakedDays)
-    const deviation = diff.sub(estimatedFrens) // deviation from network communication, this value is not ignorable because rate is too high
-    const frensRatePerMinute = rates[4].rate.div(1440)
-    const deviationLimit = frensRatePerMinute.mul(ghstMaticStakeAmount)  // deviation limit, network communication will be less than 1 minute
-    expect(deviation.lte(deviationLimit)).to.equal(true);
+    const afterFrens = await stakingFacet.frens(testAddress);
+    const estimatedFrens = rates[4].rate
+      .mul(ghstMaticStakeAmount)
+      .mul(stakedDays);
+
+    const finalDifference = ethers.utils.formatEther(
+      beforeFrens.add(estimatedFrens).sub(afterFrens)
+    );
+
+    expect(Math.abs(Number(finalDifference))).to.be.lessThan(1);
   });
 
   it("User can unstake GHST-MATIC token balance", async function () {
