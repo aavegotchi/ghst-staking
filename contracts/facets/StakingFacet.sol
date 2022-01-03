@@ -529,7 +529,13 @@ contract StakingFacet {
    |           Ticket Functions          |
    |__________________________________*/
 
+    function togglePauseTickets() external {
+        LibDiamond.enforceIsContractOwner();
+        s.pauseTickets = !s.pauseTickets;
+    }
+
     function claimTickets(uint256[] calldata _ids, uint256[] calldata _values) external {
+        require(s.pauseTickets == false, "Tickets buying is paused at the moment");
         require(_ids.length == _values.length, "Staking: _ids not the same length as _values");
 
         address sender = LibMeta.msgSender();

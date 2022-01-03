@@ -136,6 +136,7 @@ task(
           const {
             LedgerSigner,
           } = require("../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets");
+
           signer = new LedgerSigner(hre.ethers.provider);
         } else signer = (await hre.ethers.getSigners())[0];
       } else {
