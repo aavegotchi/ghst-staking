@@ -9,7 +9,6 @@ import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/LibMeta.sol";
 import {Epoch} from "../libraries/AppStorage.sol";
-import "hardhat/console.sol";
 
 interface IERC1155Marketplace {
     function updateBatchERC1155Listing(
@@ -211,7 +210,6 @@ contract StakingFacet {
 
         for (uint256 i = 1; i <= epochsBehind; i++) {
             uint256 historicEpoch = s.currentEpoch - i;
-            //   console.log("historic epoch:", historicEpoch);
             frens_ += _frensForEpoch(_account, historicEpoch);
         }
     }
@@ -258,6 +256,15 @@ contract StakingFacet {
         for (uint256 index = 0; index < _stakers.length; index++) {
             Account storage account = s.accounts[_stakers[index]];
             account.frens += _frens[index];
+        }
+    }
+
+    function adjustFrensDown(address[] calldata _stakers, uint256[] calldata _amounts) external {
+        LibDiamond.enforceIsContractOwner();
+        require(_stakers.length == _amounts.length, "StakingFacet: Incorrect array length");
+        for (uint256 index = 0; index < _stakers.length; index++) {
+            Account storage account = s.accounts[_stakers[index]];
+            account.frens -= _amounts[index];
         }
     }
 
