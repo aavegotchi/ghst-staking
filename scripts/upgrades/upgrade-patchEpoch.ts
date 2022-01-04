@@ -40,6 +40,22 @@ async function upgrade() {
   };
 
   await run("deployUpgrade", args);
+
+  const stakingFacet = await ethers.getContractAt(
+    "StakingFacet",
+    maticStakingAddress
+  );
+
+  const frensBefore = await stakingFacet.frens(
+    "0xC3c2e1Cf099Bc6e1fA94ce358562BCbD5cc59FE5",
+    { blockTag: 23302659 }
+  );
+  console.log("frens before:", ethers.utils.formatEther(frensBefore));
+
+  const frensAfter = await stakingFacet.frens(
+    "0xC3c2e1Cf099Bc6e1fA94ce358562BCbD5cc59FE5"
+  );
+  console.log("frens after:", ethers.utils.formatEther(frensAfter));
 }
 
 if (require.main === module) {
