@@ -287,6 +287,11 @@ contract StakingFacet {
         emit EpochIncreased(0);
     }
 
+    function updateReceiptToken(address _poolAddress, address _tokenAddress) external {
+        LibDiamond.enforceIsContractOwner();
+        s.pools[_poolAddress].receiptToken = _tokenAddress;
+    }
+
     function updateRates(uint256 _currentEpoch, PoolInput[] calldata _newPools) external onlyRateManager {
         require(_newPools.length > 0, "StakingFacet: Pools length cannot be zero");
         //Used to prevent duplicate rate updates from happening in bad network conditions
