@@ -11,22 +11,21 @@ import {
 import { sendToMultisig } from "../libraries/multisig/multisig";
 
 async function checkFrens() {
+  const address = "0x46Db73fC5fD98c9dAF2d79f8653398d2D4dcA958";
+
   let stakingFacet = (await ethers.getContractAt(
     "StakingFacet",
     maticStakingAddress
   )) as StakingFacet;
 
-  const frensBefore = await stakingFacet.frens(
-    "0xee5cDa91E4DdCde24D44daFd74BEd4Ba068f8ac2",
-    { blockTag: 23302659 }
-  );
+  const frensBefore = await stakingFacet.frens(address, { blockTag: 23302659 });
   console.log("frens before:", ethers.utils.formatEther(frensBefore));
 
-  const frensAfter = await stakingFacet.frens(
-    "0xee5cDa91E4DdCde24D44daFd74BEd4Ba068f8ac2",
-    { blockTag: 23302660 }
-  );
+  const frensAfter = await stakingFacet.frens(address, { blockTag: 23302660 });
   console.log("frens after:", ethers.utils.formatEther(frensAfter));
+
+  const currentBalance = await stakingFacet.frens(address);
+  console.log("current balance:", ethers.utils.formatEther(currentBalance));
 }
 
 if (require.main === module) {

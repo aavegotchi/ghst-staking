@@ -7,109 +7,87 @@ import {
 import { StakingFacet__factory } from "../../typechain";
 import { StakingFacetInterface } from "../../typechain/StakingFacet";
 import { PoolObject } from "../../types";
-import { stakers, amounts } from "../../stakers";
+import { stakers, amounts } from "../../rollback";
 import {
   impersonate,
+  maticDiamondAddress,
   maticStakingAddress,
   stakingDiamondUpgrader,
 } from "../helperFunctions";
 
 async function upgrade() {
-  const facets: FacetsAndAddSelectors[] = [
-    {
-      facetName: "StakingFacet",
-      addSelectors: [
-        "function adjustFrensDown(address[] calldata _stakers, uint256[] calldata _amounts) external",
-      ],
-      removeSelectors: [],
-    },
-  ];
+  let stakingFacet = await ethers.getContractAt(
+    "StakingFacet",
+    maticStakingAddress
+  );
 
-  const joined = convertFacetAndSelectorsToString(facets);
+  //Migrate balanaces back
+  const finalStakers: string[] = [];
+  const finalAmounts: string[] = [];
 
-  const args: DeployUpgradeTaskArgs = {
-    diamondUpgrader: stakingDiamondUpgrader,
-    diamondAddress: maticStakingAddress,
-    facetsAndAddSelectors: joined,
-    useLedger: true,
-    useMultisig: true,
-  };
+  for (let index = 0; index < amounts.length; index++) {
+    const amount = amounts[index];
+    const staker = stakers[index];
 
-  await run("deployUpgrade", args);
+    if (Number(amount) > 0) {
+      const isaddress = await ethers.utils.getAddress(stakers[index]);
 
-  // let stakingFacet = await ethers.getContractAt(
-  //   "StakingFacet",
-  //   maticStakingAddress
-  // );
+      if (isaddress) {
+        finalStakers.push(stakers[index]);
+        finalAmounts.push(ethers.utils.parseEther(amount).toString());
+      }
+    }
+  }
 
-  // //First check those who have not updated stake during the period
-  // let frensBefore = await stakingFacet.frens(
-  //   "0x51208e5cC9215c6360210C48F81C8270637a5218",
-  //   { blockTag: 23302659 }
-  // );
-  // console.log("frens before:", ethers.utils.formatEther(frensBefore));
+  console.log("stakers:", finalStakers);
+  console.log("amounts:", finalAmounts);
+  if (finalStakers.length !== finalAmounts.length) {
+    throw new Error("Mismatched stakers");
+  }
 
-  // let frensAfter = await stakingFacet.frens(
-  //   "0x51208e5cC9215c6360210C48F81C8270637a5218",
-  //   { blockTag: 23302660 }
-  // );
-  // console.log("frens after:", ethers.utils.formatEther(frensAfter));
+  console.log("length:", finalStakers.length);
 
-  // const frensAfter = await stakingFacet.frens(
-  //   "0x585E06CA576D0565a035301819FD2cfD7104c1E8"
-  // );
-  // console.log("frens after upgrade:", ethers.utils.formatEther(frensAfter));
+  const signer = await ethers.getSigners();
+  const currentBlock = await signer[0].provider?.getBlockNumber();
 
-  // //Then check those who have updated stake during the period
+  console.log("current block:", currentBlock);
 
-  // frensBefore = await stakingFacet.frens(
-  //   "0x7B1672Ad97506551645dacaFE0F7E6F008bcE2EF",
-  //   { blockTag: 23302659 }
-  // );
-  // console.log("frens before:", ethers.utils.formatEther(frensBefore));
+  const ownershipFacet = await ethers.getContractAt(
+    "OwnershipFacet",
+    maticStakingAddress
+  );
+  const owner = await ownershipFacet.owner();
 
-  // frensAfter = await stakingFacet.frens(
-  //   "0x7B1672Ad97506551645dacaFE0F7E6F008bcE2EF"
-  // );
-  // console.log("frens after:", ethers.utils.formatEther(frensAfter));
+  stakingFacet = await impersonate(owner, stakingFacet, ethers, network);
 
-  // const ownership = await ethers.getContractAt(
-  //   "OwnershipFacet",
-  //   maticStakingAddress
-  // );
-  // const owner = await ownership.owner();
+  const tx = await stakingFacet.adjustFrensDown(finalStakers, finalAmounts);
+  await tx.wait();
+  console.log("tx:", tx.gasLimit.toString());
 
-  // console.log("owner:", owner);
+  for (let index = 0; index < stakers.length; index++) {
+    const address = stakers[index];
+    console.log("**Address**", address);
+    const frensBefore = await stakingFacet.frens(address, {
+      blockTag: 23302659, //before bug block
+    });
+    console.log("frens before:", ethers.utils.formatEther(frensBefore));
 
-  // stakingFacet = await impersonate(owner, stakingFacet, ethers, network);
+    const frensAfter = await stakingFacet.frens(address, {
+      blockTag: 23302660, //after bug block
+    });
+    console.log("frens after:", ethers.utils.formatEther(frensAfter));
 
-  // await stakingFacet.adjustFrensDown(
-  //   ["0x7B1672Ad97506551645dacaFE0F7E6F008bcE2EF"],
-  //   [frensAfter.sub(frensBefore).toString()]
-  // );
+    const frensBeforeUpdate = await stakingFacet.frens(address, {
+      blockTag: currentBlock,
+    });
+    console.log(
+      "frens before update:",
+      ethers.utils.formatEther(frensBeforeUpdate)
+    );
 
-  // const frensFinal = await stakingFacet.frens(
-  //   "0x7B1672Ad97506551645dacaFE0F7E6F008bcE2EF"
-  // );
-  // console.log("frens final:", ethers.utils.formatEther(frensFinal));
-
-  // //Migrate balanaces back
-  // const finalStakers: string[] = [];
-  // const finalAmounts: string[] = [];
-
-  // amounts.forEach((amount, index) => {
-  //   if (Number(amount) > 0) {
-  //     finalStakers.push(stakers[index]);
-  //     finalAmounts.push(ethers.utils.parseEther(amount).toString());
-  //   }
-  // });
-
-  // console.log("stakers:", finalStakers);
-  // console.log("amounts:", finalAmounts);
-
-  // if (finalStakers.length !== finalAmounts.length) {
-  //   throw new Error("Mismatched stakers");
-  // }
+    const currentBalance = await stakingFacet.frens(address);
+    console.log("current balance:", ethers.utils.formatEther(currentBalance));
+  }
 }
 
 if (require.main === module) {
