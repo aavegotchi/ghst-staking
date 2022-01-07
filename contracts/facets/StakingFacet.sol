@@ -70,6 +70,10 @@ contract StakingFacet {
         return s.currentEpoch;
     }
 
+    function getUserStake(address _account, address _poolAddress) external view returns (uint256) {
+        return s.accounts[_account].accountStakedTokens[_poolAddress];
+    }
+
     function getPoolInfo(address _poolAddress, uint256 _epoch) external view returns (PoolInput memory _poolInfo) {
         Pool storage pool = s.pools[_poolAddress];
         return PoolInput(_poolAddress, pool.receiptToken, pool.epochPoolRate[_epoch], pool.name, pool.url);
