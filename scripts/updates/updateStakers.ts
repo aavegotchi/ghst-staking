@@ -14,6 +14,8 @@ import {
   maticStakingAddress,
   stakingDiamondUpgrader,
 } from "../helperFunctions";
+import { PopulatedTransaction } from "ethers";
+import { sendToMultisig } from "../libraries/multisig/multisig";
 
 async function upgrade() {
   let stakingFacet = await ethers.getContractAt(
@@ -52,17 +54,34 @@ async function upgrade() {
 
   console.log("current block:", currentBlock);
 
-  const ownershipFacet = await ethers.getContractAt(
-    "OwnershipFacet",
-    maticStakingAddress
-  );
-  const owner = await ownershipFacet.owner();
+  if (network.name === "matic") {
+    const {
+      LedgerSigner,
+    } = require("../../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets");
 
-  stakingFacet = await impersonate(owner, stakingFacet, ethers, network);
+    const signer = new LedgerSigner(ethers.provider);
 
-  const tx = await stakingFacet.adjustFrensDown(finalStakers, finalAmounts);
-  await tx.wait();
-  console.log("tx:", tx.gasLimit.toString());
+    console.log("Adjust frens");
+    const tx: PopulatedTransaction =
+      await stakingFacet.populateTransaction.adjustFrensDown(
+        finalStakers,
+        finalAmounts
+      );
+
+    await sendToMultisig(stakingDiamondUpgrader, signer, tx, ethers);
+  } else {
+    const ownershipFacet = await ethers.getContractAt(
+      "OwnershipFacet",
+      maticStakingAddress
+    );
+    const owner = await ownershipFacet.owner();
+
+    stakingFacet = await impersonate(owner, stakingFacet, ethers, network);
+
+    // const tx = await stakingFacet.adjustFrensDown(finalStakers, finalAmounts);
+    // await tx.wait();
+    // console.log("tx:", tx.gasLimit.toString());
+  }
 
   for (let index = 0; index < stakers.length; index++) {
     const address = stakers[index];
