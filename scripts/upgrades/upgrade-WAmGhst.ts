@@ -14,8 +14,8 @@ async function upgrade() {
     {
       facetName: "StakingFacet",
       addSelectors: [
-        ` function stakeIntoPoolForUser( address _poolContractAddress, uint256 _amount,address _sender ) public`,
-        ` function withdrawFromPoolForUser(address _poolContractAddress,uint256 _amount, address _sender ) public`,
+        `function stakeIntoPoolForUser(address _poolContractAddress, uint256 _amount, address _sender) public`,
+        `function withdrawFromPoolForUser(address _poolContractAddress,uint256 _amount, address _sender) public`,
       ],
       removeSelectors: [],
     },
@@ -29,7 +29,7 @@ async function upgrade() {
     facetsAndAddSelectors: joined,
     useLedger: false,
     useMultisig: false,
-    initAddress: maticStakingAddress,
+    initAddress: ethers.constants.AddressZero,
     initCalldata: "0x",
   };
 

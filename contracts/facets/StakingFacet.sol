@@ -484,21 +484,21 @@ contract StakingFacet {
    |      Deprecated Read Functions     |
    |__________________________________*/
 
-    function getGhstUsdcPoolToken() external view returns (address) {
-        return s.ghstUsdcPoolToken;
-    }
+    // function getGhstUsdcPoolToken() external view returns (address) {
+    //     return s.ghstUsdcPoolToken;
+    // }
 
-    function getStkGhstUsdcToken() external view returns (address) {
-        return s.stkGhstUsdcToken;
-    }
+    // function getStkGhstUsdcToken() external view returns (address) {
+    //     return s.stkGhstUsdcToken;
+    // }
 
-    function getGhstWethPoolToken() external view returns (address) {
-        return s.ghstWethPoolToken;
-    }
+    // function getGhstWethPoolToken() external view returns (address) {
+    //     return s.ghstWethPoolToken;
+    // }
 
-    function getStkGhstWethToken() external view returns (address) {
-        return s.stkGhstWethToken;
-    }
+    // function getStkGhstWethToken() external view returns (address) {
+    //     return s.stkGhstWethToken;
+    // }
 
     function staked(address _account)
         external
