@@ -16,8 +16,6 @@ async function upgrade() {
       addSelectors: [
         ` function stakeIntoPoolForUser( address _poolContractAddress, uint256 _amount,address _sender ) public`,
         ` function withdrawFromPoolForUser(address _poolContractAddress,uint256 _amount, address _sender ) public`,
-        ` function stakeIntoPool(address _poolContractAddress, uint256 _amount) public `,
-        ` function withdrawFromPool(address _poolContractAddress, uint256 _amount) public`,
       ],
       removeSelectors: [],
     },
