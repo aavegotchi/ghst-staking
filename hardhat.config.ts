@@ -5,6 +5,7 @@ import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-truffle5";
 import "@nomiclabs/hardhat-etherscan";
+import { version } from "chai";
 require("hardhat-contract-sizer");
 require("dotenv").config();
 require("solidity-coverage");
@@ -12,6 +13,7 @@ require("solidity-coverage");
 require("./tasks/verifyFacet");
 require("./tasks/deployReceiptToken");
 require("./tasks/updateRates");
+import("hardhat-interface-generator");
 
 // You have to export an object to set up your config
 // This object can have the following optional entries:
@@ -19,7 +21,7 @@ require("./tasks/updateRates");
 // Go to https://buidler.dev/config/ to learn more
 module.exports = {
   mocha: {
-    timeout: 100000000,
+    timeout: 100000000000,
   },
   etherscan: {
     apiKey: process.env.POLYGON_API_KEY,
@@ -28,7 +30,7 @@ module.exports = {
     hardhat: {
       forking: {
         url: process.env.MATIC_URL,
-        timeout: 8000000,
+        timeout: 8000000000,
       },
       blockGasLimit: 20000000,
       timeout: 120000,
@@ -43,6 +45,7 @@ module.exports = {
       blockGasLimit: 200000000000,
       gasPrice: 10000000000,
       timeout: 90000,
+      gas: "auto",
     },
   },
   gasReporter: {
@@ -66,6 +69,9 @@ module.exports = {
             runs: 200,
           },
         },
+      },
+      {
+        version: "0.6.12",
       },
     ],
   },

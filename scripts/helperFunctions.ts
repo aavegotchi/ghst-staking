@@ -3,7 +3,7 @@ import { Contract } from "@ethersproject/contracts";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DiamondLoupeFacet, OwnershipFacet } from "../typechain";
 
-export const gasPrice = 50000000000;
+export const gasPrice = 5000000000000;
 
 export async function impersonate(
   address: string,
@@ -86,12 +86,10 @@ export async function getDiamondSigner(
 ) {
   //Instantiate the Signer
   let signer: Signer;
-  const owner = await (
-    (await ethers.getContractAt(
-      "OwnershipFacet",
-      maticDiamondAddress
-    )) as OwnershipFacet
-  ).owner();
+  const owner = await ((await ethers.getContractAt(
+    "OwnershipFacet",
+    maticDiamondAddress
+  )) as OwnershipFacet).owner();
   const testing = ["hardhat", "localhost"].includes(network.name);
 
   if (testing) {

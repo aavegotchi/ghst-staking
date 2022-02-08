@@ -11,3 +11,6 @@ bin
 typechain
 coverage
 flat
+foundry.toml
+soljson-v0.6.12+commit.27d51765.js
+soljson-v0.7.6+commit.7338295f.js

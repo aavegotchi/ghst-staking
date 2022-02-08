@@ -294,68 +294,82 @@ contract StakingFacet {
    |__________________________________*/
 
     function stakeIntoPool(address _poolContractAddress, uint256 _amount) public {
-        address sender = LibMeta.msgSender();
+        stakeIntoPoolForUser(_poolContractAddress, _amount, LibMeta.msgSender());
+    }
 
+    function stakeIntoPoolForUser(
+        address _poolContractAddress,
+        uint256 _amount,
+        address _sender
+    ) public {
+        require(LibMeta.msgSender() == _sender || tx.origin == _sender, "StakingFacet: Not authorized");
         require(_validPool(_poolContractAddress) == true, "StakingFacet: Pool is not valid in this epoch");
+        require(IERC20(_poolContractAddress).balanceOf(_sender) >= _amount, "StakingFacet: Insufficient token balance");
 
-        require(IERC20(_poolContractAddress).balanceOf(sender) >= _amount, "StakingFacet: Insufficient token balance");
-
-        _migrateOrUpdate(sender);
+        _migrateOrUpdate(_sender);
 
         //Credit the user's with their new LP token balance
-        s.accounts[sender].accountStakedTokens[_poolContractAddress] += _amount;
+        s.accounts[_sender].accountStakedTokens[_poolContractAddress] += _amount;
 
         if (_poolContractAddress == s.ghstContract) {
             //Do nothing for original GHST contract
         } else if (_poolContractAddress == s.poolContract) {
             //Keep the GHST-QUICK staking token balance up to date
-            s.accounts[sender].ghstStakingTokens += _amount;
+            s.accounts[_sender].ghstStakingTokens += _amount;
             s.ghstStakingTokensTotalSupply += _amount;
-            emit Transfer(address(0), sender, _amount);
+            emit Transfer(address(0), _sender, _amount);
         } else {
             //Use mintable for minting other stkGHST- tokens
             address stkTokenAddress = s.pools[_poolContractAddress].receiptToken;
-            IERC20Mintable(stkTokenAddress).mint(sender, _amount);
+            IERC20Mintable(stkTokenAddress).mint(_sender, _amount);
         }
 
         //Transfer the LP tokens into the Diamond
-        LibERC20.transferFrom(_poolContractAddress, sender, address(this), _amount);
+        LibERC20.transferFrom(_poolContractAddress, _sender, address(this), _amount);
 
-        emit StakeInEpoch(sender, _poolContractAddress, s.currentEpoch, _amount);
+        emit StakeInEpoch(_sender, _poolContractAddress, s.currentEpoch, _amount);
     }
 
-    function withdrawFromPool(address _poolContractAddress, uint256 _amount) public {
-        address sender = LibMeta.msgSender();
+    function withdrawFromPoolForUser(
+        address _poolContractAddress,
+        uint256 _amount,
+        address _sender
+    ) public {
+        require(LibMeta.msgSender() == _sender || tx.origin == _sender, "StakingFacet: Not authorized");
 
-        _migrateOrUpdate(sender);
+        _migrateOrUpdate(_sender);
 
         address receiptTokenAddress = s.pools[_poolContractAddress].receiptToken;
-        uint256 stakedBalance = s.accounts[sender].accountStakedTokens[_poolContractAddress];
+        uint256 stakedBalance = s.accounts[_sender].accountStakedTokens[_poolContractAddress];
 
         //GHST does not have a receipt token
         if (receiptTokenAddress != address(0)) {
-            require(IERC20(receiptTokenAddress).balanceOf(sender) >= _amount, "StakingFacet: Receipt token insufficient");
+            require(IERC20(receiptTokenAddress).balanceOf(_sender) >= _amount, "StakingFacet: Receipt token insufficient");
         }
 
         require(stakedBalance >= _amount, "StakingFacet: Can't withdraw more tokens than staked");
 
         //Reduce user balance of staked token
-        s.accounts[sender].accountStakedTokens[_poolContractAddress] -= _amount;
+        s.accounts[_sender].accountStakedTokens[_poolContractAddress] -= _amount;
 
         if (_poolContractAddress == s.ghstContract) {
             //Do nothing for GHST
         } else if (_poolContractAddress == s.poolContract) {
-            s.accounts[sender].ghstStakingTokens -= _amount;
+            s.accounts[_sender].ghstStakingTokens -= _amount;
             s.ghstStakingTokensTotalSupply -= _amount;
 
-            emit Transfer(sender, address(0), _amount);
+            emit Transfer(_sender, address(0), _amount);
         } else {
-            IERC20Mintable(receiptTokenAddress).burn(sender, _amount);
+            IERC20Mintable(receiptTokenAddress).burn(_sender, _amount);
         }
 
         //Transfer stake tokens from GHST diamond
-        LibERC20.transfer(_poolContractAddress, sender, _amount);
-        emit WithdrawInEpoch(sender, _poolContractAddress, s.currentEpoch, _amount);
+        LibERC20.transfer(_poolContractAddress, _sender, _amount);
+        emit WithdrawInEpoch(_sender, _poolContractAddress, s.currentEpoch, _amount);
+    }
+
+    function withdrawFromPool(address _poolContractAddress, uint256 _amount) public {
+        withdrawFromPoolForUser(_poolContractAddress, _amount, LibMeta.msgSender());
     }
 
     /***********************************|
@@ -468,22 +482,21 @@ contract StakingFacet {
    |      Deprecated Read Functions     |
    |__________________________________*/
 
-    function getGhstUsdcPoolToken() external view returns (address) {
-        return s.ghstUsdcPoolToken;
-    }
+    // function getGhstUsdcPoolToken() external view returns (address) {
+    //     return s.ghstUsdcPoolToken;
+    // }
 
-    function getStkGhstUsdcToken() external view returns (address) {
-        return s.stkGhstUsdcToken;
-    }
+    // function getStkGhstUsdcToken() external view returns (address) {
+    //     return s.stkGhstUsdcToken;
+    // }
 
-    function getGhstWethPoolToken() external view returns (address) {
-        return s.ghstWethPoolToken;
-    }
+    // function getGhstWethPoolToken() external view returns (address) {
+    //     return s.ghstWethPoolToken;
+    // }
 
-    function getStkGhstWethToken() external view returns (address) {
-        return s.stkGhstWethToken;
-    }
-
+    // function getStkGhstWethToken() external view returns (address) {
+    //     return s.stkGhstWethToken;
+    // }
     function staked(address _account)
         external
         view
