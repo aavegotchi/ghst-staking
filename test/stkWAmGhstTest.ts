@@ -104,11 +104,8 @@ describe("Perform all staking calculations", async function () {
 
     //withdrawing stkWAmghst from staking diamond
     //SHOULD REVERT
-    expect(
-      await deployedAddresses.router.unWrapAndWithdraw(
-        pools[0].amount,
-        secondAddress
-      )
+    await expect(
+      deployedAddresses.router.unWrapAndWithdraw(pools[0].amount, secondAddress)
     ).to.be.revertedWith("StakingFacet: Not authorized");
 
     await deployedAddresses.router.unWrapAndWithdraw(

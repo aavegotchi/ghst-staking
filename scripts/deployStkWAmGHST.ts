@@ -68,13 +68,13 @@ export async function deploy() {
   // initialize params
   wGHST.initialize(aaveLendingContract, amGHST, "Wrapped amGHST", "wAmGHST");
 
-  //Add amGHST pool
+  //Add wamGHST pool
   const poolData: PoolObject[] = [
     {
       _poolAddress: wGHST.address,
       _poolReceiptToken: token.address,
       _rate: "1",
-      _poolName: "wAmGHST",
+      _poolName: "wamGHST",
       _poolUrl: "",
     },
   ];
@@ -113,7 +113,7 @@ export async function deploy() {
   //deploy GHST main wrapper router
   const wrapper = await ethers.getContractFactory("StaticAmGHSTRouter", signer);
   //@ts-ignore
-  ghstRouter = await wrapper.deploy(wGHST.address, poolAddress);
+  ghstRouter = await wrapper.deploy(wGHST.address);
   await ghstRouter.deployed();
   console.log("router deployed to", ghstRouter.address);
 

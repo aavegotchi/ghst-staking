@@ -65,6 +65,8 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wAmGHST") {
 
     address public router;
     address public deployer;
+    address public wMatic = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+    address public maticTreasury;
 
     constructor() public {
         deployer = msg.sender;
@@ -94,6 +96,13 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wAmGHST") {
         } catch {}
 
         //    emit Initialized(address(pool), aToken, staticATokenName, staticATokenSymbol);
+    }
+
+    function claimMaticRewards() public {
+        IERC20 m = IERC20(wMatic);
+        if (m.balanceOf(address(this)) > 0) {
+            m.transfer(maticTreasury, m.balanceOf(address(this)));
+        }
     }
 
     function setRouter(address _newRouter) public {
@@ -127,84 +136,6 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wAmGHST") {
         return _withdraw(msg.sender, recipient, 0, amount, toUnderlying);
     }
 
-    // function permit(
-    //     address owner,
-    //     address spender,
-    //     uint256 value,
-    //     uint256 deadline,
-    //     uint8 v,
-    //     bytes32 r,
-    //     bytes32 s
-    // ) external  {
-    //     require(owner != address(0), StaticATokenErrors.INVALID_OWNER);
-    //     //solium-disable-next-line
-    //     require(block.timestamp <= deadline, StaticATokenErrors.INVALID_EXPIRATION);
-    //     uint256 currentValidNonce = _nonces[owner];
-    //     bytes32 digest = keccak256(
-    //         abi.encodePacked(
-    //             "\x19\x01",
-    //             getDomainSeparator(),
-    //             keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, currentValidNonce, deadline))
-    //         )
-    //     );
-    //     require(owner == ecrecover(digest, v, r, s), StaticATokenErrors.INVALID_SIGNATURE);
-    //     _nonces[owner] = currentValidNonce.add(1);
-    //     _approve(owner, spender, value);
-    // }
-
-    // function metaDeposit(
-    //     address depositor,
-    //     address recipient,
-    //     uint256 value,
-    //     uint16 referralCode,
-    //     bool fromUnderlying,
-    //     uint256 deadline,
-    //     SignatureParams calldata sigParams
-    // ) external  returns (uint256) {
-    //     require(depositor != address(0), StaticATokenErrors.INVALID_DEPOSITOR);
-    //     //solium-disable-next-line
-    //     require(block.timestamp <= deadline, StaticATokenErrors.INVALID_EXPIRATION);
-    //     uint256 currentValidNonce = _nonces[depositor];
-    //     bytes32 digest = keccak256(
-    //         abi.encodePacked(
-    //             "\x19\x01",
-    //             getDomainSeparator(),
-    //             keccak256(abi.encode(METADEPOSIT_TYPEHASH, depositor, recipient, value, referralCode, fromUnderlying, currentValidNonce, deadline))
-    //         )
-    //     );
-    //     require(depositor == ecrecover(digest, sigParams.v, sigParams.r, sigParams.s), StaticATokenErrors.INVALID_SIGNATURE);
-    //     _nonces[depositor] = currentValidNonce.add(1);
-    //     return _deposit(depositor, recipient, value, referralCode, fromUnderlying);
-    // }
-
-    // function metaWithdraw(
-    //     address owner,
-    //     address recipient,
-    //     uint256 staticAmount,
-    //     uint256 dynamicAmount,
-    //     bool toUnderlying,
-    //     uint256 deadline,
-    //     SignatureParams calldata sigParams
-    // ) external  returns (uint256, uint256) {
-    //     require(owner != address(0), StaticATokenErrors.INVALID_OWNER);
-    //     //solium-disable-next-line
-    //     require(block.timestamp <= deadline, StaticATokenErrors.INVALID_EXPIRATION);
-    //     uint256 currentValidNonce = _nonces[owner];
-    //     bytes32 digest = keccak256(
-    //         abi.encodePacked(
-    //             "\x19\x01",
-    //             getDomainSeparator(),
-    //             keccak256(
-    //                 abi.encode(METAWITHDRAWAL_TYPEHASH, owner, recipient, staticAmount, dynamicAmount, toUnderlying, currentValidNonce, deadline)
-    //             )
-    //         )
-    //     );
-
-    //     require(owner == ecrecover(digest, sigParams.v, sigParams.r, sigParams.s), StaticATokenErrors.INVALID_SIGNATURE);
-    //     _nonces[owner] = currentValidNonce.add(1);
-    //     return _withdraw(owner, recipient, staticAmount, dynamicAmount, toUnderlying);
-    // }
-
     function dynamicBalanceOf(address account) external view returns (uint256) {
         return _staticToDynamicAmount(balanceOf(account), rate());
     }
@@ -220,15 +151,6 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wAmGHST") {
     function rate() public view returns (uint256) {
         return LENDING_POOL.getReserveNormalizedIncome(address(ASSET));
     }
-
-    //
-    // function getDomainSeparator() public view  returns (bytes32) {
-    //     uint256 chainId;
-    //     assembly {
-    //         chainId := chainid()
-    //     }
-    //     return keccak256(abi.encode(EIP712_DOMAIN, keccak256(bytes(name())), keccak256(EIP712_REVISION), chainId, address(this)));
-    // }
 
     function _dynamicToStaticAmount(uint256 amount, uint256 _rate) internal pure returns (uint256) {
         return amount.rayDiv(_rate);
