@@ -20,14 +20,14 @@ export const randAddress = "0x837704Ec8DFEC198789baF061D6e93B0e1555dA6";
 export let poolAddress: string;
 let ghstRouter: StaticAmGHSTRouter;
 
-let wGHST;
+let wamGHST;
 let stakingFacet: StakingFacet;
 let addresses: contractAddresses;
 export const sufficientAmnt = "1000000000000000000000"; //1000ghst
 
 export interface contractAddresses {
-  wAmGHST: StaticATokenLM;
-  stkWamGHST: ReceiptToken;
+  wamGHST: StaticATokenLM;
+  stkwamGHST: ReceiptToken;
   router: StaticAmGHSTRouter;
 }
 
@@ -48,30 +48,33 @@ export async function deploy() {
   }
 
   //deploy wamGhst static token
-  const wamGHST = await ethers.getContractFactory("StaticATokenLM", signer);
-  wGHST = await wamGHST.deploy();
-  await wGHST.deployed();
-  console.log("wrapped amGHST static token deployed to", wGHST.address);
+  const staticAToken = await ethers.getContractFactory(
+    "StaticATokenLM",
+    signer
+  );
+  wamGHST = await staticAToken.deploy();
+  await wamGHST.deployed();
+  console.log("wrapped amGHST static token deployed to", wamGHST.address);
 
-  //deploy stkWamGHST receipt token
+  //deploy stkwamGHST receipt token
   const receiptTokenFactory = (await ethers.getContractFactory(
     "ReceiptToken"
   )) as ReceiptToken__factory;
   const token = (await receiptTokenFactory.deploy(
     stakingDiamond,
-    "stakeWrapped amGHST",
-    "stkWAmGhst"
+    "Staked Wrapped amGHST",
+    "stkwamGHST"
   )) as ReceiptToken;
   await token.deployed();
-  console.log("staked wAmGHST token deployed to", token.address);
+  console.log("stkwamGHST token deployed to", token.address);
 
   // initialize params
-  wGHST.initialize(aaveLendingContract, amGHST, "Wrapped amGHST", "wAmGHST");
+  wamGHST.initialize(aaveLendingContract, amGHST, "Wrapped amGHST", "wamGHST");
 
   //Add wamGHST pool
   const poolData: PoolObject[] = [
     {
-      _poolAddress: wGHST.address,
+      _poolAddress: wamGHST.address,
       _poolReceiptToken: token.address,
       _rate: "1",
       _poolName: "wamGHST",
@@ -113,16 +116,16 @@ export async function deploy() {
   //deploy GHST main wrapper router
   const wrapper = await ethers.getContractFactory("StaticAmGHSTRouter", signer);
   //@ts-ignore
-  ghstRouter = await wrapper.deploy(wGHST.address);
+  ghstRouter = await wrapper.deploy(wamGHST.address);
   await ghstRouter.deployed();
   console.log("router deployed to", ghstRouter.address);
 
   //set the router address
-  await wGHST.setRouter(ghstRouter.address);
+  await wamGHST.setRouter(ghstRouter.address);
 
   return (addresses = {
-    wAmGHST: wGHST,
-    stkWamGHST: token,
+    wamGHST: wamGHST,
+    stkwamGHST: token,
     router: ghstRouter,
   });
 }

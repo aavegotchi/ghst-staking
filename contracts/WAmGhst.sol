@@ -25,7 +25,7 @@ import {SafeMath} from "./aave/protocol-v2/contracts/dependencies/openzeppelin/c
  * The token support claiming liquidity mining rewards from the Aave system.
  * @author Aave
  **/
-contract StaticATokenLM is ERC20("Wrapped amGHST", "wAmGHST") {
+contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using WadRayMath for uint256;

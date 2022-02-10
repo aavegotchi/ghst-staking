@@ -33,7 +33,7 @@ module.exports = {
         timeout: 8000000000,
       },
       blockGasLimit: 20000000,
-      timeout: 120000,
+      timeout: 12000000,
       gas: "auto",
     },
     localhost: {

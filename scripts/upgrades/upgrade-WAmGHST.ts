@@ -14,8 +14,8 @@ async function upgrade() {
     {
       facetName: "StakingFacet",
       addSelectors: [
-        ` function stakeIntoPoolForUser( address _poolContractAddress, uint256 _amount,address _sender ) public`,
-        ` function withdrawFromPoolForUser(address _poolContractAddress,uint256 _amount, address _sender ) public`,
+        `function stakeIntoPoolForUser( address _poolContractAddress, uint256 _amount,address _sender ) public`,
+        `function withdrawFromPoolForUser(address _poolContractAddress,uint256 _amount, address _sender ) public`,
       ],
       removeSelectors: [],
     },

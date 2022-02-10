@@ -11,49 +11,47 @@ contract StaticAmGHSTRouter {
     address constant stakingDiamond = 0xA02d547512Bb90002807499F05495Fe9C4C3943f;
     IERC20 GHST = IERC20(0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7);
     address constant amGHST = 0x080b5BF8f360F624628E0fb961F4e67c9e3c7CF1;
-    address public wAmGHSTPool;
+    address public wamGHSTPool;
     uint256 constant MAX_UINT = type(uint256).max;
 
     constructor(address _wamGhstPoolAddress) public {
-        wAmGHSTPool = _wamGhstPoolAddress;
-
-        ///inifinite  approvals
+        wamGHSTPool = _wamGhstPoolAddress;
 
         //approve lendingpool to spend GHST
         GHST.approve(address(aaveLendingPool), MAX_UINT);
 
         //approve static wrapper contract to spend amGHST
-        IERC20(amGHST).approve(wAmGHSTPool, MAX_UINT);
+        IERC20(amGHST).approve(wamGHSTPool, MAX_UINT);
 
         //approve stk diamond to spend wAmGhst
-        IERC20(wAmGHSTPool).approve(stakingDiamond, MAX_UINT);
+        IERC20(wamGHSTPool).approve(stakingDiamond, MAX_UINT);
     }
 
     function wrapAndDeposit(uint256 _amount, address _to) external {
-        //get user ghst
+        //transfer user ghst
         require(GHST.transferFrom(msg.sender, address(this), _amount));
 
         //convert to amGHST
         aaveLendingPool.deposit(address(GHST), _amount, address(this), 0);
 
-        //convert to wAmGHST
-        //fromUnderlying can be true..in this case tx.origin can convert directly from ghst to stkWAmGhst without converting to amGhst first
-        uint256 deposited = IStaticATokenLM(wAmGHSTPool).deposit(_to, _amount, 0, false);
+        //convert to wamGHST
+        //fromUnderlying can be true..in this case tx.origin can convert directly from ghst to stkWAmGhst without converting to amGHST first
+        uint256 deposited = IStaticATokenLM(wamGHSTPool).deposit(_to, _amount, 0, false);
         console.log("deposited", deposited);
         //convert to stkWAmGhst on behalf of tx.origin
         //trusting LibMeta.msgSender() to use tx.origin instead of msg.sender
-        IStakingFacet(stakingDiamond).stakeIntoPoolForUser(wAmGHSTPool, deposited, _to);
+        IStakingFacet(stakingDiamond).stakeIntoPoolForUser(wamGHSTPool, deposited, _to);
         console.log("staked", _amount);
     }
 
-    function unWrapAndWithdraw(uint256 _amount, address _to) external {
-        //get user wAmGhst by burning stkWamGhst
-        IStakingFacet(stakingDiamond).withdrawFromPoolForUser(wAmGHSTPool, _amount, _to);
+    function unwrapAndWithdraw(uint256 _amount, address _to) external {
+        //get user wamGhst by burning stkWamGhst
+        IStakingFacet(stakingDiamond).withdrawFromPoolForUser(wamGHSTPool, _amount, _to);
         console.log("unwrapping", _amount);
 
-        //convert wAmGhst back to  amGHST
-        //fromUnderlying can be true..in this case tx.origin can convert directly from stkWAmGhst to ghst without converting to amGhst first
-        (, uint256 toWithdraw) = IStaticATokenLM(wAmGHSTPool).withdraw(msg.sender, address(this), _amount, false);
+        //convert wamGhst back to amGHST
+        //fromUnderlying can be true..in this case tx.origin can convert directly from stkwamGhst to GHST without converting to amGHST first
+        (, uint256 toWithdraw) = IStaticATokenLM(wamGHSTPool).withdraw(msg.sender, address(this), _amount, false);
         console.log("converting back to amGHST", toWithdraw);
         //convert  back to ghst and send directly
         aaveLendingPool.withdraw(address(GHST), toWithdraw, _to);

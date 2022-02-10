@@ -15,7 +15,7 @@ import {
 } from "../scripts/deployStkWAmGHST";
 import { Signer } from "ethers";
 
-const { upgrade } = require("../scripts/upgrades/upgrade-WAmGHST");
+const { upgrade } = require("../scripts/upgrades/upgrade-wamGHST");
 const { deploy } = require("../scripts/deployStkWAmGHST");
 
 let deployedAddresses: contractAddresses;
@@ -25,7 +25,7 @@ const secondAddress = "0x92fedfc12357771c3f4cf2374714904f3690fbe1";
 
 describe("Perform all staking calculations", async function () {
   before(async function () {
-    this.timeout(2000000000000);
+    this.timeout(200000000);
 
     console.log("upgrading");
     await upgrade();
@@ -69,7 +69,7 @@ describe("Perform all staking calculations", async function () {
     );
 
     //user needs to approve staking diamond to spend wAmGhst
-    await deployedAddresses.wAmGHST.approve(stakingDiamond, sufficientAmnt);
+    await deployedAddresses.wamGHST.approve(stakingDiamond, sufficientAmnt);
 
     //user also approves router diamond to spend wAmGhst
     // await deployedAddresses.wAmGHST.approve(
@@ -85,11 +85,17 @@ describe("Perform all staking calculations", async function () {
 
     await deployedAddresses.router.wrapAndDeposit(sufficientAmnt, ghstOwner);
 
-    //increase by a day
-    await network.provider.send("evm_increaseTime", [86400]);
-    const frens = await stakeFacet.frens(ghstOwner);
+    let frens = await stakeFacet.frens(ghstOwner);
     //frens should be 86400
-    console.log(frens);
+    console.log("before frens:", frens.toString());
+
+    //increase by a day
+    ethers.provider.send("evm_increaseTime", [86400]);
+    ethers.provider.send("evm_mine", []);
+
+    frens = await stakeFacet.frens(ghstOwner);
+    //frens should be 86400
+    console.log("after frens:", frens.toString());
   });
 
   it("User can unwwrap stkWAmghst and get ghst back in the same txn", async function () {
@@ -105,10 +111,10 @@ describe("Perform all staking calculations", async function () {
     //withdrawing stkWAmghst from staking diamond
     //SHOULD REVERT
     await expect(
-      deployedAddresses.router.unWrapAndWithdraw(pools[0].amount, secondAddress)
+      deployedAddresses.router.unwrapAndWithdraw(pools[0].amount, secondAddress)
     ).to.be.revertedWith("StakingFacet: Not authorized");
 
-    await deployedAddresses.router.unWrapAndWithdraw(
+    await deployedAddresses.router.unwrapAndWithdraw(
       pools[0].amount,
       ghstOwner
     );
