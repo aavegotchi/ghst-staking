@@ -4,7 +4,6 @@ import {IStaticATokenLM} from "./aave/protocol-v2/contracts/interfaces/IStaticAT
 import {ILendingPool} from "./aave/protocol-v2/contracts/interfaces/ILendingPool.sol";
 import {IERC20} from "./aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20.sol";
 import {IStakingFacet} from "./interfaces/IStakingFacet.sol";
-import "hardhat/console.sol";
 
 contract StaticAmGHSTRouter {
     ILendingPool public aaveLendingPool = ILendingPool(0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf);
@@ -37,22 +36,20 @@ contract StaticAmGHSTRouter {
         //convert to wamGHST
         //fromUnderlying can be true..in this case tx.origin can convert directly from ghst to stkWAmGhst without converting to amGHST first
         uint256 deposited = IStaticATokenLM(wamGHSTPool).deposit(_to, _amount, 0, false);
-        console.log("deposited", deposited);
+
         //convert to stkWAmGhst on behalf of tx.origin
         //trusting LibMeta.msgSender() to use tx.origin instead of msg.sender
         IStakingFacet(stakingDiamond).stakeIntoPoolForUser(wamGHSTPool, deposited, _to);
-        console.log("staked", _amount);
     }
 
     function unwrapAndWithdraw(uint256 _amount, address _to) external {
         //get user wamGhst by burning stkWamGhst
         IStakingFacet(stakingDiamond).withdrawFromPoolForUser(wamGHSTPool, _amount, _to);
-        console.log("unwrapping", _amount);
 
         //convert wamGhst back to amGHST
         //fromUnderlying can be true..in this case tx.origin can convert directly from stkwamGhst to GHST without converting to amGHST first
         (, uint256 toWithdraw) = IStaticATokenLM(wamGHSTPool).withdraw(msg.sender, address(this), _amount, false);
-        console.log("converting back to amGHST", toWithdraw);
+
         //convert  back to ghst and send directly
         aaveLendingPool.withdraw(address(GHST), toWithdraw, _to);
     }
