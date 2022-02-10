@@ -94,7 +94,7 @@ describe("Perform all staking calculations", async function () {
     ethers.provider.send("evm_mine", []);
 
     frens = await stakeFacet.frens(ghstOwner);
-    //frens should be 86400
+    //frens should be approx 1000
     console.log("after frens:", frens.toString());
   });
 
