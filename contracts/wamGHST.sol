@@ -8,7 +8,6 @@ import {IERC20Detailed} from "./aave/protocol-v2/contracts/dependencies/openzepp
 import {IAToken} from "./aave/protocol-v2/contracts/interfaces/IAToken.sol";
 import {IStaticATokenLM} from "./aave/protocol-v2/contracts/interfaces/IStaticATokenLM.sol";
 import {IAaveIncentivesController} from "./aave/protocol-v2/contracts/interfaces/IAaveIncentivesController.sol";
-import {IInitializableStaticATokenLM} from "./aave/protocol-v2/contracts/interfaces/IInitializableStaticATokenLM.sol";
 
 import {StaticATokenErrors} from "./aave/protocol-v2/contracts/StaticATokenErrors.sol";
 
@@ -31,23 +30,9 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
     using WadRayMath for uint256;
     using RayMathNoRounding for uint256;
 
-    // bytes public constant EIP712_REVISION = bytes("1");
-    // bytes32 internal constant EIP712_DOMAIN = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-    // bytes32 public constant PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    // bytes32 public constant METADEPOSIT_TYPEHASH =
-    //     keccak256(
-    //         "Deposit(address depositor,address recipient,uint256 value,uint16 referralCode,bool fromUnderlying,uint256 nonce,uint256 deadline)"
-    //     );
-    // bytes32 public constant METAWITHDRAWAL_TYPEHASH =
-    //     keccak256(
-    //         "Withdraw(address owner,address recipient,uint256 staticAmount,uint256 dynamicAmount,bool toUnderlying,uint256 nonce,uint256 deadline)"
-    //     );
-
-    // uint256 public constant STATIC_ATOKEN_LM_REVISION = 0x1;
-
     ILendingPool public LENDING_POOL;
     IAaveIncentivesController public INCENTIVES_CONTROLLER;
-    IERC20 public ATOKEN;
+    IERC20 immutable ATOKEN;
     IERC20 public ASSET;
     IERC20 public REWARD_TOKEN;
 
@@ -65,26 +50,23 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
 
     address public router;
     address public deployer;
-    address public wMatic = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+    address constant wMatic = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+
     address public maticTreasury;
+    event Initialized(address indexed pool, address aToken, string staticATokenName, string staticATokenSymbol);
 
-    constructor() public {
-        deployer = msg.sender;
-    }
-
-    function initialize(
+    constructor(
         ILendingPool pool,
         address aToken,
-        string calldata staticATokenName,
-        string calldata staticATokenSymbol
-    ) external {
+        string memory staticATokenName,
+        string memory staticATokenSymbol
+    ) public {
+        deployer = msg.sender;
         LENDING_POOL = pool;
         ATOKEN = IERC20(aToken);
-
         _name = staticATokenName;
         _symbol = staticATokenSymbol;
         _setupDecimals(IERC20Detailed(aToken).decimals());
-
         ASSET = IERC20(IAToken(aToken).UNDERLYING_ASSET_ADDRESS());
         ASSET.safeApprove(address(pool), type(uint256).max);
 
@@ -94,20 +76,24 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
                 REWARD_TOKEN = IERC20(INCENTIVES_CONTROLLER.REWARD_TOKEN());
             }
         } catch {}
-
-        //    emit Initialized(address(pool), aToken, staticATokenName, staticATokenSymbol);
+        emit Initialized(address(pool), aToken, staticATokenName, staticATokenSymbol);
     }
 
-    function claimMaticRewards() public {
+    function claimMaticRewards() external {
         IERC20 m = IERC20(wMatic);
         if (m.balanceOf(address(this)) > 0) {
             m.transfer(maticTreasury, m.balanceOf(address(this)));
         }
     }
 
-    function setRouter(address _newRouter) public {
+    function setRouter(address _newRouter) external {
         require(msg.sender == deployer, "Static Token: Not Owner");
         router = _newRouter;
+    }
+
+    function setAdmin(address _newAdmin) external {
+        require(msg.sender == deployer, "Static Token: Not Owner");
+        deployer = _newAdmin;
     }
 
     function deposit(

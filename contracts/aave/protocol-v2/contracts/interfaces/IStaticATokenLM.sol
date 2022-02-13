@@ -5,14 +5,16 @@ pragma experimental ABIEncoderV2;
 import {IERC20} from "../dependencies/openzeppelin/contracts/IERC20.sol";
 import {ILendingPool} from "./ILendingPool.sol";
 import {IAaveIncentivesController} from "./IAaveIncentivesController.sol";
-import {IInitializableStaticATokenLM} from "./IInitializableStaticATokenLM.sol";
 
-interface IStaticATokenLM is IERC20, IInitializableStaticATokenLM {
-    struct SignatureParams {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-    }
+interface IStaticATokenLM is IERC20 {
+    /**
+     * @dev Emitted when a StaticATokenLM is initialized
+     * @param pool The address of the lending pool where the underlying aToken is used
+     * @param aToken The address of the underlying aToken (aWETH)
+     * @param staticATokenName The name of the Static aToken
+     * @param staticATokenSymbol The symbol of the Static aToken
+     **/
+    event Initialized(address indexed pool, address aToken, string staticATokenName, string staticATokenSymbol);
 
     /**
      * @notice Deposits `ASSET` in the Aave protocol and mints static aTokens to msg.sender
@@ -66,77 +68,6 @@ interface IStaticATokenLM is IERC20, IInitializableStaticATokenLM {
     ) external returns (uint256, uint256);
 
     /**
-     * @notice Implements the permit function as for
-     * https://github.com/ethereum/EIPs/blob/8a34d644aacf0f9f8f00815307fd7dd5da07655f/EIPS/eip-2612.md
-     * @param owner The owner of the funds
-     * @param spender The spender
-     * @param value The amount
-     * @param deadline The deadline timestamp, type(uint256).max for max deadline
-     * @param v Signature param
-     * @param s Signature param
-     * @param r Signature param
-     */
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external;
-
-    /**
-     * @notice Allows to deposit on Aave via meta-transaction
-     * https://github.com/ethereum/EIPs/blob/8a34d644aacf0f9f8f00815307fd7dd5da07655f/EIPS/eip-2612.md
-     * @param depositor Address from which the funds to deposit are going to be pulled
-     * @param recipient Address that will receive the staticATokens, in the average case, same as the `depositor`
-     * @param value The amount to deposit
-     * @param referralCode Code used to register the integrator originating the operation, for potential rewards.
-     *   0 if the action is executed directly by the user, without any middle-man
-     * @param fromUnderlying bool
-     * - `true` if the msg.sender comes with underlying tokens (e.g. USDC)
-     * - `false` if the msg.sender comes already with aTokens (e.g. aUSDC)
-     * @param deadline The deadline timestamp, type(uint256).max for max deadline
-     * @param sigParams Signature params: v,r,s
-     * @return uint256 The amount of StaticAToken minted, static balance
-     */
-    function metaDeposit(
-        address depositor,
-        address recipient,
-        uint256 value,
-        uint16 referralCode,
-        bool fromUnderlying,
-        uint256 deadline,
-        SignatureParams calldata sigParams
-    ) external returns (uint256);
-
-    /**
-     * @notice Allows to withdraw from Aave via meta-transaction
-     * https://github.com/ethereum/EIPs/blob/8a34d644aacf0f9f8f00815307fd7dd5da07655f/EIPS/eip-2612.md
-     * @param owner Address owning the staticATokens
-     * @param recipient Address that will receive the underlying withdrawn from Aave
-     * @param staticAmount The amount of staticAToken to withdraw. If > 0, `dynamicAmount` needs to be 0
-     * @param dynamicAmount The amount of underlying/aToken to withdraw. If > 0, `staticAmount` needs to be 0
-     * @param toUnderlying bool
-     * - `true` for the recipient to get underlying tokens (e.g. USDC)
-     * - `false` for the recipient to get aTokens (e.g. aUSDC)
-     * @param deadline The deadline timestamp, type(uint256).max for max deadline
-     * @param sigParams Signature params: v,r,s
-     * @return amountToBurn: StaticATokens burnt, static balance
-     * @return amountToWithdraw: underlying/aToken send to `recipient`, dynamic balance
-     */
-    function metaWithdraw(
-        address owner,
-        address recipient,
-        uint256 staticAmount,
-        uint256 dynamicAmount,
-        bool toUnderlying,
-        uint256 deadline,
-        SignatureParams calldata sigParams
-    ) external returns (uint256, uint256);
-
-    /**
      * @notice Utility method to get the current aToken balance of an user, from his staticAToken balance
      * @param account The address of the user
      * @return uint256 The aToken balance
@@ -165,12 +96,6 @@ interface IStaticATokenLM is IERC20, IInitializableStaticATokenLM {
      * @return The liquidity index
      **/
     function rate() external view returns (uint256);
-
-    /**
-     * @notice Function to return a dynamic domain separator, in order to be compatible with forks changing chainId
-     * @return bytes32 The domain separator
-     **/
-    function getDomainSeparator() external view returns (bytes32);
 
     /**
      * @notice Claims rewards from `INCENTIVES_CONTROLLER` and updates internal accounting of rewards.

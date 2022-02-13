@@ -52,7 +52,9 @@ export async function deploy() {
     "StaticATokenLM",
     signer
   );
-  wamGHST = await staticAToken.deploy();
+  wamGHST = await staticAToken.deploy(
+    aaveLendingContract,amGHST,"Wrapped amGHST", "wamGHST"
+  );
   await wamGHST.deployed();
   console.log("wrapped amGHST static token deployed to", wamGHST.address);
 
@@ -67,9 +69,6 @@ export async function deploy() {
   )) as ReceiptToken;
   await token.deployed();
   console.log("stkwamGHST token deployed to", token.address);
-
-  // initialize params
-  wamGHST.initialize(aaveLendingContract, amGHST, "Wrapped amGHST", "wamGHST");
 
   //Add wamGHST pool
   const poolData: PoolObject[] = [

@@ -121,5 +121,9 @@ describe("Perform all staking calculations", async function () {
 
     const balAfter = await ghstContract.balanceOf(ghstOwner);
     console.log("ghst balance after", balAfter);
+
+    // //check wmatic balance
+    // const matic=await ethers.getContractAt("contracts/test/GHST/ERC20.sol:ERC20","0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270");
+    // console.log(await (await matic.balanceOf(deployedAddresses.wamGHST.address)).toString())
   });
 });
