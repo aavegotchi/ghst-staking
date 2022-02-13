@@ -12,11 +12,11 @@ import {
   poolAddress,
   stakingDiamond,
   sufficientAmnt,
-} from "../scripts/deployStkWAmGHST";
+} from "../scripts/deploystkwamGHST";
 import { Signer } from "ethers";
 
 const { upgrade } = require("../scripts/upgrades/upgrade-wamGHST");
-const { deploy } = require("../scripts/deployStkWAmGHST");
+const { deploy } = require("../scripts/deploystkwamGHST");
 
 let deployedAddresses: contractAddresses;
 let ghstContract: ERC20;
