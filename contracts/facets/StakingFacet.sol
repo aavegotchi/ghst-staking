@@ -297,12 +297,12 @@ contract StakingFacet {
         stakeIntoPoolForUser(_poolContractAddress, _amount, LibMeta.msgSender());
     }
 
+    //allow tx.origin to stake for _sender provided msg.sender has enough wamGHST
     function stakeIntoPoolForUser(
         address _poolContractAddress,
         uint256 _amount,
         address _sender
     ) public {
-        require(LibMeta.msgSender() == _sender || tx.origin == _sender, "StakingFacet: Not authorized");
         require(_validPool(_poolContractAddress) == true, "StakingFacet: Pool is not valid in this epoch");
         require(IERC20(_poolContractAddress).balanceOf(_sender) >= _amount, "StakingFacet: Insufficient token balance");
 
@@ -330,46 +330,41 @@ contract StakingFacet {
         emit StakeInEpoch(_sender, _poolContractAddress, s.currentEpoch, _amount);
     }
 
-    function withdrawFromPoolForUser(
-        address _poolContractAddress,
-        uint256 _amount,
-        address _sender
-    ) public {
-        require(LibMeta.msgSender() == _sender || tx.origin == _sender, "StakingFacet: Not authorized");
-
-        _migrateOrUpdate(_sender);
+    function withdrawFromPoolForUser(address _poolContractAddress, uint256 _amount) public {
+        address user = tx.origin;
+        _migrateOrUpdate(user);
 
         address receiptTokenAddress = s.pools[_poolContractAddress].receiptToken;
-        uint256 stakedBalance = s.accounts[_sender].accountStakedTokens[_poolContractAddress];
+        uint256 stakedBalance = s.accounts[user].accountStakedTokens[_poolContractAddress];
 
         //GHST does not have a receipt token
         if (receiptTokenAddress != address(0)) {
-            require(IERC20(receiptTokenAddress).balanceOf(_sender) >= _amount, "StakingFacet: Receipt token insufficient");
+            require(IERC20(receiptTokenAddress).balanceOf(user) >= _amount, "StakingFacet: Receipt token insufficient");
         }
 
         require(stakedBalance >= _amount, "StakingFacet: Can't withdraw more tokens than staked");
 
         //Reduce user balance of staked token
-        s.accounts[_sender].accountStakedTokens[_poolContractAddress] -= _amount;
+        s.accounts[user].accountStakedTokens[_poolContractAddress] -= _amount;
 
         if (_poolContractAddress == s.ghstContract) {
             //Do nothing for GHST
         } else if (_poolContractAddress == s.poolContract) {
-            s.accounts[_sender].ghstStakingTokens -= _amount;
+            s.accounts[user].ghstStakingTokens -= _amount;
             s.ghstStakingTokensTotalSupply -= _amount;
 
-            emit Transfer(_sender, address(0), _amount);
+            emit Transfer(user, address(0), _amount);
         } else {
-            IERC20Mintable(receiptTokenAddress).burn(_sender, _amount);
+            IERC20Mintable(receiptTokenAddress).burn(user, _amount);
         }
 
         //Transfer stake tokens from GHST diamond
-        LibERC20.transfer(_poolContractAddress, _sender, _amount);
-        emit WithdrawInEpoch(_sender, _poolContractAddress, s.currentEpoch, _amount);
+        LibERC20.transfer(_poolContractAddress, user, _amount);
+        emit WithdrawInEpoch(user, _poolContractAddress, s.currentEpoch, _amount);
     }
 
     function withdrawFromPool(address _poolContractAddress, uint256 _amount) public {
-        withdrawFromPoolForUser(_poolContractAddress, _amount, LibMeta.msgSender());
+        withdrawFromPoolForUser(_poolContractAddress, _amount, tx.origin);
     }
 
     /***********************************|
