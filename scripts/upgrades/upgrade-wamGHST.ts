@@ -9,7 +9,7 @@ import {
   stakingDiamondUpgrader,
 } from "../helperFunctions";
 
-async function upgrade() {
+export async function upgrade() {
   const facets: FacetsAndAddSelectors[] = [
     {
       facetName: "StakingFacet",

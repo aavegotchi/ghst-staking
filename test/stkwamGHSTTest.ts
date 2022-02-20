@@ -15,8 +15,8 @@ import {
 } from "../scripts/deploystkwamGHST";
 import { Signer } from "ethers";
 
-const { upgrade } = require("../scripts/upgrades/upgrade-wamGHST");
-const { deploy } = require("../scripts/deploystkwamGHST");
+import { upgrade } from "../scripts/upgrades/upgrade-WAmGHST";
+import { deploy } from "../scripts/deployStkWAmGHST";
 
 let deployedAddresses: contractAddresses;
 let ghstContract: ERC20;
