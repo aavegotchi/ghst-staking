@@ -15,12 +15,13 @@ import {
 } from "../scripts/deploystkwamGHST";
 import { Signer } from "ethers";
 
-import { upgrade } from "../scripts/upgrades/upgrade-WAmGHST";
-import { deploy } from "../scripts/deployStkWAmGHST";
+const { upgrade } = require("../scripts/upgrades/upgrade-wamGHST");
+const { deploy } = require("../scripts/deploystkwamGHST");
 
 let deployedAddresses: contractAddresses;
 let ghstContract: ERC20;
 let stakeFacet: StakingFacet;
+let overDraft: string;
 const secondAddress = "0x92fedfc12357771c3f4cf2374714904f3690fbe1";
 
 describe("Perform all staking calculations", async function () {
@@ -35,6 +36,7 @@ describe("Perform all staking calculations", async function () {
 
     //set signer
     const accounts = await ethers.getSigners();
+    overDraft = "10000000000000000000000"; //10000ghst
     let testing = ["hardhat", "localhost"].includes(network.name);
     let signer: Signer;
     if (testing) {
@@ -61,6 +63,7 @@ describe("Perform all staking calculations", async function () {
       signer
     );
   });
+
   it("User can wrap ghst and stake in the same transaction", async function () {
     //user approves router to spend his ghst
     await ghstContract.approve(
@@ -125,5 +128,32 @@ describe("Perform all staking calculations", async function () {
     // //check wmatic balance
     // const matic=await ethers.getContractAt("contracts/test/GHST/ERC20.sol:ERC20","0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270");
     // console.log(await (await matic.balanceOf(deployedAddresses.wamGHST.address)).toString())
+  });
+  it("Make sure StakingFacet is still secure", async function () {
+    //user needs to approve staking diamond to spend GHST
+    await ghstContract.approve(stakingDiamond, overDraft);
+
+    //user tries to stake GHST for someone else
+    await expect(
+      stakeFacet.stakeIntoPoolForUser(GHST, sufficientAmnt, secondAddress)
+    ).to.be.revertedWith("StakingFacet: Not authorized");
+
+    //user stakes GHST for himself
+    await stakeFacet.stakeGhst(sufficientAmnt);
+
+    //user tries to withdraw GHST for someone else
+    await expect(
+      stakeFacet.withdrawFromPoolForUser(GHST, sufficientAmnt, secondAddress)
+    ).to.be.revertedWith("StakingFacet: Not authorized");
+
+    //user tries to withdraw more than he staked
+    await expect(
+      stakeFacet.withdrawFromPoolForUser(GHST, overDraft, ghstOwner)
+    ).to.be.revertedWith(
+      "StakingFacet: Can't withdraw more tokens than staked"
+    );
+
+    //user can withdraw his ghst normally
+    await stakeFacet.withdrawFromPool(GHST, sufficientAmnt);
   });
 });

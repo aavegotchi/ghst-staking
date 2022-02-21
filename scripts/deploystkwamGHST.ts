@@ -53,7 +53,10 @@ export async function deploy() {
     signer
   );
   wamGHST = await staticAToken.deploy(
-    aaveLendingContract,amGHST,"Wrapped amGHST", "wamGHST"
+    aaveLendingContract,
+    amGHST,
+    "Wrapped amGHST",
+    "wamGHST"
   );
   await wamGHST.deployed();
   console.log("wrapped amGHST static token deployed to", wamGHST.address);
@@ -77,6 +80,13 @@ export async function deploy() {
       _poolReceiptToken: token.address,
       _rate: "1",
       _poolName: "wamGHST",
+      _poolUrl: "",
+    },
+    {
+      _poolAddress: GHST,
+      _poolReceiptToken: ethers.constants.AddressZero,
+      _rate: "1",
+      _poolName: "GHST",
       _poolUrl: "",
     },
   ];
