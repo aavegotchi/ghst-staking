@@ -156,7 +156,6 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
         uint16 referralCode,
         bool fromUnderlying
     ) internal returns (uint256) {
-        require(msg.sender == router, "Static Token:Not Router");
         require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
         _updateRewards();
 
