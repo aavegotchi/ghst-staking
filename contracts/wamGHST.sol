@@ -48,8 +48,6 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
     // user => unclaimedRewards (in RAYs)
     mapping(address => uint256) private _unclaimedRewards;
 
-    address public router;
-    address public deployer;
     address constant wMatic = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     bytes32 public constant PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes public constant EIP712_REVISION = bytes("1");
@@ -64,7 +62,6 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
         string memory staticATokenName,
         string memory staticATokenSymbol
     ) public {
-        deployer = msg.sender;
         LENDING_POOL = pool;
         ATOKEN = IERC20(aToken);
         _name = staticATokenName;
@@ -87,16 +84,6 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
         if (m.balanceOf(address(this)) > 0) {
             m.transfer(maticTreasury, m.balanceOf(address(this)));
         }
-    }
-
-    function setRouter(address _newRouter) external {
-        require(msg.sender == deployer, "Static Token: Not Owner");
-        router = _newRouter;
-    }
-
-    function setAdmin(address _newAdmin) external {
-        require(msg.sender == deployer, "Static Token: Not Owner");
-        deployer = _newAdmin;
     }
 
     function deposit(

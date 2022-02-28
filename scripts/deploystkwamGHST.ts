@@ -129,9 +129,6 @@ export async function deploy() {
   await ghstRouter.deployed();
   console.log("router deployed to", ghstRouter.address);
 
-  //set the router address
-  await wamGHST.setRouter(ghstRouter.address);
-
   return (addresses = {
     wamGHST: wamGHST,
     stkwamGHST: token,
