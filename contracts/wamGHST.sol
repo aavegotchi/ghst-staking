@@ -51,9 +51,11 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
     address constant wMatic = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     bytes32 public constant PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes public constant EIP712_REVISION = bytes("1");
-    bytes32 internal constant EIP712_DOMAIN = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 public immutable DOMAIN_SEPARATOR;
 
+    //TODO: Define maticTreasury
     address public maticTreasury;
+    address public contractOwner;
     event Initialized(address indexed pool, address aToken, string staticATokenName, string staticATokenSymbol);
 
     constructor(
@@ -62,6 +64,7 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
         string memory staticATokenName,
         string memory staticATokenSymbol
     ) public {
+        contractOwner = msg.sender;
         LENDING_POOL = pool;
         ATOKEN = IERC20(aToken);
         _name = staticATokenName;
@@ -76,7 +79,13 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
                 REWARD_TOKEN = IERC20(INCENTIVES_CONTROLLER.REWARD_TOKEN());
             }
         } catch {}
+        DOMAIN_SEPARATOR = getDomainSeparator();
         emit Initialized(address(pool), aToken, staticATokenName, staticATokenSymbol);
+    }
+
+    function changeMaticTreasury(address _newTreasuryAddress) external {
+        require(msg.sender == contractOwner, "Not Owner");
+        maticTreasury = _newTreasuryAddress;
     }
 
     function claimMaticRewards() external {
@@ -84,6 +93,22 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
         if (m.balanceOf(address(this)) > 0) {
             m.transfer(maticTreasury, m.balanceOf(address(this)));
         }
+    }
+
+    function getDomainSeparator() internal view returns (bytes32) {
+        uint256 chainId;
+        assembly {
+            chainId := chainid()
+        }
+        keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(bytes(name())),
+                keccak256(bytes(EIP712_REVISION)),
+                chainId,
+                address(this)
+            )
+        );
     }
 
     function deposit(
@@ -102,14 +127,6 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
         bool toUnderlying
     ) external returns (uint256, uint256) {
         return _withdraw(_from, recipient, amount, 0, toUnderlying);
-    }
-
-    function withdrawDynamicAmount(
-        address recipient,
-        uint256 amount,
-        bool toUnderlying
-    ) external returns (uint256, uint256) {
-        return _withdraw(msg.sender, recipient, 0, amount, toUnderlying);
     }
 
     function dynamicBalanceOf(address account) external view returns (uint256) {
@@ -348,14 +365,6 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
             return;
         }
         _claimRewardsOnBehalf(msg.sender, msg.sender, forceUpdate);
-    }
-
-    function getDomainSeparator() public view returns (bytes32) {
-        uint256 chainId;
-        assembly {
-            chainId := chainid()
-        }
-        return keccak256(abi.encode(EIP712_DOMAIN, keccak256(bytes(name())), keccak256(EIP712_REVISION), chainId, address(this)));
     }
 
     /**
