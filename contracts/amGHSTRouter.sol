@@ -30,7 +30,7 @@ contract StaticAmGHSTRouter {
     ///@notice user can either provide GHST or amGHST directly
     ///@param _amount Amount of incoming tokens, either GHST or wamGHST
     ///@param _to Address to stake for
-    ///@param _underlying true if GHST is provided,false if amGHST is provided
+    ///@param _underlying true if GHST is provided, false if amGHST is provided
     function wrapAndDeposit(
         uint256 _amount,
         address _to,
@@ -38,7 +38,7 @@ contract StaticAmGHSTRouter {
     ) external {
         uint256 deposited;
         if (_underlying) {
-            //transfer user ghst
+            //transfer user GHST
             require(GHST.transferFrom(msg.sender, address(this), _amount));
 
             //convert to amGHST
@@ -49,7 +49,7 @@ contract StaticAmGHSTRouter {
             deposited = IStaticATokenLM(wamGHSTPool).deposit(_to, _amount, 0, false);
         }
         if (!_underlying) {
-            //transfer user ghst
+            //transfer user amGHST
             require(IERC20(amGHST).transferFrom(msg.sender, address(this), _amount));
             deposited = IStaticATokenLM(wamGHSTPool).deposit(_to, _amount, 0, false);
         }
