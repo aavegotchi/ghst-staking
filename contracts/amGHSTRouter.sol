@@ -36,24 +36,20 @@ contract StaticAmGHSTRouter {
         address _to,
         bool _underlying
     ) external {
-        uint256 deposited;
         if (_underlying) {
             //transfer user GHST
             require(GHST.transferFrom(msg.sender, address(this), _amount));
-
             //convert to amGHST
             aaveLendingPool.deposit(address(GHST), _amount, address(this), 0);
-
-            //convert to wamGHST
-
-            deposited = IStaticATokenLM(wamGHSTPool).deposit(_to, _amount, 0, false);
-        }
-        if (!_underlying) {
+        } else {
             //transfer user amGHST
             require(IERC20(amGHST).transferFrom(msg.sender, address(this), _amount));
-            deposited = IStaticATokenLM(wamGHSTPool).deposit(_to, _amount, 0, false);
         }
-        //convert to stkWAmGhst on behalf of tx.origin
+
+        //convert to wamGHST
+        uint256 deposited = IStaticATokenLM(wamGHSTPool).deposit(_to, _amount, 0, false);
+
+        //convert to stkWAmGhst on behalf of _to
         IStakingFacet(stakingDiamond).stakeIntoPoolForUser(wamGHSTPool, deposited, _to);
     }
 
@@ -61,22 +57,23 @@ contract StaticAmGHSTRouter {
     ///@notice user can either unwrap to amGHST or GHST directly
     ///@param _amount Amount of tokens to unstake
     ///@param _to Address to unstake for
-    ///@param _toUnderlying true if amGHST should be converted to GHST before sending back,false if amGHST should be sent back directly
+    ///@param _toUnderlying true if amGHST should be converted to GHST before sending back, false if amGHST should be sent back directly
     function unwrapAndWithdraw(
         uint256 _amount,
         address _to,
         bool _toUnderlying
     ) external {
         uint256 toWithdraw;
-        //get user wamGhst by burning stkWamGhst
+        //get user wamGHST by burning stkWamGHST
         IStakingFacet(stakingDiamond).withdrawFromPoolForUser(wamGHSTPool, _amount, _to);
+
+        //Convert back to GHST
         if (_toUnderlying) {
-            //convert wamGhst back to amGHST
+            //convert wamGHST back to amGHST
             (, toWithdraw) = IStaticATokenLM(wamGHSTPool).withdraw(msg.sender, address(this), _amount, false);
-            //convert  amGHST to ghst and send directly
+            //convert amGHST to GHST and send directly
             aaveLendingPool.withdraw(address(GHST), toWithdraw, _to);
-        }
-        if (!_toUnderlying) {
+        } else {
             //withdraw amGHST and send back
             IStaticATokenLM(wamGHSTPool).withdraw(_to, _to, _amount, false);
         }
