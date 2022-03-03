@@ -54,7 +54,7 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
     bytes32 public immutable DOMAIN_SEPARATOR;
 
     //TODO: Define maticTreasury
-    address public maticTreasury;
+    address public maticTreasury = 0xb208f8BB431f580CC4b216826AFfB128cd1431aB;
     address public contractOwner;
     event Initialized(address indexed pool, address aToken, string staticATokenName, string staticATokenSymbol);
 

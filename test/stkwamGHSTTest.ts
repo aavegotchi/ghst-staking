@@ -12,6 +12,7 @@ import {
   poolAddress,
   stakingDiamond,
   sufficientAmnt,
+  amGHST,
 } from "../scripts/deploystkwamGHST";
 import { Signer } from "ethers";
 
@@ -20,9 +21,12 @@ const { deploy } = require("../scripts/deploystkwamGHST");
 
 let deployedAddresses: contractAddresses;
 let ghstContract: ERC20;
+let amGHSTContract: ERC20;
 let stakeFacet: StakingFacet;
 let overDraft: string;
+let amGHSTsigner: Signer;
 const secondAddress = "0x92fedfc12357771c3f4cf2374714904f3690fbe1";
+const amGHSTHolder = "0xd553294b42bdfeb49d8f5a64e8b2d3a65fc673a9";
 
 describe("Perform all staking calculations", async function () {
   before(async function () {
@@ -39,12 +43,14 @@ describe("Perform all staking calculations", async function () {
     overDraft = "10000000000000000000000"; //10000ghst
     let testing = ["hardhat", "localhost"].includes(network.name);
     let signer: Signer;
+
     if (testing) {
       await network.provider.request({
         method: "hardhat_impersonateAccount",
         params: [ghstOwner],
       });
       signer = await ethers.provider.getSigner(ghstOwner);
+      amGHSTsigner = await ethers.provider.getSigner(amGHSTHolder);
     } else if (network.name === "matic") {
       signer = accounts[0];
     } else {
@@ -55,6 +61,12 @@ describe("Perform all staking calculations", async function () {
       "contracts/test/GHST/ERC20.sol:ERC20",
       GHST,
       signer
+    )) as ERC20;
+
+    amGHSTContract = (await ethers.getContractAt(
+      "contracts/test/GHST/ERC20.sol:ERC20",
+      amGHST,
+      amGHSTsigner
     )) as ERC20;
 
     stakeFacet = await ethers.getContractAt(
@@ -83,13 +95,21 @@ describe("Perform all staking calculations", async function () {
     //depositing ghst into the router contract
     //THIS SHOULD REVERT
     await expect(
-      deployedAddresses.router.wrapAndDeposit(sufficientAmnt, secondAddress)
+      deployedAddresses.router.wrapAndDeposit(
+        sufficientAmnt,
+        secondAddress,
+        true
+      )
     ).to.be.revertedWith("StakingFacet: Not authorized");
 
-    await deployedAddresses.router.wrapAndDeposit(sufficientAmnt, ghstOwner);
+    await deployedAddresses.router.wrapAndDeposit(
+      sufficientAmnt,
+      ghstOwner,
+      true
+    );
 
     let frens = await stakeFacet.frens(ghstOwner);
-    //frens should be 86400
+    //frens should be 0
     console.log("before frens:", frens.toString());
 
     //increase by a day
@@ -101,25 +121,30 @@ describe("Perform all staking calculations", async function () {
     console.log("after frens:", frens.toString());
   });
 
-  it("User can unwwrap stkWAmghst and get ghst back in the same txn", async function () {
-    let balBefore = await ghstContract.balanceOf(ghstOwner);
+  it("User can unwrap stkwamghst and get ghst back in the same txn", async function () {
+    const balBefore = await ghstContract.balanceOf(ghstOwner);
     console.log("bal before", balBefore);
     //@ts-ignore
     const pools = await stakeFacet.stakedInEpoch(
       ghstOwner,
       await stakeFacet.currentEpoch()
     );
-    console.log("Pool is", pools);
+    // console.log("Pool is", pools);
 
-    //withdrawing stkWAmghst from staking diamond
+    //withdrawing stkwamghst from staking diamond
     //SHOULD REVERT
     await expect(
-      deployedAddresses.router.unwrapAndWithdraw(pools[0].amount, secondAddress)
+      deployedAddresses.router.unwrapAndWithdraw(
+        pools[0].amount,
+        secondAddress,
+        true
+      )
     ).to.be.revertedWith("StakingFacet: Not authorized");
 
     await deployedAddresses.router.unwrapAndWithdraw(
       pools[0].amount,
-      ghstOwner
+      ghstOwner,
+      true
     );
 
     const balAfter = await ghstContract.balanceOf(ghstOwner);
@@ -128,6 +153,58 @@ describe("Perform all staking calculations", async function () {
     // //check wmatic balance
     // const matic=await ethers.getContractAt("contracts/test/GHST/ERC20.sol:ERC20","0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270");
     // console.log(await (await matic.balanceOf(deployedAddresses.wamGHST.address)).toString())
+  });
+
+  it("Allow direct deposit of amGHST and withdrawal to amGHST", async function () {
+    //deposit amGHST directly from account with no amGHST
+    //SHOULD FAIL
+    await expect(
+      deployedAddresses.router.wrapAndDeposit(sufficientAmnt, ghstOwner, false)
+    ).to.be.revertedWith("ERC20: transfer amount exceeds balance");
+
+    //deposit amGHST with account that has sufficient amGHST
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [amGHSTHolder],
+    });
+
+    //approve router to spend amGHST and wamGHST
+    await amGHSTContract.approve(
+      deployedAddresses.router.address,
+      sufficientAmnt
+    );
+
+    await deployedAddresses.wamGHST
+      .connect(amGHSTsigner)
+      .approve(stakingDiamond, "1000000000000000000000000");
+
+    console.log(
+      `amGHST balance before`,
+      await amGHSTContract.balanceOf(amGHSTHolder)
+    );
+
+    await deployedAddresses.router
+      .connect(amGHSTsigner)
+      .wrapAndDeposit(sufficientAmnt, amGHSTHolder, false);
+
+    //increase by a day
+    ethers.provider.send("evm_increaseTime", [86400]);
+    ethers.provider.send("evm_mine", []);
+    console.log(await stakeFacet.frens(amGHSTHolder));
+
+    const pools = await stakeFacet.stakedInEpoch(
+      amGHSTHolder,
+      await stakeFacet.currentEpoch()
+    );
+    console.log("amount to withdraw", pools[0].amount);
+    //withdrawal
+    await deployedAddresses.router
+      .connect(amGHSTsigner)
+      .unwrapAndWithdraw(pools[0].amount, amGHSTHolder, false);
+    console.log(
+      `amGHST balance after`,
+      await amGHSTContract.balanceOf(amGHSTHolder)
+    );
   });
   it("Make sure StakingFacet is still secure", async function () {
     //user needs to approve staking diamond to spend GHST
