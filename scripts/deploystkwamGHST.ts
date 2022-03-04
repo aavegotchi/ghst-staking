@@ -52,12 +52,7 @@ export async function deploy() {
     "StaticATokenLM",
     signer
   );
-  wamGHST = await staticAToken.deploy(
-    aaveLendingContract,
-    amGHST,
-    "Wrapped amGHST",
-    "wamGHST"
-  );
+  wamGHST = await staticAToken.deploy(aaveLendingContract, amGHST);
   await wamGHST.deployed();
   console.log("wrapped amGHST static token deployed to", wamGHST.address);
 

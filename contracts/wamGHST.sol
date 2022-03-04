@@ -3,7 +3,7 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 import {ILendingPool} from "./aave/protocol-v2/contracts/interfaces/ILendingPool.sol";
-import {IERC20} from "./aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Detailed} from "./aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20Detailed.sol";
 import {IAToken} from "./aave/protocol-v2/contracts/interfaces/IAToken.sol";
 import {IStaticATokenLM} from "./aave/protocol-v2/contracts/interfaces/IStaticATokenLM.sol";
@@ -11,11 +11,11 @@ import {IAaveIncentivesController} from "./aave/protocol-v2/contracts/interfaces
 
 import {StaticATokenErrors} from "./aave/protocol-v2/contracts/StaticATokenErrors.sol";
 
-import {ERC20} from "./aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/ERC20.sol";
-import {SafeERC20} from "./aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/SafeERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {WadRayMath} from "./aave/protocol-v2/contracts/WadRayMath.sol";
 import {RayMathNoRounding} from "./aave/protocol-v2/contracts/RayMathNoRounding.sol";
-import {SafeMath} from "./aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/SafeMath.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * @title StaticATokenLM
@@ -58,17 +58,10 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
     address public contractOwner;
     event Initialized(address indexed pool, address aToken, string staticATokenName, string staticATokenSymbol);
 
-    constructor(
-        ILendingPool pool,
-        address aToken,
-        string memory staticATokenName,
-        string memory staticATokenSymbol
-    ) public {
+    constructor(ILendingPool pool, address aToken) public {
         contractOwner = msg.sender;
         LENDING_POOL = pool;
         ATOKEN = IERC20(aToken);
-        _name = staticATokenName;
-        _symbol = staticATokenSymbol;
         _setupDecimals(IERC20Detailed(aToken).decimals());
         ASSET = IERC20(IAToken(aToken).UNDERLYING_ASSET_ADDRESS());
         ASSET.safeApprove(address(pool), type(uint256).max);
@@ -80,7 +73,7 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
             }
         } catch {}
         DOMAIN_SEPARATOR = getDomainSeparator();
-        emit Initialized(address(pool), aToken, staticATokenName, staticATokenSymbol);
+        emit Initialized(address(pool), aToken, "Wrapped amGHST", "wamGHST");
     }
 
     function changeMaticTreasury(address _newTreasuryAddress) external {

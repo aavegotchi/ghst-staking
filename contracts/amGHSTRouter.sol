@@ -2,7 +2,7 @@ pragma solidity 0.6.12;
 
 import {IStaticATokenLM} from "./aave/protocol-v2/contracts/interfaces/IStaticATokenLM.sol";
 import {ILendingPool} from "./aave/protocol-v2/contracts/interfaces/ILendingPool.sol";
-import {IERC20} from "./aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IStakingFacet} from "./interfaces/IStakingFacet.sol";
 
 contract StaticAmGHSTRouter {
