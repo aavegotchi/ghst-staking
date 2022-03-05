@@ -2,19 +2,19 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import {ILendingPool} from "./aave/protocol-v2/contracts/interfaces/ILendingPool.sol";
+import {ILendingPool} from "../dep/protocol-v2/contracts/interfaces/ILendingPool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Detailed} from "./aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20Detailed.sol";
-import {IAToken} from "./aave/protocol-v2/contracts/interfaces/IAToken.sol";
-import {IStaticATokenLM} from "./aave/protocol-v2/contracts/interfaces/IStaticATokenLM.sol";
-import {IAaveIncentivesController} from "./aave/protocol-v2/contracts/interfaces/IAaveIncentivesController.sol";
+import {IERC20Detailed} from "../dep/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20Detailed.sol";
+import {IAToken} from "../dep/protocol-v2/contracts/interfaces/IAToken.sol";
+import {IStaticATokenLM} from "../dep/protocol-v2/contracts/interfaces/IStaticATokenLM.sol";
+import {IAaveIncentivesController} from "../dep/protocol-v2/contracts/interfaces/IAaveIncentivesController.sol";
 
-import {StaticATokenErrors} from "./aave/protocol-v2/contracts/StaticATokenErrors.sol";
+import {StaticATokenErrors} from "../dep/protocol-v2/contracts/StaticATokenErrors.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import {WadRayMath} from "./aave/protocol-v2/contracts/WadRayMath.sol";
-import {RayMathNoRounding} from "./aave/protocol-v2/contracts/RayMathNoRounding.sol";
+import {WadRayMath} from "../dep/protocol-v2/contracts/WadRayMath.sol";
+import {RayMathNoRounding} from "../dep/protocol-v2/contracts/RayMathNoRounding.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
