@@ -31,7 +31,8 @@
     "web3": "^1.4.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "update-dep": "git submodule update --init --remote dep && git add dep && git status -sb"
   },
   "repository": {
     "type": "git",
