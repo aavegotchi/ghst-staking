@@ -135,14 +135,14 @@ describe("Perform all staking calculations", async function () {
     //SHOULD REVERT
     await expect(
       deployedAddresses.router.unwrapAndWithdraw(
-        pools[0].amount,
+        pools[5].amount,
         secondAddress,
         true
       )
     ).to.be.revertedWith("StakingFacet: Not authorized");
 
     await deployedAddresses.router.unwrapAndWithdraw(
-      pools[0].amount,
+      pools[5].amount,
       ghstOwner,
       true
     );
@@ -196,11 +196,11 @@ describe("Perform all staking calculations", async function () {
       amGHSTHolder,
       await stakeFacet.currentEpoch()
     );
-    console.log("amount to withdraw", pools[0].amount);
+    console.log("amount to withdraw", pools[5].amount);
     //withdrawal
     await deployedAddresses.router
       .connect(amGHSTsigner)
-      .unwrapAndWithdraw(pools[0].amount, amGHSTHolder, false);
+      .unwrapAndWithdraw(pools[5].amount, amGHSTHolder, false);
     console.log(
       `amGHST balance after`,
       await amGHSTContract.balanceOf(amGHSTHolder)
