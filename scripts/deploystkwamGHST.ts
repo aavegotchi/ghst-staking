@@ -116,7 +116,8 @@ export async function deploy() {
       _poolReceiptToken: token.address,
       _rate: "1",
       _poolName: "wamGHST",
-      _poolUrl: "",
+      _poolUrl:
+        "https://app.aave.com/#/reserve-overview/0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7-0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a70xd05e3e715d945b59290df0ae8ef85c1bdb684744",
     },
   ];
 
