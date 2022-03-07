@@ -3,9 +3,18 @@ import { StakingFacet, ERC20 } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
 import { ethers } from "hardhat";
-import { initPools } from "../scripts/upgrades/upgrade-epoch";
+import { deploy } from "../scripts/deploystkwamGHST";
+import { BigNumber } from "ethers";
 
-const { upgrade } = require("../scripts/upgrades/upgrade-epoch.ts");
+const { upgrade } = require("../scripts/upgrades/upgrade-wamGHST.ts");
+
+function toStringBulk(input: BigNumber[]) {
+  let output: string[] = [];
+  for (let i = 0; i < input.length; i++) {
+    output.push(input[i].toString());
+  }
+  return output;
+}
 
 const testAddress = "0x3Da7D21f1A06C7Ce19EE593f76148FAe6e952ca3";
 const testAddress2 = "0xC99DF6B7A5130Dce61bA98614A2457DAA8d92d1c";
@@ -77,17 +86,34 @@ describe("Check balances before and after", async function () {
   const diamondAddress = maticStakingAddress;
 
   //get balances before upgrade
+  let beforeBalances: string[] = [];
+  let afterBalances: string[] = [];
+  let balances: BigNumber[];
 
   before(async function () {
     this.timeout(2000000000);
+    stakingFacet = (await ethers.getContractAt(
+      "StakingFacet",
+      diamondAddress
+    )) as StakingFacet;
+
+    balances = await stakingFacet.bulkFrens(stakersList);
+    beforeBalances = toStringBulk(balances);
+
+    console.log(beforeBalances);
+
     await upgrade();
+    await deploy();
 
     stakingFacet = (await ethers.getContractAt(
       "StakingFacet",
       diamondAddress
     )) as StakingFacet;
 
-    ghstToken = (await ethers.getContractAt("ERC20", ghstAddress)) as ERC20;
+    ghstToken = (await ethers.getContractAt(
+      "contracts/test/GHST/ERC20.sol:ERC20",
+      ghstAddress
+    )) as ERC20;
 
     stakingFacet = (await impersonate(
       testAddress,
@@ -97,6 +123,9 @@ describe("Check balances before and after", async function () {
     )) as StakingFacet;
 
     //get balances after upgrade
+    balances = await stakingFacet.bulkFrens(stakersList);
+    afterBalances = toStringBulk(balances);
+    console.log(`after balance is`, afterBalances);
   });
   it("Check that balances do not change after staking wamGHST ");
 });
