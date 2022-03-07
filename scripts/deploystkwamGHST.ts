@@ -145,8 +145,8 @@ export async function deploy() {
     console.log("Adding rate manager succeeded:", tx.hash);
     console.log(await stakingFacet.currentEpoch());
 
-    const oldPools = await stakingFacet.poolRatesInEpoch("2");
-    console.log("old pools:", oldPools);
+    // const oldPools = await stakingFacet.poolRatesInEpoch("2");
+    // console.log("old pools:", oldPools);
 
     let addTx = await stakingFacet.updateRates(2, poolData);
     const txData = await addTx.wait();
