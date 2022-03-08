@@ -9,7 +9,6 @@ import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/LibMeta.sol";
 import {Epoch} from "../libraries/AppStorage.sol";
-import "hardhat/console.sol";
 
 interface IERC1155Marketplace {
     function updateBatchERC1155Listing(
@@ -174,8 +173,12 @@ contract StakingFacet {
         //When epoch is over
         else {
             uint256 epochDuration = epoch.endTime - epoch.beginTime;
-            if (duration > sinceLastFrensUpdate) {
+
+            //Duration cannot exceed epochDuration
+            if (sinceLastFrensUpdate > epochDuration) {
                 duration = epochDuration;
+
+                //last update is shorter than epochDuration
             } else {
                 duration = sinceLastFrensUpdate;
             }
@@ -200,24 +203,15 @@ contract StakingFacet {
 
         frens_ = account.frens;
 
-        console.log("account frens:", frens_ / 10e17);
-
         uint256 epochsBehind = s.currentEpoch - account.userCurrentEpoch;
-
-        console.log("epochs behind", epochsBehind);
-
-        console.log("base frens", _frensForEpoch(_account, s.currentEpoch) / 10e17);
 
         //Get frens for current epoch
         frens_ += _frensForEpoch(_account, s.currentEpoch);
 
         for (uint256 i = 1; i <= epochsBehind; i++) {
             uint256 historicEpoch = s.currentEpoch - i;
-            console.log("frens for epoch:", _frensForEpoch(_account, historicEpoch) / 10e17);
             frens_ += _frensForEpoch(_account, historicEpoch);
         }
-
-        console.log("final frens", frens_ / 10e17);
     }
 
     function _deprecatedFrens(address _account) internal view returns (uint256 frens_) {
