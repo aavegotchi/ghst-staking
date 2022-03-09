@@ -153,8 +153,7 @@ contract StakingFacet {
     function _frensForEpoch(address _account, uint256 _epoch) internal view returns (uint256) {
         Epoch memory epoch = s.epochs[_epoch];
         address[] memory supportedPools = epoch.supportedPools;
-        uint256 lastFrensUpdate = s.accounts[_account].lastFrensUpdate;
-        uint256 sinceLastFrensUpdate = block.timestamp - lastFrensUpdate;
+        uint256 sinceLastFrensUpdate = block.timestamp - s.accounts[_account].lastFrensUpdate;
 
         uint256 duration = 0;
 
