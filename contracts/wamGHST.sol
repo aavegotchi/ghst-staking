@@ -114,12 +114,11 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
     }
 
     function withdraw(
-        address _from,
         address recipient,
         uint256 amount,
         bool toUnderlying
     ) external returns (uint256, uint256) {
-        return _withdraw(_from, recipient, amount, 0, toUnderlying);
+        return _withdraw(msg.sender, recipient, amount, 0, toUnderlying);
     }
 
     function dynamicBalanceOf(address account) external view returns (uint256) {
@@ -241,11 +240,7 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
         require(block.timestamp <= deadline, StaticATokenErrors.INVALID_EXPIRATION);
         uint256 currentValidNonce = _nonces[owner];
         bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                getDomainSeparator(),
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, currentValidNonce, deadline))
-            )
+            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, currentValidNonce, deadline)))
         );
         require(owner == ecrecover(digest, v, r, s), StaticATokenErrors.INVALID_SIGNATURE);
         _nonces[owner] = currentValidNonce.add(1);

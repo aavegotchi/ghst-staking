@@ -1,4 +1,4 @@
-//import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
+import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
 import { ERC20, StakingFacet } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
@@ -25,6 +25,7 @@ let amGHSTContract: ERC20;
 let stakeFacet: StakingFacet;
 let overDraft: string;
 let amGHSTsigner: Signer;
+let signer: Signer;
 const secondAddress = "0x92fedfc12357771c3f4cf2374714904f3690fbe1";
 const amGHSTHolder = "0xd553294b42bdfeb49d8f5a64e8b2d3a65fc673a9";
 
@@ -42,7 +43,6 @@ describe("Perform all staking calculations", async function () {
     const accounts = await ethers.getSigners();
     overDraft = "10000000000000000000000"; //10000ghst
     let testing = ["hardhat", "localhost"].includes(network.name);
-    let signer: Signer;
 
     if (testing) {
       await network.provider.request({
@@ -80,7 +80,12 @@ describe("Perform all staking calculations", async function () {
     //user approves router to spend his ghst
     await ghstContract.approve(
       deployedAddresses.router.address,
-      sufficientAmnt
+      "1000000000000000000000000000"
+    );
+    //aprove router to spend wamGHST
+    await deployedAddresses.wamGHST.approve(
+      deployedAddresses.router.address,
+      "1000000000000000000000000000"
     );
 
     //user needs to approve staking diamond to spend wAmGhst
@@ -171,12 +176,18 @@ describe("Perform all staking calculations", async function () {
     //approve router to spend amGHST and wamGHST
     await amGHSTContract.approve(
       deployedAddresses.router.address,
-      sufficientAmnt
+      "10000000000000000000000000000000000000000000"
     );
+    await deployedAddresses.wamGHST
+      .connect(amGHSTsigner)
+      .approve(
+        deployedAddresses.router.address,
+        "1000000000000000000000000000"
+      );
 
     await deployedAddresses.wamGHST
       .connect(amGHSTsigner)
-      .approve(stakingDiamond, "1000000000000000000000000");
+      .approve(stakingDiamond, "1000000000000000000000000000");
 
     console.log(
       `amGHST balance before`,
@@ -196,6 +207,7 @@ describe("Perform all staking calculations", async function () {
       amGHSTHolder,
       await stakeFacet.currentEpoch()
     );
+
     console.log("amount to withdraw", pools[5].amount);
     //withdrawal
     await deployedAddresses.router
@@ -232,5 +244,39 @@ describe("Perform all staking calculations", async function () {
 
     //user can withdraw his ghst normally
     await stakeFacet.withdrawFromPool(GHST, sufficientAmnt);
+  });
+  it("Allows only owners to withdraw", async function () {
+    const bal1 = await deployedAddresses.wamGHST.balanceOf(secondAddress);
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [amGHSTHolder],
+    });
+    //approve
+    await amGHSTContract.approve(
+      deployedAddresses.wamGHST.address,
+      sufficientAmnt
+    );
+
+    //deposit some  amGHST for wamGHST directly
+    await deployedAddresses.wamGHST
+      .connect(amGHSTsigner)
+      .deposit(amGHSTHolder, "100000000000000000000", 0, false);
+
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [ghstOwner],
+    });
+
+    //you cannot withdraw for someone else
+    await deployedAddresses.wamGHST
+      .connect(signer)
+      .withdraw(secondAddress, "10000000000000000000", false);
+
+    await deployedAddresses.wamGHST
+      .connect(amGHSTsigner)
+      .withdraw(ghstOwner, "10000000000000000000", false);
+    const bal2 = await deployedAddresses.wamGHST.balanceOf(secondAddress);
+    //no balance change
+    expect(bal1).to.equal(bal2);
   });
 });
