@@ -246,7 +246,8 @@ describe("Perform all staking calculations", async function () {
     await stakeFacet.withdrawFromPool(GHST, sufficientAmnt);
   });
   it("Allows only owners to withdraw", async function () {
-    const bal1 = await deployedAddresses.wamGHST.balanceOf(secondAddress);
+    const bal1 = await amGHSTContract.balanceOf(secondAddress);
+
     await network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [amGHSTHolder],
@@ -261,6 +262,9 @@ describe("Perform all staking calculations", async function () {
     await deployedAddresses.wamGHST
       .connect(amGHSTsigner)
       .deposit(amGHSTHolder, "100000000000000000000", 0, false);
+    const ownerBalance1 = await deployedAddresses.wamGHST.balanceOf(
+      amGHSTHolder
+    );
 
     await network.provider.request({
       method: "hardhat_impersonateAccount",
@@ -271,12 +275,16 @@ describe("Perform all staking calculations", async function () {
     await deployedAddresses.wamGHST
       .connect(signer)
       .withdraw(secondAddress, "10000000000000000000", false);
+    const ownerBalance2 = await deployedAddresses.wamGHST.balanceOf(
+      amGHSTHolder
+    );
 
     await deployedAddresses.wamGHST
       .connect(amGHSTsigner)
       .withdraw(ghstOwner, "10000000000000000000", false);
-    const bal2 = await deployedAddresses.wamGHST.balanceOf(secondAddress);
+    const bal2 = await amGHSTContract.balanceOf(secondAddress);
     //no balance change
     expect(bal1).to.equal(bal2);
+    expect(ownerBalance1).to.equal(ownerBalance2);
   });
 });
