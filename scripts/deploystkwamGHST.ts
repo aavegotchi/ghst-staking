@@ -10,6 +10,7 @@ import {
   StaticAmGHSTRouter,
   StaticATokenLM,
 } from "../typechain";
+import { gasPrice, getDiamondSigner } from "./helperFunctions";
 
 export const ghstOwner = "0x08F4d97DD326094B66CC5eb597F288c5b5567fcf";
 export const aaveLendingContract = "0x8dff5e27ea6b7ac08ebfdf9eb090f32ee9a30fcf";
@@ -32,20 +33,10 @@ export interface contractAddresses {
 }
 
 export async function deploy() {
-  const accounts = await ethers.getSigners();
   let testing = ["hardhat", "localhost"].includes(network.name);
-  let signer: Signer;
-  if (testing) {
-    await network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [ghstOwner],
-    });
-    signer = await ethers.provider.getSigner(ghstOwner);
-  } else if (network.name === "matic") {
-    signer = accounts[0];
-  } else {
-    throw Error("Incorrect network selected");
-  }
+  let signer: Signer = await getDiamondSigner(ethers, network, ghstOwner);
+
+  console.log("address:", await signer.getAddress());
 
   const contractOwner = await signer.getAddress();
 
@@ -57,7 +48,8 @@ export async function deploy() {
   wamGHST = await staticAToken.deploy(
     aaveLendingContract,
     amGHST,
-    contractOwner
+    contractOwner,
+    { gasPrice: gasPrice }
   );
   await wamGHST.deployed();
   console.log("wrapped amGHST static token deployed to", wamGHST.address);
@@ -77,7 +69,8 @@ export async function deploy() {
   const token = (await receiptTokenFactory.deploy(
     stakingDiamond,
     "Staked Wrapped amGHST",
-    "stkwamGHST"
+    "stkwamGHST",
+    { gasPrice: gasPrice }
   )) as ReceiptToken;
   await token.deployed();
   console.log("stkwamGHST token deployed to", token.address);
@@ -159,27 +152,23 @@ export async function deploy() {
     console.log("Adding rate manager succeeded:", tx.hash);
     console.log(await stakingFacet.currentEpoch());
 
-    // const oldPools = await stakingFacet.poolRatesInEpoch("2");
-    // console.log("old pools:", oldPools);
+    const addTx = await stakingFacet.updateRates(2, poolData);
+    await addTx.wait();
 
-    let addTx = await stakingFacet.updateRates(2, poolData);
-    const txData = await addTx.wait();
-    //@ts-ignore
-    poolAddress = txData.events[0].args;
-    console.log(poolAddress);
+    const pools = await stakingFacet.poolRatesInEpoch("3");
+    console.log("pools:", pools);
+  } else {
+    const addTx = await stakingFacet.populateTransaction.updateRates(
+      2,
+      poolData,
+      { gasPrice: gasPrice }
+    );
+    console.log("tx data:", addTx.data);
   }
-
-  // //deploy GHST main wrapper router
-  // const wrapper = await ethers.getContractFactory("StaticAmGHSTRouter", signer);
-  // //@ts-ignore
-  // ghstRouter = await wrapper.deploy(wamGHST.address);
-  // await ghstRouter.deployed();
-  // console.log("router deployed to", ghstRouter.address);
 
   return {
     wamGHST: wamGHST,
     stkwamGHST: token,
-    // router: ghstRouter,
   };
 }
 if (require.main === module) {
