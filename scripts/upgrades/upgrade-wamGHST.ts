@@ -28,7 +28,7 @@ export async function upgrade() {
     diamondAddress: maticStakingAddress,
     facetsAndAddSelectors: joined,
     useLedger: false,
-    useMultisig: false,
+    useMultisig: true,
     initAddress: ethers.constants.AddressZero,
     initCalldata: "0x",
   };

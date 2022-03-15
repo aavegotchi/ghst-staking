@@ -254,7 +254,7 @@ task(
             cut,
             initAddress,
             initCalldata,
-            { gasLimit: 800000 }
+            { gasLimit: 800000, gasPrice: gasPrice }
           );
 
           const receipt: ContractReceipt = await tx.wait();
