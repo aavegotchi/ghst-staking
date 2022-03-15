@@ -17,7 +17,7 @@
     "dotenv": "^8.2.0",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.1.0",
-    "hardhat": "^2.3.3",
+    "hardhat": "^2.9.0",
     "hardhat-contract-sizer": "^2.0.3",
     "husky": "^4.3.8",
     "node-hid": "^2.1.1",
@@ -31,7 +31,8 @@
     "web3": "^1.4.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "update-dep": "git submodule update --init --remote dep && git add dep && git status -sb"
   },
   "repository": {
     "type": "git",
@@ -44,11 +45,14 @@
   },
   "homepage": "https://github.com/aavegotchi/ghst-staking#readme",
   "dependencies": {
+    "@aave/protocol-v2": "^1.0.1",
     "@gnosis.pm/safe-core-sdk": "^1.0.0",
     "@ledgerhq/hw-transport-node-hid": "^6.20.0",
     "@ledgerhq/hw-transport-node-hid-noevents": "^6.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.1.7",
+    "@openzeppelin/contracts": "^3.4.1",
     "axios": "^0.21.1",
+    "hardhat-interface-generator": "^0.0.6",
     "typechain": "^5.1.2"
   }
 }

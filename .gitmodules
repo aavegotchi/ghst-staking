@@ -1,0 +1,3 @@
+[submodule "dep"]
+	path = dep
+	url = https://github.com/Timidan/aave-minimal.git

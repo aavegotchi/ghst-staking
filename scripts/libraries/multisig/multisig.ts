@@ -26,6 +26,9 @@ export async function sendToMultisig(
   console.log("tx data:", transaction.data);
 
   console.log("Sending transaction to multisig:", multisigAddress);
+
+  console.log("tx data:", transaction.data);
+
   let tx = await multisigContract.submitTransaction(
     transaction.to,
     0,
