@@ -58,8 +58,17 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
     address public contractOwner;
     event Initialized(address indexed pool, address aToken, string staticATokenName, string staticATokenSymbol);
 
-    constructor(ILendingPool pool, address aToken) public {
-        contractOwner = msg.sender;
+    modifier onlyOwner() {
+        require(msg.sender == contractOwner, "Only Owner");
+        _;
+    }
+
+    constructor(
+        ILendingPool pool,
+        address aToken,
+        address _owner
+    ) public {
+        contractOwner = _owner;
         LENDING_POOL = pool;
         ATOKEN = IERC20(aToken);
         _setupDecimals(IERC20Detailed(aToken).decimals());
@@ -76,8 +85,11 @@ contract StaticATokenLM is ERC20("Wrapped amGHST", "wamGHST") {
         emit Initialized(address(pool), aToken, "Wrapped amGHST", "wamGHST");
     }
 
-    function changeMaticTreasury(address _newTreasuryAddress) external {
-        require(msg.sender == contractOwner, "Not Owner");
+    function changeOwner(address _newOwner) external onlyOwner {
+        contractOwner = _newOwner;
+    }
+
+    function changeMaticTreasury(address _newTreasuryAddress) external onlyOwner {
         maticTreasury = _newTreasuryAddress;
     }
 

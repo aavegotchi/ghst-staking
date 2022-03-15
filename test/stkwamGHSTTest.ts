@@ -1,5 +1,5 @@
 import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
-import { ERC20, StakingFacet } from "../typechain";
+import { ERC20, StakingFacet, StaticATokenLM } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
 import { ethers } from "hardhat";
@@ -25,6 +25,7 @@ let amGHSTContract: ERC20;
 let stakeFacet: StakingFacet;
 let overDraft: string;
 let amGHSTsigner: Signer;
+let wamGHST: StaticATokenLM;
 let signer: Signer;
 const secondAddress = "0x92fedfc12357771c3f4cf2374714904f3690fbe1";
 const amGHSTHolder = "0xd553294b42bdfeb49d8f5a64e8b2d3a65fc673a9";
@@ -74,6 +75,30 @@ describe("Perform all staking calculations", async function () {
       stakingDiamond,
       signer
     );
+
+    wamGHST = await ethers.getContractAt(
+      "StaticATokenLM",
+      deployedAddresses.wamGHST.address
+    );
+  });
+
+  it("Owner should be deployer", async function () {
+    const owner = await wamGHST.contractOwner();
+    expect(owner.toLowerCase()).to.equal(ghstOwner.toLowerCase());
+  });
+
+  it("Non-owner cannot change owner", async function () {
+    wamGHST = await impersonate(secondAddress, wamGHST, ethers, network);
+    await expect(wamGHST.changeOwner(secondAddress)).to.be.revertedWith(
+      "Only Owner"
+    );
+  });
+
+  it("Owner can change owner", async function () {
+    wamGHST = await impersonate(ghstOwner, wamGHST, ethers, network);
+    await wamGHST.changeOwner(secondAddress);
+    const owner = await wamGHST.contractOwner();
+    expect(owner.toLowerCase()).to.equal(secondAddress.toLowerCase());
   });
 
   it("User can wrap ghst and stake in the same transaction", async function () {

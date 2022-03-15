@@ -18,11 +18,11 @@ export const stakingDiamond = "0xA02d547512Bb90002807499F05495Fe9C4C3943f";
 export const GHST = "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7";
 export const randAddress = "0x837704Ec8DFEC198789baF061D6e93B0e1555dA6";
 export let poolAddress: string;
-let ghstRouter: StaticAmGHSTRouter;
+// let ghstRouter: StaticAmGHSTRouter;
 
 let wamGHST;
 let stakingFacet: StakingFacet;
-let addresses: contractAddresses;
+
 export const sufficientAmnt = "1000000000000000000000"; //1000ghst
 
 export interface contractAddresses {
@@ -47,14 +47,28 @@ export async function deploy() {
     throw Error("Incorrect network selected");
   }
 
+  const contractOwner = await signer.getAddress();
+
   //deploy wamGhst static token
   const staticAToken = await ethers.getContractFactory(
     "StaticATokenLM",
     signer
   );
-  wamGHST = await staticAToken.deploy(aaveLendingContract, amGHST);
+  wamGHST = await staticAToken.deploy(
+    aaveLendingContract,
+    amGHST,
+    contractOwner
+  );
   await wamGHST.deployed();
   console.log("wrapped amGHST static token deployed to", wamGHST.address);
+
+  const wamGHSTToken = (await ethers.getContractAt(
+    "StaticATokenLM",
+    wamGHST.address
+  )) as StaticATokenLM;
+
+  const tokenOwner = await wamGHSTToken.contractOwner();
+  console.log("token owner:", tokenOwner);
 
   //deploy stkwamGHST receipt token
   const receiptTokenFactory = (await ethers.getContractFactory(
@@ -81,7 +95,7 @@ export async function deploy() {
     {
       _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
       _poolReceiptToken: "0xA02d547512Bb90002807499F05495Fe9C4C3943f",
-      _rate: "83",
+      _rate: "29",
       _poolName: "GHST-QUICK",
       _poolUrl:
         "https://quickswap.exchange/#/add/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7/0x831753DD7087CaC61aB5644b308642cc1c33Dc13",
@@ -89,7 +103,7 @@ export async function deploy() {
     {
       _poolAddress: "0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4",
       _poolReceiptToken: "0x04439eC4ba8b09acfae0E9b5D75A82cC63b19f09",
-      _rate: "74062104",
+      _rate: "73270159",
       _poolName: "GHST-USDC",
       _poolUrl:
         "https://quickswap.exchange/#/add/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7/0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
@@ -97,7 +111,7 @@ export async function deploy() {
     {
       _poolAddress: "0xccb9d2100037f1253e6c1682adf7dc9944498aff",
       _poolReceiptToken: "0x388E2a3d389F27504212030c2D42Abf0a8188cd1",
-      _rate: "12077243",
+      _rate: "11560572",
       _poolName: "GHST-WETH",
       _poolUrl:
         "https://quickswap.exchange/#/add/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7/0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
@@ -155,18 +169,18 @@ export async function deploy() {
     console.log(poolAddress);
   }
 
-  //deploy GHST main wrapper router
-  const wrapper = await ethers.getContractFactory("StaticAmGHSTRouter", signer);
-  //@ts-ignore
-  ghstRouter = await wrapper.deploy(wamGHST.address);
-  await ghstRouter.deployed();
-  console.log("router deployed to", ghstRouter.address);
+  // //deploy GHST main wrapper router
+  // const wrapper = await ethers.getContractFactory("StaticAmGHSTRouter", signer);
+  // //@ts-ignore
+  // ghstRouter = await wrapper.deploy(wamGHST.address);
+  // await ghstRouter.deployed();
+  // console.log("router deployed to", ghstRouter.address);
 
-  return (addresses = {
+  return {
     wamGHST: wamGHST,
     stkwamGHST: token,
-    router: ghstRouter,
-  });
+    // router: ghstRouter,
+  };
 }
 if (require.main === module) {
   deploy()
