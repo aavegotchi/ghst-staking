@@ -20,7 +20,6 @@ export const GHST = "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7";
 export const randAddress = "0x837704Ec8DFEC198789baF061D6e93B0e1555dA6";
 export let poolAddress: string;
 
-let wamGHST;
 let stakingFacet: StakingFacet;
 
 export const sufficientAmnt = "1000000000000000000000"; //1000ghst
@@ -35,44 +34,47 @@ export async function deploy() {
   let testing = ["hardhat", "localhost"].includes(network.name);
   let signer: Signer = await getDiamondSigner(ethers, network, ghstOwner);
 
-  console.log("address:", await signer.getAddress());
+  // console.log("address:", await signer.getAddress());
 
-  const contractOwner = await signer.getAddress();
+  // const contractOwner = await signer.getAddress();
 
-  //deploy wamGhst static token
-  const staticAToken = await ethers.getContractFactory(
-    "StaticATokenLM",
-    signer
-  );
-  wamGHST = await staticAToken.deploy(
-    aaveLendingContract,
-    amGHST,
-    contractOwner,
-    { gasPrice: gasPrice }
-  );
-  await wamGHST.deployed();
-  console.log("wrapped amGHST static token deployed to", wamGHST.address);
+  // //deploy wamGhst static token
+  // const staticAToken = await ethers.getContractFactory(
+  //   "StaticATokenLM",
+  //   signer
+  // );
+  // wamGHST = await staticAToken.deploy(
+  //   aaveLendingContract,
+  //   amGHST,
+  //   contractOwner,
+  //   { gasPrice: gasPrice }
+  // );
+  // await wamGHST.deployed();
+  // console.log("wrapped amGHST static token deployed to", wamGHST.address);
 
-  const wamGHSTToken = (await ethers.getContractAt(
-    "StaticATokenLM",
-    wamGHST.address
-  )) as StaticATokenLM;
+  // const wamGHSTToken = (await ethers.getContractAt(
+  //   "StaticATokenLM",
+  //   wamGHST.address
+  // )) as StaticATokenLM;
 
-  const tokenOwner = await wamGHSTToken.contractOwner();
-  console.log("token owner:", tokenOwner);
+  // const tokenOwner = await wamGHSTToken.contractOwner();
+  // console.log("token owner:", tokenOwner);
 
-  //deploy stkwamGHST receipt token
-  const receiptTokenFactory = (await ethers.getContractFactory(
-    "ReceiptToken"
-  )) as ReceiptToken__factory;
-  const token = (await receiptTokenFactory.deploy(
-    stakingDiamond,
-    "Staked Wrapped amGHST",
-    "stkwamGHST",
-    { gasPrice: gasPrice }
-  )) as ReceiptToken;
-  await token.deployed();
-  console.log("stkwamGHST token deployed to", token.address);
+  const wamGhstAddress = "0x3172cE4f647a4afA70EaE383401AB8aE2FE2E9f7";
+  const stkWamGhstAddress = "0xe5f6166D8e10b205c0E500175E7F6C3bC4B3D252";
+
+  // //deploy stkwamGHST receipt token
+  // const receiptTokenFactory = (await ethers.getContractFactory(
+  //   "ReceiptToken"
+  // )) as ReceiptToken__factory;
+  // const token = (await receiptTokenFactory.deploy(
+  //   stakingDiamond,
+  //   "Staked Wrapped amGHST",
+  //   "stkwamGHST",
+  //   { gasPrice: gasPrice }
+  // )) as ReceiptToken;
+  // await token.deployed();
+  // console.log("stkwamGHST token deployed to", token.address);
 
   //new pools
 
@@ -118,8 +120,8 @@ export async function deploy() {
 
     //amGHST Pool
     {
-      _poolAddress: wamGHST.address,
-      _poolReceiptToken: token.address,
+      _poolAddress: wamGhstAddress,
+      _poolReceiptToken: stkWamGhstAddress,
       _rate: "1",
       _poolName: "wamGHST",
       _poolUrl:
@@ -157,6 +159,8 @@ export async function deploy() {
     const pools = await stakingFacet.poolRatesInEpoch("3");
     console.log("pools:", pools);
   } else {
+    stakingFacet = await ethers.getContractAt("StakingFacet", stakingDiamond);
+
     const addTx = await stakingFacet.populateTransaction.updateRates(
       2,
       poolData,
@@ -166,8 +170,8 @@ export async function deploy() {
   }
 
   return {
-    wamGHST: wamGHST,
-    stkwamGHST: token,
+    wamGHST: wamGhstAddress,
+    stkwamGHST: stkWamGhstAddress,
   };
 }
 if (require.main === module) {
