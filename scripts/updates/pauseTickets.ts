@@ -27,7 +27,7 @@ async function togglePause() {
     console.log("tx data:", tx.data);
 
     console.log(
-      "Please submit data to multisig address: 0x258cC4C495Aef8D809944aD94C6722ef41216ef3"
+      "Please submit the data above to multisig address: https://https://polygonscan.com/address/0x258cC4C495Aef8D809944aD94C6722ef41216ef3, with destination: 0xA02d547512Bb90002807499F05495Fe9C4C3943f and value: 0"
     );
   } else {
     stakingFacet = await impersonate(owner, stakingFacet, ethers, network);
