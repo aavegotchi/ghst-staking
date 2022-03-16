@@ -19,7 +19,6 @@ export const stakingDiamond = "0xA02d547512Bb90002807499F05495Fe9C4C3943f";
 export const GHST = "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7";
 export const randAddress = "0x837704Ec8DFEC198789baF061D6e93B0e1555dA6";
 export let poolAddress: string;
-// let ghstRouter: StaticAmGHSTRouter;
 
 let wamGHST;
 let stakingFacet: StakingFacet;
