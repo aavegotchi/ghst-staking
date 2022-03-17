@@ -3,6 +3,10 @@ import { Contract } from "@ethersproject/contracts";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DiamondLoupeFacet, OwnershipFacet } from "../typechain";
 
+const {
+  LedgerSigner,
+} = require("../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets");
+
 export const gasPrice = 100000000000;
 
 export async function impersonate(
@@ -85,7 +89,7 @@ export async function getDiamondSigner(
   useLedger?: boolean
 ) {
   //Instantiate the Signer
-  let signer: Signer;
+
   const owner = await (
     (await ethers.getContractAt(
       "OwnershipFacet",
@@ -101,7 +105,11 @@ export async function getDiamondSigner(
     });
     return await ethers.getSigner(override ? override : owner);
   } else if (network.name === "matic") {
-    return (await ethers.getSigners())[0];
+    if (useLedger) {
+      return new LedgerSigner(ethers.provider, "hid", "m/44'/60'/2'/0/0");
+    } else {
+      return (await ethers.getSigners())[0];
+    }
   } else {
     throw Error("Incorrect network selected");
   }

@@ -12,7 +12,7 @@ import {
   poolAddress,
   stakingDiamond,
   sufficientAmnt,
-  amGHST,
+  amGHSTv2,
 } from "../scripts/deploystkwamGHST";
 import { Signer } from "ethers";
 
@@ -34,8 +34,8 @@ describe("Perform all staking calculations", async function () {
   before(async function () {
     this.timeout(200000000);
 
-    console.log("upgrading");
-    await upgrade();
+    // console.log("upgrading");
+    // await upgrade();
 
     //get deployed contract addresses
     deployedAddresses = await deploy();
@@ -66,7 +66,7 @@ describe("Perform all staking calculations", async function () {
 
     amGHSTContract = (await ethers.getContractAt(
       "contracts/test/GHST/ERC20.sol:ERC20",
-      amGHST,
+      amGHSTv2,
       amGHSTsigner
     )) as ERC20;
 

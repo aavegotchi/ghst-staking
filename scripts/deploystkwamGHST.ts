@@ -1,4 +1,4 @@
-import { Signer } from "ethers";
+import { BigNumber, Signer } from "ethers";
 import { network, ethers } from "hardhat";
 import { PoolObject } from "../types";
 
@@ -14,7 +14,8 @@ import { gasPrice, getDiamondSigner } from "./helperFunctions";
 
 export const ghstOwner = "0x08F4d97DD326094B66CC5eb597F288c5b5567fcf";
 export const aaveLendingContract = "0x8dff5e27ea6b7ac08ebfdf9eb090f32ee9a30fcf";
-export const amGHST = "0x080b5bf8f360f624628e0fb961f4e67c9e3c7cf1";
+export const amGHSTV1 = "0x080b5bf8f360f624628e0fb961f4e67c9e3c7cf1";
+export const amGHSTv2 = "0x8Eb270e296023E9D92081fdF967dDd7878724424";
 export const stakingDiamond = "0xA02d547512Bb90002807499F05495Fe9C4C3943f";
 export const GHST = "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7";
 export const randAddress = "0x837704Ec8DFEC198789baF061D6e93B0e1555dA6";
@@ -32,51 +33,58 @@ export interface contractAddresses {
 
 export async function deploy() {
   let testing = ["hardhat", "localhost"].includes(network.name);
-  let signer: Signer = await getDiamondSigner(ethers, network, ghstOwner);
+  let signer: Signer = await getDiamondSigner(ethers, network, ghstOwner, true);
 
-  // console.log("address:", await signer.getAddress());
+  const address = await signer.getAddress();
 
-  // const contractOwner = await signer.getAddress();
+  console.log("signer:", await signer.getAddress());
 
-  // //deploy wamGhst static token
-  // const staticAToken = await ethers.getContractFactory(
-  //   "StaticATokenLM",
-  //   signer
-  // );
-  // wamGHST = await staticAToken.deploy(
-  //   aaveLendingContract,
-  //   amGHST,
-  //   contractOwner,
-  //   { gasPrice: gasPrice }
-  // );
-  // await wamGHST.deployed();
-  // console.log("wrapped amGHST static token deployed to", wamGHST.address);
+  console.log("address:", await signer.getAddress());
 
-  // const wamGHSTToken = (await ethers.getContractAt(
-  //   "StaticATokenLM",
-  //   wamGHST.address
-  // )) as StaticATokenLM;
+  const contractOwner = await signer.getAddress();
 
-  // const tokenOwner = await wamGHSTToken.contractOwner();
-  // console.log("token owner:", tokenOwner);
+  //deploy wamGhst static token
+  const staticAToken = await ethers.getContractFactory(
+    "StaticATokenLM",
+    signer
+  );
+  const wamGHST = await staticAToken.deploy(
+    aaveLendingContract,
+    amGHSTv2,
+    contractOwner,
+    { gasPrice: gasPrice }
+  );
+  await wamGHST.deployed();
+  console.log("wrapped amGHST static token deployed to", wamGHST.address);
 
-  const wamGhstAddress = "0x3172cE4f647a4afA70EaE383401AB8aE2FE2E9f7";
-  const stkWamGhstAddress = "0xe5f6166D8e10b205c0E500175E7F6C3bC4B3D252";
+  const wamGHSTToken = (await ethers.getContractAt(
+    "StaticATokenLM",
+    wamGHST.address
+  )) as StaticATokenLM;
 
-  // //deploy stkwamGHST receipt token
-  // const receiptTokenFactory = (await ethers.getContractFactory(
-  //   "ReceiptToken"
-  // )) as ReceiptToken__factory;
-  // const token = (await receiptTokenFactory.deploy(
-  //   stakingDiamond,
-  //   "Staked Wrapped amGHST",
-  //   "stkwamGHST",
-  //   { gasPrice: gasPrice }
-  // )) as ReceiptToken;
-  // await token.deployed();
-  // console.log("stkwamGHST token deployed to", token.address);
+  const tokenOwner = await wamGHSTToken.contractOwner();
+  console.log("token owner:", tokenOwner);
+
+  // const wamGhstAddress = "0x3172cE4f647a4afA70EaE383401AB8aE2FE2E9f7";
+  // const stkWamGhstAddress = "0xe5f6166D8e10b205c0E500175E7F6C3bC4B3D252";
+
+  //deploy stkwamGHST receipt token
+  const receiptTokenFactory = (await ethers.getContractFactory(
+    "ReceiptToken"
+  )) as ReceiptToken__factory;
+  const token = (await receiptTokenFactory.deploy(
+    stakingDiamond,
+    "Staked Wrapped amGHST",
+    "stkwamGHST",
+    { gasPrice: gasPrice }
+  )) as ReceiptToken;
+  await token.deployed();
+  console.log("stkwamGHST token deployed to", token.address);
 
   //new pools
+
+  const wamGhstAddress = wamGHSTToken.address;
+  const stkWamGhstAddress = token.address;
 
   const poolData: PoolObject[] = [
     {
@@ -159,7 +167,35 @@ export async function deploy() {
     const pools = await stakingFacet.poolRatesInEpoch("3");
     console.log("pools:", pools);
   } else {
-    stakingFacet = await ethers.getContractAt("StakingFacet", stakingDiamond);
+    stakingFacet = await ethers.getContractAt(
+      "StakingFacet",
+      stakingDiamond,
+      signer
+    );
+
+    console.log("Updating rates");
+
+    const gas = await ethers.provider.getFeeData();
+
+    console.log(
+      "gas:",
+      gas.maxFeePerGas?.toString(),
+      gas.maxPriorityFeePerGas?.toString()
+    );
+
+    const nonce = await ethers.provider.getTransactionCount(address);
+
+    console.log("current nonce:", nonce);
+
+    const tx = await stakingFacet.updateRates(2, poolData, {
+      maxFeePerGas: 32339967253,
+      maxPriorityFeePerGas: 32339967253,
+      // gasPrice: gas.gasPrice ? gas.gasPrice : gasPrice,
+    });
+
+    console.log("tx hash:", tx.hash);
+
+    await tx.wait();
 
     const addTx = await stakingFacet.populateTransaction.updateRates(
       2,
