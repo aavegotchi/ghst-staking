@@ -28,7 +28,7 @@ export const sufficientAmnt = "1000000000000000000000"; //1000ghst
 export interface contractAddresses {
   wamGHST: StaticATokenLM;
   stkwamGHST: ReceiptToken;
-  router: StaticAmGHSTRouter;
+  // router: StaticAmGHSTRouter;
 }
 
 export async function deploy() {
@@ -62,7 +62,7 @@ export async function deploy() {
     wamGHST.address
   )) as StaticATokenLM;
 
-  const tokenOwner = await wamGHSTToken.contractOwner();
+  const tokenOwner = await wamGHSTToken.owner();
   console.log("token owner:", tokenOwner);
 
   // const wamGhstAddress = "0x3172cE4f647a4afA70EaE383401AB8aE2FE2E9f7";
@@ -205,10 +205,12 @@ export async function deploy() {
     console.log("tx data:", addTx.data);
   }
 
-  return {
-    wamGHST: wamGhstAddress,
-    stkwamGHST: stkWamGhstAddress,
+  const deployed: contractAddresses = {
+    wamGHST: wamGHSTToken,
+    stkwamGHST: token,
   };
+
+  return deployed;
 }
 if (require.main === module) {
   deploy()

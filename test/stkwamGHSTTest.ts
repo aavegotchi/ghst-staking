@@ -76,6 +76,8 @@ describe("Perform all staking calculations", async function () {
       signer
     );
 
+    console.log("wamghst:", deployedAddresses);
+
     wamGHST = await ethers.getContractAt(
       "StaticATokenLM",
       deployedAddresses.wamGHST.address
@@ -83,166 +85,166 @@ describe("Perform all staking calculations", async function () {
   });
 
   it("Owner should be deployer", async function () {
-    const owner = await wamGHST.contractOwner();
+    const owner = await wamGHST.owner();
     expect(owner.toLowerCase()).to.equal(ghstOwner.toLowerCase());
   });
 
   it("Non-owner cannot change owner", async function () {
     wamGHST = await impersonate(secondAddress, wamGHST, ethers, network);
-    await expect(wamGHST.changeOwner(secondAddress)).to.be.revertedWith(
-      "Only Owner"
+    await expect(wamGHST.transferOwnership(secondAddress)).to.be.revertedWith(
+      "Ownable: caller is not the owner"
     );
   });
 
   it("Owner can change owner", async function () {
     wamGHST = await impersonate(ghstOwner, wamGHST, ethers, network);
-    await wamGHST.changeOwner(secondAddress);
-    const owner = await wamGHST.contractOwner();
+    await wamGHST.transferOwnership(secondAddress);
+    const owner = await wamGHST.owner();
     expect(owner.toLowerCase()).to.equal(secondAddress.toLowerCase());
   });
 
-  it("User can wrap ghst and stake in the same transaction", async function () {
-    //user approves router to spend his ghst
-    await ghstContract.approve(
-      deployedAddresses.router.address,
-      "1000000000000000000000000000"
-    );
-    //aprove router to spend wamGHST
-    await deployedAddresses.wamGHST.approve(
-      deployedAddresses.router.address,
-      "1000000000000000000000000000"
-    );
+  // it("User can wrap ghst and stake in the same transaction", async function () {
+  //   //user approves router to spend his ghst
+  //   await ghstContract.approve(
+  //     deployedAddresses.router.address,
+  //     "1000000000000000000000000000"
+  //   );
+  //   //aprove router to spend wamGHST
+  //   await deployedAddresses.wamGHST.approve(
+  //     deployedAddresses.router.address,
+  //     "1000000000000000000000000000"
+  //   );
 
-    //user needs to approve staking diamond to spend wAmGhst
-    await deployedAddresses.wamGHST.approve(stakingDiamond, sufficientAmnt);
+  //   //user needs to approve staking diamond to spend wAmGhst
+  //   await deployedAddresses.wamGHST.approve(stakingDiamond, sufficientAmnt);
 
-    //user also approves router diamond to spend wAmGhst
-    // await deployedAddresses.wAmGHST.approve(
-    //   deployedAddresses.router.address,
-    //   sufficientAmnt
-    // );
+  //   //user also approves router diamond to spend wAmGhst
+  //   // await deployedAddresses.wAmGHST.approve(
+  //   //   deployedAddresses.router.address,
+  //   //   sufficientAmnt
+  //   // );
 
-    //depositing ghst into the router contract
-    //THIS SHOULD REVERT
-    await expect(
-      deployedAddresses.router.wrapAndDeposit(
-        sufficientAmnt,
-        secondAddress,
-        true
-      )
-    ).to.be.revertedWith("StakingFacet: Not authorized");
+  //   //depositing ghst into the router contract
+  //   //THIS SHOULD REVERT
+  //   await expect(
+  //     deployedAddresses.router.wrapAndDeposit(
+  //       sufficientAmnt,
+  //       secondAddress,
+  //       true
+  //     )
+  //   ).to.be.revertedWith("StakingFacet: Not authorized");
 
-    await deployedAddresses.router.wrapAndDeposit(
-      sufficientAmnt,
-      ghstOwner,
-      true
-    );
+  //   await deployedAddresses.router.wrapAndDeposit(
+  //     sufficientAmnt,
+  //     ghstOwner,
+  //     true
+  //   );
 
-    let frens = await stakeFacet.frens(ghstOwner);
-    //frens should be 0
-    console.log("before frens:", frens.toString());
+  //   let frens = await stakeFacet.frens(ghstOwner);
+  //   //frens should be 0
+  //   console.log("before frens:", frens.toString());
 
-    //increase by a day
-    ethers.provider.send("evm_increaseTime", [86400]);
-    ethers.provider.send("evm_mine", []);
+  //   //increase by a day
+  //   ethers.provider.send("evm_increaseTime", [86400]);
+  //   ethers.provider.send("evm_mine", []);
 
-    frens = await stakeFacet.frens(ghstOwner);
-    //frens should be approx 1000
-    console.log("after frens:", frens.toString());
-  });
+  //   frens = await stakeFacet.frens(ghstOwner);
+  //   //frens should be approx 1000
+  //   console.log("after frens:", frens.toString());
+  // });
 
-  it("User can unwrap stkwamghst and get ghst back in the same txn", async function () {
-    const balBefore = await ghstContract.balanceOf(ghstOwner);
-    console.log("bal before", balBefore);
-    //@ts-ignore
-    const pools = await stakeFacet.stakedInEpoch(
-      ghstOwner,
-      await stakeFacet.currentEpoch()
-    );
-    // console.log("Pool is", pools);
+  // it("User can unwrap stkwamghst and get ghst back in the same txn", async function () {
+  //   const balBefore = await ghstContract.balanceOf(ghstOwner);
+  //   console.log("bal before", balBefore);
+  //   //@ts-ignore
+  //   const pools = await stakeFacet.stakedInEpoch(
+  //     ghstOwner,
+  //     await stakeFacet.currentEpoch()
+  //   );
+  //   // console.log("Pool is", pools);
 
-    //withdrawing stkwamghst from staking diamond
-    //SHOULD REVERT
-    await expect(
-      deployedAddresses.router.unwrapAndWithdraw(
-        pools[5].amount,
-        secondAddress,
-        true
-      )
-    ).to.be.revertedWith("StakingFacet: Not authorized");
+  //   //withdrawing stkwamghst from staking diamond
+  //   //SHOULD REVERT
+  //   await expect(
+  //     deployedAddresses.router.unwrapAndWithdraw(
+  //       pools[5].amount,
+  //       secondAddress,
+  //       true
+  //     )
+  //   ).to.be.revertedWith("StakingFacet: Not authorized");
 
-    await deployedAddresses.router.unwrapAndWithdraw(
-      pools[5].amount,
-      ghstOwner,
-      true
-    );
+  //   await deployedAddresses.router.unwrapAndWithdraw(
+  //     pools[5].amount,
+  //     ghstOwner,
+  //     true
+  //   );
 
-    const balAfter = await ghstContract.balanceOf(ghstOwner);
-    console.log("ghst balance after", balAfter);
+  //   const balAfter = await ghstContract.balanceOf(ghstOwner);
+  //   console.log("ghst balance after", balAfter);
 
-    // //check wmatic balance
-    // const matic=await ethers.getContractAt("contracts/test/GHST/ERC20.sol:ERC20","0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270");
-    // console.log(await (await matic.balanceOf(deployedAddresses.wamGHST.address)).toString())
-  });
+  //   // //check wmatic balance
+  //   // const matic=await ethers.getContractAt("contracts/test/GHST/ERC20.sol:ERC20","0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270");
+  //   // console.log(await (await matic.balanceOf(deployedAddresses.wamGHST.address)).toString())
+  // });
 
-  it("Allow direct deposit of amGHST and withdrawal to amGHST", async function () {
-    //deposit amGHST directly from account with no amGHST
-    //SHOULD FAIL
-    await expect(
-      deployedAddresses.router.wrapAndDeposit(sufficientAmnt, ghstOwner, false)
-    ).to.be.revertedWith("ERC20: transfer amount exceeds balance");
+  // it("Allow direct deposit of amGHST and withdrawal to amGHST", async function () {
+  //   //deposit amGHST directly from account with no amGHST
+  //   //SHOULD FAIL
+  //   await expect(
+  //     deployedAddresses.router.wrapAndDeposit(sufficientAmnt, ghstOwner, false)
+  //   ).to.be.revertedWith("ERC20: transfer amount exceeds balance");
 
-    //deposit amGHST with account that has sufficient amGHST
-    await network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [amGHSTHolder],
-    });
+  //   //deposit amGHST with account that has sufficient amGHST
+  //   await network.provider.request({
+  //     method: "hardhat_impersonateAccount",
+  //     params: [amGHSTHolder],
+  //   });
 
-    //approve router to spend amGHST and wamGHST
-    await amGHSTContract.approve(
-      deployedAddresses.router.address,
-      "10000000000000000000000000000000000000000000"
-    );
-    await deployedAddresses.wamGHST
-      .connect(amGHSTsigner)
-      .approve(
-        deployedAddresses.router.address,
-        "1000000000000000000000000000"
-      );
+  //   //approve router to spend amGHST and wamGHST
+  //   await amGHSTContract.approve(
+  //     deployedAddresses.router.address,
+  //     "10000000000000000000000000000000000000000000"
+  //   );
+  //   await deployedAddresses.wamGHST
+  //     .connect(amGHSTsigner)
+  //     .approve(
+  //       deployedAddresses.router.address,
+  //       "1000000000000000000000000000"
+  //     );
 
-    await deployedAddresses.wamGHST
-      .connect(amGHSTsigner)
-      .approve(stakingDiamond, "1000000000000000000000000000");
+  //   await deployedAddresses.wamGHST
+  //     .connect(amGHSTsigner)
+  //     .approve(stakingDiamond, "1000000000000000000000000000");
 
-    console.log(
-      `amGHST balance before`,
-      await amGHSTContract.balanceOf(amGHSTHolder)
-    );
+  //   console.log(
+  //     `amGHST balance before`,
+  //     await amGHSTContract.balanceOf(amGHSTHolder)
+  //   );
 
-    await deployedAddresses.router
-      .connect(amGHSTsigner)
-      .wrapAndDeposit(sufficientAmnt, amGHSTHolder, false);
+  //   await deployedAddresses.router
+  //     .connect(amGHSTsigner)
+  //     .wrapAndDeposit(sufficientAmnt, amGHSTHolder, false);
 
-    //increase by a day
-    ethers.provider.send("evm_increaseTime", [86400]);
-    ethers.provider.send("evm_mine", []);
-    console.log(await stakeFacet.frens(amGHSTHolder));
+  //   //increase by a day
+  //   ethers.provider.send("evm_increaseTime", [86400]);
+  //   ethers.provider.send("evm_mine", []);
+  //   console.log(await stakeFacet.frens(amGHSTHolder));
 
-    const pools = await stakeFacet.stakedInEpoch(
-      amGHSTHolder,
-      await stakeFacet.currentEpoch()
-    );
+  //   const pools = await stakeFacet.stakedInEpoch(
+  //     amGHSTHolder,
+  //     await stakeFacet.currentEpoch()
+  //   );
 
-    console.log("amount to withdraw", pools[5].amount);
-    //withdrawal
-    await deployedAddresses.router
-      .connect(amGHSTsigner)
-      .unwrapAndWithdraw(pools[5].amount, amGHSTHolder, false);
-    console.log(
-      `amGHST balance after`,
-      await amGHSTContract.balanceOf(amGHSTHolder)
-    );
-  });
+  //   console.log("amount to withdraw", pools[5].amount);
+  //   //withdrawal
+  //   await deployedAddresses.router
+  //     .connect(amGHSTsigner)
+  //     .unwrapAndWithdraw(pools[5].amount, amGHSTHolder, false);
+  //   console.log(
+  //     `amGHST balance after`,
+  //     await amGHSTContract.balanceOf(amGHSTHolder)
+  //   );
+  // });
   it("Make sure StakingFacet is still secure", async function () {
     //user needs to approve staking diamond to spend GHST
     await ghstContract.approve(stakingDiamond, overDraft);

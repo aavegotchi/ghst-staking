@@ -43,9 +43,8 @@ contract StaticATokenLM is Ownable, ERC20("Wrapped amGHST", "wamGHST") {
     bytes public constant EIP712_REVISION = bytes("1");
     bytes32 public immutable DOMAIN_SEPARATOR;
 
-    address public maticTreasury = 0xb208f8BB431f580CC4b216826AFfB128cd1431aB;
+    address public daoTreasury = 0xb208f8BB431f580CC4b216826AFfB128cd1431aB;
     event Initialized(address indexed pool, address aToken, string staticATokenName, string staticATokenSymbol);
-
 
     constructor(
         ILendingPool pool,
@@ -66,8 +65,8 @@ contract StaticATokenLM is Ownable, ERC20("Wrapped amGHST", "wamGHST") {
         emit Initialized(address(pool), aToken, "Wrapped amGHST", "wamGHST");
     }
 
-    function changeMaticTreasury(address _newTreasuryAddress) external onlyOwner {
-        maticTreasury = _newTreasuryAddress;
+    function changeDaoTreasury(address _newTreasuryAddress) external onlyOwner {
+        daoTreasury = _newTreasuryAddress;
     }
 
     function getDomainSeparator() internal view returns (bytes32) {
@@ -181,17 +180,14 @@ contract StaticATokenLM is Ownable, ERC20("Wrapped amGHST", "wamGHST") {
     function claimRewardTokensToTreasury() external {
         address[] memory asset;
         asset[0] = address(ASSET);
-        REWARDS_CONTROLLER.claimAllRewards(asset, maticTreasury);
+        REWARDS_CONTROLLER.claimAllRewards(asset, daoTreasury);
     }
 
-    /** @notice Transfers any tokens besides the underlying 
-      * owned by this contract to the treasury. */ 
-    function rescueTokens(
-        address token,
-        uint256 amount
-    ) external {
+    /** @notice Transfers any tokens besides the underlying
+     * owned by this contract to the treasury. */
+    function rescueTokens(address token, uint256 amount) external {
         require(token != address(ASSET), "Cannot rescue underlying");
-        IERC20(token).safeTransfer(maticTreasury, amount);
+        IERC20(token).safeTransfer(daoTreasury, amount);
     }
 
     function dynamicBalanceOf(address account) external view returns (uint256) {
@@ -225,5 +221,4 @@ contract StaticATokenLM is Ownable, ERC20("Wrapped amGHST", "wamGHST") {
     function UNDERLYING_ASSET_ADDRESS() external view returns (address) {
         return address(ASSET);
     }
-
 }
