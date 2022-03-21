@@ -28,7 +28,7 @@ let amGHSTsigner: Signer;
 let wamGHST: StaticATokenLM;
 let signer: Signer;
 const secondAddress = "0x92fedfc12357771c3f4cf2374714904f3690fbe1";
-const amGHSTHolder = "0xd553294b42bdfeb49d8f5a64e8b2d3a65fc673a9";
+const amGHSTHolder = "0x40bcbA5032F5f7746835ADd89CE9025D8593d20A";
 
 describe("Perform all staking calculations", async function () {
   before(async function () {
