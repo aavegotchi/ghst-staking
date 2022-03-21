@@ -1,111 +1,107 @@
 // SPDX-License-Identifier: agpl-3.0
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity 0.8.10;
 
-import {ILendingPool} from "../dep/protocol-v2/contracts/interfaces/ILendingPool.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Detailed} from "../dep/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20Detailed.sol";
-import {IAToken} from "../dep/protocol-v2/contracts/interfaces/IAToken.sol";
-import {IStaticATokenLM} from "../dep/protocol-v2/contracts/interfaces/IStaticATokenLM.sol";
-import {IAaveIncentivesController} from "../dep/protocol-v2/contracts/interfaces/IAaveIncentivesController.sol";
-import {IRewardsController} from "./interfaces/IRewardsController.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
+import {IAToken} from "@aave/core-v3/contracts/interfaces/IAToken.sol";
+import {IAaveIncentivesController} from "@aave/core-v3/contracts/interfaces/IAaveIncentivesController.sol";
+import {WadRayMath} from "@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol";
 
-import {StaticATokenErrors} from "../dep/protocol-v2/contracts/StaticATokenErrors.sol";
+import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol";
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import {WadRayMath} from "../dep/protocol-v2/contracts/WadRayMath.sol";
-import {RayMathNoRounding} from "../dep/protocol-v2/contracts/RayMathNoRounding.sol";
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {IERC20Upgradeable as IERC20} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {IERC20MetadataUpgradeable as IERC20Detailed} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import {SafeERC20Upgradeable as SafeERC20} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ERC20Upgradeable as ERC20} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import {ERC20PermitUpgradeable as ERC20Permit} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
+import {OwnableUpgradeable as Ownable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
+import {IIncentivizedERC20} from "./interfaces/IIncentivizedERC20.sol";
 
 /**
  * @title StaticATokenLM
  * @notice Wrapper token that allows to deposit tokens on the Aave protocol and receive
  * a token which balance doesn't increase automatically, but uses an ever-increasing exchange rate.
  * The token support claiming liquidity mining rewards from the Aave system.
- * @author Aave
+ * @author Aavegotchi, building on top of Aave's StaticATokenLM
  **/
-contract StaticATokenLM is Ownable, ERC20("Wrapped amGHST", "wamGHST") {
+contract StaticATokenLM is 
+    Initializable, 
+    Ownable, 
+    ERC20, 
+    ERC20Permit 
+{
     using SafeERC20 for IERC20;
-    using SafeMath for uint256;
     using WadRayMath for uint256;
-    using RayMathNoRounding for uint256;
 
-    ILendingPool public LENDING_POOL;
+    IPool public LENDING_POOL;
     IRewardsController public REWARDS_CONTROLLER;
-    IERC20 immutable ATOKEN;
+    IERC20 public ATOKEN;
     IERC20 public ASSET;
-
-    mapping(address => uint256) public _nonces;
-
-    bytes32 public constant PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    bytes public constant EIP712_REVISION = bytes("1");
-    bytes32 public immutable DOMAIN_SEPARATOR;
 
     address public daoTreasury = 0xb208f8BB431f580CC4b216826AFfB128cd1431aB;
     event Initialized(address indexed pool, address aToken, string staticATokenName, string staticATokenSymbol);
 
-    constructor(
-        ILendingPool pool,
+    error InvalidRecipient(address recipient);
+    error InvalidOwner(address owner);
+    error InvalidSignature(bytes signature);
+    error InvalidExpiration(uint256 expiration);
+    error InvalidDecimals(uint8 decimals);
+    error OnlyOneAmountFormatAllowed();
+    error CannotRescueUnderlying(address token);
+
+    function initialize(
+        IPool pool,
         address aToken,
         address _owner
-    ) public {
-        transferOwnership(_owner);
+    ) public initializer {
+        __ERC20_init_unchained("Wrapped Aave Polygon GHST", "WaPolGHST");
+        __ERC20Permit_init("Wrapped Aave Polygon GHST");
+        _transferOwnership(_owner);
+
+        // validate aToken decimals
+        if(IERC20Detailed(aToken).decimals() != 18) {
+            revert InvalidDecimals(IERC20Detailed(aToken).decimals());
+        }
         LENDING_POOL = pool;
         ATOKEN = IERC20(aToken);
-        _setupDecimals(IERC20Detailed(aToken).decimals());
         ASSET = IERC20(IAToken(aToken).UNDERLYING_ASSET_ADDRESS());
         ASSET.safeApprove(address(pool), type(uint256).max);
 
-        try IAToken(aToken).getIncentivesController() returns (IAaveIncentivesController incentivesController) {
+        // The aToken interface returns an incentives controller, but this actually leads to the rewards controller
+        try IIncentivizedERC20(aToken).getIncentivesController() returns (IAaveIncentivesController incentivesController) {
             REWARDS_CONTROLLER = IRewardsController(address(incentivesController));
         } catch {}
-        DOMAIN_SEPARATOR = getDomainSeparator();
-        emit Initialized(address(pool), aToken, "Wrapped amGHST", "wamGHST");
+
+        emit Initialized(address(pool), aToken, "Wrapped Aave Polygon GHST", "WaPolGHST");
     }
 
     function changeDaoTreasury(address _newTreasuryAddress) external onlyOwner {
         daoTreasury = _newTreasuryAddress;
     }
 
-    function getDomainSeparator() internal view returns (bytes32) {
-        uint256 chainId;
-        assembly {
-            chainId := chainid()
-        }
-        keccak256(
-            abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-                keccak256(bytes(name())),
-                keccak256(bytes(EIP712_REVISION)),
-                chainId,
-                address(this)
-            )
-        );
-    }
-
-    function deposit(
+    function supply(
         address recipient,
         uint256 amount,
         uint16 referralCode,
         bool fromUnderlying
     ) external {
-        return _deposit(msg.sender, recipient, amount, referralCode, fromUnderlying);
+        return _supply(msg.sender, recipient, amount, referralCode, fromUnderlying);
     }
 
-    function _deposit(
+    function _supply(
         address depositor,
         address recipient,
         uint256 amount,
         uint16 referralCode,
         bool fromUnderlying
     ) internal {
-        require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
+        if(recipient == address(0)) revert InvalidRecipient(recipient);
 
         if (fromUnderlying) {
             ASSET.safeTransferFrom(depositor, address(this), amount);
-            LENDING_POOL.deposit(address(ASSET), amount, address(this), referralCode);
+            LENDING_POOL.supply(address(ASSET), amount, address(this), referralCode);
         } else {
             ATOKEN.safeTransferFrom(depositor, address(this), amount);
         }
@@ -128,8 +124,8 @@ contract StaticATokenLM is Ownable, ERC20("Wrapped amGHST", "wamGHST") {
         uint256 dynamicAmount,
         bool toUnderlying
     ) internal {
-        require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
-        require(staticAmount == 0 || dynamicAmount == 0, StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED);
+        if(recipient == address(0)) revert InvalidRecipient(recipient);
+        if(staticAmount != 0 && dynamicAmount != 0) revert OnlyOneAmountFormatAllowed();
 
         uint256 userBalance = balanceOf(owner);
 
@@ -155,27 +151,6 @@ contract StaticATokenLM is Ownable, ERC20("Wrapped amGHST", "wamGHST") {
         }
     }
 
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
-        require(owner != address(0), StaticATokenErrors.INVALID_OWNER);
-        //solium-disable-next-line
-        require(block.timestamp <= deadline, StaticATokenErrors.INVALID_EXPIRATION);
-        uint256 currentValidNonce = _nonces[owner];
-        bytes32 digest = keccak256(
-            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, currentValidNonce, deadline)))
-        );
-        require(owner == ecrecover(digest, v, r, s), StaticATokenErrors.INVALID_SIGNATURE);
-        _nonces[owner] = currentValidNonce.add(1);
-        _approve(owner, spender, value);
-    }
-
     /** @notice Claims all reward tokens accrued by the aTokens in this contract to the treasury. */
     function claimRewardTokensToTreasury() external {
         address[] memory asset;
@@ -186,7 +161,7 @@ contract StaticATokenLM is Ownable, ERC20("Wrapped amGHST", "wamGHST") {
     /** @notice Transfers any tokens besides the underlying
      * owned by this contract to the treasury. */
     function rescueTokens(address token, uint256 amount) external {
-        require(token != address(ASSET), "Cannot rescue underlying");
+        if(token == address(ASSET)) revert CannotRescueUnderlying(token);
         IERC20(token).safeTransfer(daoTreasury, amount);
     }
 
@@ -220,5 +195,15 @@ contract StaticATokenLM is Ownable, ERC20("Wrapped amGHST", "wamGHST") {
 
     function UNDERLYING_ASSET_ADDRESS() external view returns (address) {
         return address(ASSET);
+    }
+
+    // Renamed function to maintain backwards compatibility for anyone expecting a deposit function
+    function deposit(
+        address recipient,
+        uint256 amount,
+        uint16 referralCode,
+        bool fromUnderlying
+    ) external {
+        return _supply(msg.sender, recipient, amount, referralCode, fromUnderlying);
     }
 }

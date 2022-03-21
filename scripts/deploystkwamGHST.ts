@@ -49,12 +49,14 @@ export async function deploy() {
     signer
   );
   const wamGHST = await staticAToken.deploy(
-    aaveLendingContract,
-    amGHSTv2,
-    contractOwner,
     { gasPrice: gasPrice }
   );
   await wamGHST.deployed();
+  await wamGHST.initialize(
+    aaveLendingContract,
+    amGHSTv2,
+    contractOwner,
+  )
   console.log("wrapped amGHST static token deployed to", wamGHST.address);
 
   const wamGHSTToken = (await ethers.getContractAt(
