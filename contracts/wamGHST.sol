@@ -48,8 +48,8 @@ contract StaticATokenLM is
     error InvalidSignature(bytes signature);
     error InvalidExpiration(uint256 expiration);
     error InvalidDecimals(uint8 decimals);
+    error InvalidRescue(address token);
     error OnlyOneAmountFormatAllowed();
-    error CannotRescueUnderlying(address token);
 
     function initialize(
         IPool pool,
@@ -152,16 +152,14 @@ contract StaticATokenLM is
     }
 
     /** @notice Claims all reward tokens accrued by the aTokens in this contract to the treasury. */
-    function claimRewardTokensToTreasury() external {
-        address[] memory asset;
-        asset[0] = address(ATOKEN);
-        REWARDS_CONTROLLER.claimAllRewards(asset, daoTreasury);
+    function claimRewardTokensToTreasury(address[] calldata assets) external {
+        REWARDS_CONTROLLER.claimAllRewards(assets, daoTreasury);
     }
 
-    /** @notice Transfers any tokens besides the underlying
+    /** @notice Transfers any tokens besides the atokens
      * owned by this contract to the treasury. */
     function rescueTokens(address token, uint256 amount) external {
-        if(token == address(ATOKEN)) revert CannotRescueUnderlying(token);
+        if(token == address(ATOKEN)) revert InvalidRescue(token);
         IERC20(token).safeTransfer(daoTreasury, amount);
     }
 
