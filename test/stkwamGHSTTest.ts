@@ -1,5 +1,5 @@
 import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
-import { ERC20, StakingFacet, StaticATokenLM } from "../typechain";
+import { ERC20, StakingFacet, WrappedAToken } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
 import { ethers } from "hardhat";
@@ -13,6 +13,7 @@ import {
   stakingDiamond,
   sufficientAmnt,
   amGHSTv2,
+  aaveLendingContract,
 } from "../scripts/deploystkwamGHST";
 import { Signer } from "ethers";
 
@@ -25,10 +26,13 @@ let amGHSTContract: ERC20;
 let stakeFacet: StakingFacet;
 let overDraft: string;
 let amGHSTsigner: Signer;
-let wamGHST: StaticATokenLM;
+let wamGHST: WrappedAToken;
 let signer: Signer;
+let junkSigner: Signer;
 const secondAddress = "0x92fedfc12357771c3f4cf2374714904f3690fbe1";
 const amGHSTHolder = "0x40bcbA5032F5f7746835ADd89CE9025D8593d20A";
+const daoTreasury = "0x6fb7e0AAFBa16396Ad6c1046027717bcA25F821f";
+const rewardsController = "0x929EC64c34a17401F460460D4B9390518E5B473e";
 
 describe("Perform all staking calculations", async function () {
   before(async function () {
@@ -79,7 +83,7 @@ describe("Perform all staking calculations", async function () {
     console.log("wamghst:", deployedAddresses);
 
     wamGHST = await ethers.getContractAt(
-      "StaticATokenLM",
+      "WrappedAToken",
       deployedAddresses.wamGHST.address
     );
   });
@@ -288,7 +292,7 @@ describe("Perform all staking calculations", async function () {
     //deposit some  amGHST for wamGHST directly
     await deployedAddresses.wamGHST
       .connect(amGHSTsigner)
-      .deposit(amGHSTHolder, "100000000000000000000", 0, false);
+      .enter("100000000000000000000");
     const ownerBalance1 = await deployedAddresses.wamGHST.balanceOf(
       amGHSTHolder
     );
@@ -299,19 +303,71 @@ describe("Perform all staking calculations", async function () {
     });
 
     //you cannot withdraw for someone else
-    await deployedAddresses.wamGHST
+    await expect(deployedAddresses.wamGHST
       .connect(signer)
-      .withdraw(secondAddress, "10000000000000000000", false);
+      .redeem("10000000000000000000", secondAddress, await signer.getAddress())).to.be.revertedWith("ERC20: burn amount exceeds balance");
     const ownerBalance2 = await deployedAddresses.wamGHST.balanceOf(
       amGHSTHolder
     );
 
     await deployedAddresses.wamGHST
       .connect(amGHSTsigner)
-      .withdraw(ghstOwner, "10000000000000000000", false);
+      .redeem("10000000000000000000", ghstOwner, await amGHSTsigner.getAddress());
     const bal2 = await amGHSTContract.balanceOf(secondAddress);
     //no balance change
     expect(bal1).to.equal(bal2);
     expect(ownerBalance1).to.equal(ownerBalance2);
   });
+
+
+  it("Should make an empty wamGHST contract", async() => {
+    const WamGHST = await ethers.getContractFactory("WrappedAToken");
+    wamGHST = await WamGHST.deploy() as WrappedAToken;
+    await wamGHST.initialize(
+      amGHSTv2,
+      rewardsController,
+      daoTreasury,
+      amGHSTHolder,
+      "Wrapped AAVE Polygon GHST",
+      "WaPolGHST",
+    );
+    console.log("amGHST balance of signer");
+    let amGHSTSignerBalance = await amGHSTContract.balanceOf(await amGHSTsigner.getAddress());
+    await amGHSTContract.connect(amGHSTsigner).approve(wamGHST.address, amGHSTSignerBalance);
+    console.log(amGHSTSignerBalance.toString());
+  });
+  
+  it("Should deposit 1000 atokens and receive wamGHST 1:1", async() => { 
+    await wamGHST.connect(amGHSTsigner).enter(1000);
+    expect(await wamGHST.balanceOf(await amGHSTsigner.getAddress())).to.equal(1000);
+    expect(await amGHSTContract.balanceOf(wamGHST.address)).to.be.gte(1000);
+  });
+
+  it("Should withdraw at least 500 aTokens", async() => { 
+    await wamGHST.connect(amGHSTsigner).leave(500);
+    expect(await wamGHST.balanceOf(await amGHSTsigner.getAddress())).to.equal(500);
+    expect(await amGHSTContract.balanceOf(wamGHST.address)).to.be.gte(500);
+  });
+
+  it("Should deposit 1000 with receipt token going to another address", async() => {
+    junkSigner = await ethers.getSigner(ethers.utils.computeAddress(ethers.utils.keccak256(ethers.utils.hexlify(42069))));
+    console.log((await wamGHST.totalSupply()).toString());
+    console.log((await wamGHST.totalAssets()).toString());
+    await wamGHST.connect(amGHSTsigner).deposit(1000, await junkSigner.getAddress());
+    console.log((await wamGHST.totalSupply()).toString());
+    console.log((await wamGHST.totalAssets()).toString());
+    expect(await wamGHST.balanceOf(await junkSigner.getAddress())).to.be.gte(990);
+    expect(await wamGHST.balanceOf(await junkSigner.getAddress())).to.be.lte(1000);
+    expect(await amGHSTContract.balanceOf(wamGHST.address)).to.be.gte(1500);
+  });
+
+  it("Should withdraw 500 to another address", async() => {
+    await wamGHST.connect(amGHSTsigner).redeem(500, await junkSigner.getAddress(), await amGHSTsigner.getAddress());
+    expect(await wamGHST.balanceOf(await junkSigner.getAddress())).to.be.lte(1000);
+    expect(await wamGHST.balanceOf(await junkSigner.getAddress())).to.be.gte(990);
+    expect(await wamGHST.balanceOf(await amGHSTsigner.getAddress())).to.equal(0);
+    expect(await amGHSTContract.balanceOf(wamGHST.address)).to.be.gte(1000);
+    expect(await amGHSTContract.balanceOf(await junkSigner.getAddress())).to.be.gte(500);
+  });
+
 });

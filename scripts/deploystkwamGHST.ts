@@ -8,7 +8,7 @@ import {
   ReceiptToken__factory,
   StakingFacet,
   StaticAmGHSTRouter,
-  StaticATokenLM,
+  WrappedAToken,
 } from "../typechain";
 import { gasPrice, getDiamondSigner } from "./helperFunctions";
 
@@ -16,9 +16,11 @@ export const ghstOwner = "0x08F4d97DD326094B66CC5eb597F288c5b5567fcf";
 export const aaveLendingContract = "0x8dff5e27ea6b7ac08ebfdf9eb090f32ee9a30fcf";
 export const amGHSTV1 = "0x080b5bf8f360f624628e0fb961f4e67c9e3c7cf1";
 export const amGHSTv2 = "0x8Eb270e296023E9D92081fdF967dDd7878724424";
+export const rewardsController = "0x929EC64c34a17401F460460D4B9390518E5B473e";
 export const stakingDiamond = "0xA02d547512Bb90002807499F05495Fe9C4C3943f";
 export const GHST = "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7";
 export const randAddress = "0x837704Ec8DFEC198789baF061D6e93B0e1555dA6";
+export const daoTreasury = "0x6fb7e0AAFBa16396Ad6c1046027717bcA25F821f";
 export let poolAddress: string;
 
 let stakingFacet: StakingFacet;
@@ -26,7 +28,7 @@ let stakingFacet: StakingFacet;
 export const sufficientAmnt = "1000000000000000000000"; //1000ghst
 
 export interface contractAddresses {
-  wamGHST: StaticATokenLM;
+  wamGHST: WrappedAToken;
   stkwamGHST: ReceiptToken;
   // router: StaticAmGHSTRouter;
 }
@@ -45,7 +47,7 @@ export async function deploy() {
 
   //deploy wamGhst static token
   const staticAToken = await ethers.getContractFactory(
-    "StaticATokenLM",
+    "WrappedAToken",
     signer
   );
   const wamGHST = await staticAToken.deploy(
@@ -53,16 +55,19 @@ export async function deploy() {
   );
   await wamGHST.deployed();
   await wamGHST.initialize(
-    aaveLendingContract,
     amGHSTv2,
+    rewardsController,
+    daoTreasury,
     contractOwner,
+    "Wrapped Aave Polygon GHST",
+    "WamGHST",
   )
   console.log("wrapped amGHST static token deployed to", wamGHST.address);
 
   const wamGHSTToken = (await ethers.getContractAt(
-    "StaticATokenLM",
+    "WrappedAToken",
     wamGHST.address
-  )) as StaticATokenLM;
+  )) as WrappedAToken;
 
   const tokenOwner = await wamGHSTToken.owner();
   console.log("token owner:", tokenOwner);
