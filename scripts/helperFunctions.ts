@@ -5,7 +5,7 @@ import { DiamondLoupeFacet, OwnershipFacet } from "../typechain";
 
 const {
   LedgerSigner,
-} = require("@ethersproject/hardware-wallets");
+} = require("../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets");
 
 export const gasPrice = 100000000000;
 
