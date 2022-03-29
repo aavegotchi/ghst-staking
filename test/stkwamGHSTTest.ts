@@ -370,4 +370,9 @@ describe("Perform all staking calculations", async function () {
     expect(await amGHSTContract.balanceOf(await junkSigner.getAddress())).to.be.gte(500);
   });
 
+  it("Should not allow anyone but the owner to redeem");
+  it("Should revert on deposit if the user doesn't have enough amtokens");
+  it("Should not let aTokens be rescued");
+  it("Should be able to claim rewards (Difficult to test, and likely not necessary to test tbh)");
+
 });
