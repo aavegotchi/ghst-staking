@@ -54,7 +54,8 @@
     "@ledgerhq/hw-transport-node-hid": "^6.20.0",
     "@ledgerhq/hw-transport-node-hid-noevents": "^6.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.1.7",
-    "@openzeppelin/contracts": "^3.4.1",
+    "@openzeppelin/contracts": "^3.4.2",
+    "@rari-capital/solmate": "^6.2.0",
     "axios": "^0.21.1",
     "hardhat-interface-generator": "^0.0.6",
     "typechain": "^5.1.2"
