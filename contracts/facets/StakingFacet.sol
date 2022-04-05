@@ -521,16 +521,16 @@ contract StakingFacet {
         withdrawFromPool(s.ghstWethPoolToken, _poolTokens);
     }
 
+    function getStkGhstUsdcToken() external view returns (address) {
+        return s.stkGhstUsdcToken;
+    }
+
     /***********************************|
    |      Deprecated Read Functions     |
    |__________________________________*/
 
     // function getGhstUsdcPoolToken() external view returns (address) {
     //     return s.ghstUsdcPoolToken;
-    // }
-
-    // function getStkGhstUsdcToken() external view returns (address) {
-    //     return s.stkGhstUsdcToken;
     // }
 
     // function getGhstWethPoolToken() external view returns (address) {
