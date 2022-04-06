@@ -27,12 +27,12 @@ contract WrappedAToken is Ownable, ERC4626 {
     error InvalidReceiver(address receiver);
     error InvalidRescue(address token);
 
-    /// @dev The aToken is assumed to be trusted and not need SafeERC20
     function initialize(
         address _asset,
         address _rewardsController,
         address _treasury,
         address _owner,
+        uint256 _initialSeed,
         string calldata _name,
         string calldata _symbol
     ) public initializer {
@@ -43,6 +43,14 @@ contract WrappedAToken is Ownable, ERC4626 {
 
         REWARDS_CONTROLLER = IRewardsController(_rewardsController);
         treasury = _treasury;
+
+        // Sacrifice an initial seed of shares to ensure a healthy amount of precision in minting shares.
+        // Set to 0 at your own risk.
+        // Caller must have approved the asset to this contract's address.
+        // See: https://github.com/Rari-Capital/solmate/issues/178
+        if (_initialSeed > 0) {
+            deposit(_initialSeed, 0x000000000000000000000000000000000000dEaD);
+        }
 
         emit Initialized(_asset, _rewardsController, _treasury, _owner, _name, _symbol);
     }

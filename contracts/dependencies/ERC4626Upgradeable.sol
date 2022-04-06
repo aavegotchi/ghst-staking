@@ -5,10 +5,11 @@ import {ERC20Upgradeable as ERC20} from "@openzeppelin/contracts-upgradeable/tok
 import {ERC20PermitUpgradeable as ERC20Permit} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
 import {SafeERC20Upgradeable as SafeTransferLib} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import {FixedPointMathLib} from "./FixedPointMathLib.sol";
+import {IERC4626} from "../interfaces/IERC4626.sol";
 
 /// @notice Minimal ERC4626 tokenized Vault implementation.
 /// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/mixins/ERC4626.sol)
-abstract contract ERC4626Upgradeable is ERC20, ERC20Permit {
+abstract contract ERC4626Upgradeable is IERC4626, ERC20, ERC20Permit {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 

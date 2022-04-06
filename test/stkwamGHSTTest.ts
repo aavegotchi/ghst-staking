@@ -86,15 +86,25 @@ describe("Perform all staking calculations", async function () {
 
   it("Should make an empty wamGHST contract", async () => {
     const WamGHST = await ethers.getContractFactory("WrappedAToken");
-    wamGHST = (await WamGHST.deploy()) as WrappedAToken;
-    await wamGHST.initialize(
+    wamGHST = (await WamGHST.connect(signer).deploy()) as WrappedAToken;
+    console.log(await signer.getAddress());
+    const aToken = await ethers.getContractAt(
+      "contracts/interfaces/IERC20.sol:IERC20",
       amGHSTv2,
-      rewardsController,
-      daoTreasury,
-      amGHSTHolder,
-      "Wrapped AAVE Polygon GHST",
-      "WaPolGHST"
+      signer
     );
+    await aToken.approve(wamGHST.address, ethers.utils.parseEther("0.1"));
+    await wamGHST
+      .connect(signer)
+      .initialize(
+        amGHSTv2,
+        rewardsController,
+        daoTreasury,
+        amGHSTHolder,
+        0,
+        "Wrapped AAVE Polygon GHST",
+        "WaPolGHST"
+      );
     console.log("amGHST balance of signer");
     let amGHSTSignerBalance = await amGHSTContract.balanceOf(
       await amGHSTsigner.getAddress()

@@ -46,22 +46,25 @@ export async function deploy() {
   const contractOwner = await signer.getAddress();
 
   //deploy wamGhst static token
-  const staticAToken = await ethers.getContractFactory(
-    "WrappedAToken",
+  const staticAToken = await ethers.getContractFactory("WrappedAToken", signer);
+  const aToken = await ethers.getContractAt(
+    "contracts/interfaces/IERC20.sol:IERC20",
+    amGHSTv2,
     signer
   );
-  const wamGHST = await staticAToken.deploy(
-    { gasPrice: gasPrice }
-  );
+  const wamGHST = await staticAToken.deploy({ gasPrice: gasPrice });
   await wamGHST.deployed();
+
+  await aToken.approve(wamGHST.address, ethers.utils.parseEther("0.1"));
   await wamGHST.initialize(
     amGHSTv2,
     rewardsController,
     daoTreasury,
     contractOwner,
+    BigNumber.from(1e9),
     "Wrapped Aave Polygon GHST",
-    "WamGHST",
-  )
+    "WamGHST"
+  );
   console.log("wrapped amGHST static token deployed to", wamGHST.address);
 
   const wamGHSTToken = (await ethers.getContractAt(

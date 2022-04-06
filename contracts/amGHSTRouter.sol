@@ -1,8 +1,10 @@
-pragma solidity 0.6.12;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.13;
 
-import {IStaticATokenLM} from "../dep/protocol-v2/contracts/interfaces/IStaticATokenLM.sol";
-import {ILendingPool} from "../dep/protocol-v2/contracts/interfaces/ILendingPool.sol";
+import {WrappedAToken} from "./WrappedAToken.sol";
+import {ILendingPool} from "./interfaces/ILendingPool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC4626} from "./interfaces/IERC4626.sol";
 import {IStakingFacet} from "./interfaces/IStakingFacet.sol";
 
 contract StaticAmGHSTRouter {
@@ -13,7 +15,7 @@ contract StaticAmGHSTRouter {
     address public wamGHSTPool;
     uint256 constant MAX_UINT = type(uint256).max;
 
-    constructor(address _wamGhstPoolAddress) public {
+    constructor(address _wamGhstPoolAddress) {
         wamGHSTPool = _wamGhstPoolAddress;
 
         //approve lendingpool to spend GHST
@@ -46,11 +48,8 @@ contract StaticAmGHSTRouter {
             require(IERC20(amGHST).transferFrom(msg.sender, address(this), _amount));
         }
 
-        //convert to wamGHST
-        uint256 deposited = IStaticATokenLM(wamGHSTPool).deposit(address(this), _amount, 0, false);
-
-        //forward tokens
-        IERC20(wamGHSTPool).transfer(_to, deposited);
+        //convert to wamGHST and send to _to
+        uint256 deposited = IERC4626(wamGHSTPool).deposit(_amount, _to); //assets, receiver of shares
 
         //convert to stkWAmGhst on behalf of address(this)
         IStakingFacet(stakingDiamond).stakeIntoPoolForUser(wamGHSTPool, deposited, _to);
@@ -74,12 +73,12 @@ contract StaticAmGHSTRouter {
         //Convert back to GHST
         if (_toUnderlying) {
             //convert wamGHST back to amGHST
-            (, toWithdraw) = IStaticATokenLM(wamGHSTPool).withdraw(address(this), _amount, false);
+            toWithdraw = IERC4626(wamGHSTPool).withdraw(_amount, address(this), address(this)); // assets, receiver of shares, owner of assets
             //convert amGHST to GHST and send directly
             aaveLendingPool.withdraw(address(GHST), toWithdraw, _to);
         } else {
             //withdraw amGHST and send back
-            IStaticATokenLM(wamGHSTPool).withdraw(_to, _amount, false);
+            IERC4626(wamGHSTPool).withdraw(_amount, _to, address(this));
         }
     }
 }
