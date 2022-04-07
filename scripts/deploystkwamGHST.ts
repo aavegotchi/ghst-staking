@@ -52,9 +52,20 @@ export async function deploy() {
     amGHSTv2,
     signer
   );
-  const wamGHST = await staticAToken.deploy({ gasPrice: gasPrice });
+  let wamGHST = await staticAToken.deploy({ gasPrice: gasPrice });
   await wamGHST.deployed();
-
+  const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
+  const proxyAdmin = await ProxyAdmin.connect(signer).deploy();
+  const TransparentUpgradeableProxy = await ethers.getContractFactory(
+    "TransparentUpgradeableProxy"
+  );
+  const proxy = await TransparentUpgradeableProxy.deploy(
+    wamGHST.address,
+    proxyAdmin.address,
+    "0x"
+  ); // logic, admin, data;
+  wamGHST = await ethers.getContractAt("WrappedAToken", proxy.address, signer);
+  console.log("Successfully attached");
   await aToken.approve(wamGHST.address, ethers.utils.parseEther("0.1"));
   await wamGHST.initialize(
     amGHSTv2,

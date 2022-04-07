@@ -49,7 +49,7 @@ contract StaticAmGHSTRouter {
         }
 
         //convert to wamGHST and send to _to
-        uint256 deposited = IERC4626(wamGHSTPool).deposit(_amount, _to); //assets, receiver of shares
+        uint256 deposited = IERC4626(wamGHSTPool).deposit(_amount, address(this)); //assets, receiver of shares, returns shares received
 
         //convert to stkWAmGhst on behalf of address(this)
         IStakingFacet(stakingDiamond).stakeIntoPoolForUser(wamGHSTPool, deposited, _to);
@@ -68,12 +68,12 @@ contract StaticAmGHSTRouter {
         uint256 toWithdraw;
         //get user wamGHST by burning stkWamGHST
         IStakingFacet(stakingDiamond).withdrawFromPoolForUser(wamGHSTPool, _amount, _to);
-        //transfer to contract
+        //transfer shares to contract
         require(IERC20(wamGHSTPool).transferFrom(_to, address(this), _amount));
         //Convert back to GHST
         if (_toUnderlying) {
             //convert wamGHST back to amGHST
-            toWithdraw = IERC4626(wamGHSTPool).withdraw(_amount, address(this), address(this)); // assets, receiver of shares, owner of assets
+            toWithdraw = IERC4626(wamGHSTPool).withdraw(_amount, address(this), address(this)); // assets, receiver of assets, owner of shares
             //convert amGHST to GHST and send directly
             aaveLendingPool.withdraw(address(GHST), toWithdraw, _to);
         } else {
