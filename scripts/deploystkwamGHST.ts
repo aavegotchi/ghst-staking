@@ -76,13 +76,13 @@ export async function deploy() {
   console.log("Successfully attached");
 
   // Initialize Wrapped AToken with minimum shares
-  await aToken.approve(wamGHSTToken.address, BigNumber.from(1e9));
+  await aToken.approve(wamGHSTToken.address, BigNumber.from(1e10));
   await wamGHSTToken.initialize(
     amGHSTV3,
     rewardsControllerV3,
     daoTreasury,
     ghstOwner,
-    BigNumber.from(1e9),
+    BigNumber.from(1e10),
     "Wrapped Aave Polygon GHST",
     "WaPolyGHST"
   );
