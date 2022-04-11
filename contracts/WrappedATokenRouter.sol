@@ -7,19 +7,29 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC4626} from "./interfaces/IERC4626.sol";
 import {IStakingFacet} from "./interfaces/IStakingFacet.sol";
 
-contract StaticAmGHSTRouter {
-    ILendingPool public aaveLendingPool = ILendingPool(0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf);
-    address constant stakingDiamond = 0xA02d547512Bb90002807499F05495Fe9C4C3943f;
-    IERC20 GHST = IERC20(0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7);
-    address constant amGHST = 0x080b5BF8f360F624628E0fb961F4e67c9e3c7CF1;
+contract WrappedATokenRouter {
+    address public aaveLendingPool;
+    address public stakingDiamond;
+    address public GHST;
+    address public amGHST;
     address public wamGHSTPool;
     uint256 constant MAX_UINT = type(uint256).max;
 
-    constructor(address _wamGhstPoolAddress) {
+    constructor(
+        address _wamGhstPoolAddress,
+        address _lendingPool,
+        address _stakingDiamond,
+        address _ghst,
+        address _amGhst
+    ) {
         wamGHSTPool = _wamGhstPoolAddress;
+        aaveLendingPool = _lendingPool;
+        stakingDiamond = _stakingDiamond;
+        GHST = _ghst;
+        amGHST = _amGhst;
 
         //approve lendingpool to spend GHST
-        GHST.approve(address(aaveLendingPool), MAX_UINT);
+        IERC20(GHST).approve(aaveLendingPool, MAX_UINT);
 
         //approve static wrapper contract to spend amGHST
         IERC20(amGHST).approve(wamGHSTPool, MAX_UINT);
@@ -40,16 +50,16 @@ contract StaticAmGHSTRouter {
     ) external {
         if (_underlying) {
             //transfer user GHST
-            require(GHST.transferFrom(msg.sender, address(this), _amount));
+            require(IERC20(GHST).transferFrom(msg.sender, address(this), _amount));
             //convert to amGHST
-            aaveLendingPool.deposit(address(GHST), _amount, address(this), 0);
+            ILendingPool(aaveLendingPool).deposit(GHST, _amount, address(this), 0);
         } else {
             //transfer user amGHST
             require(IERC20(amGHST).transferFrom(msg.sender, address(this), _amount));
         }
 
         //convert to wamGHST and send to _to
-        uint256 deposited = IERC4626(wamGHSTPool).deposit(_amount, address(this)); //assets, receiver of shares, returns shares received
+        uint256 deposited = IERC4626(wamGHSTPool).deposit(_amount, _to); //assets, receiver of shares, returns shares received
 
         //convert to stkWAmGhst on behalf of address(this)
         IStakingFacet(stakingDiamond).stakeIntoPoolForUser(wamGHSTPool, deposited, _to);
@@ -75,7 +85,7 @@ contract StaticAmGHSTRouter {
             //convert wamGHST back to amGHST
             toWithdraw = IERC4626(wamGHSTPool).withdraw(_amount, address(this), address(this)); // assets, receiver of assets, owner of shares
             //convert amGHST to GHST and send directly
-            aaveLendingPool.withdraw(address(GHST), toWithdraw, _to);
+            ILendingPool(aaveLendingPool).withdraw(GHST, toWithdraw, _to);
         } else {
             //withdraw amGHST and send back
             IERC4626(wamGHSTPool).withdraw(_amount, _to, address(this));
