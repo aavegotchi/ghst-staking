@@ -46,6 +46,7 @@
   "homepage": "https://github.com/aavegotchi/ghst-staking#readme",
   "dependencies": {
     "@aave/protocol-v2": "^1.0.1",
+    "@anders-t/ethers-ledger": "^1.0.4",
     "@gnosis.pm/safe-core-sdk": "^1.0.0",
     "@ledgerhq/hw-transport-node-hid": "^6.20.0",
     "@ledgerhq/hw-transport-node-hid-noevents": "^6.0.2",
