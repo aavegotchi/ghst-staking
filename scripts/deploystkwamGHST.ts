@@ -51,6 +51,15 @@ export async function deploy() {
   );
   let wamGHST = await staticAToken.deploy({ gasPrice: gasPrice });
   await wamGHST.deployed();
+  await wamGHST.initialize(
+    ethers.constants.AddressZero,
+    ethers.constants.AddressZero,
+    ethers.constants.AddressZero,
+    ethers.constants.AddressZero,
+    0,
+    "ECKSDEE",
+    "XD"
+  );
 
   // Proxy Admin Deployment
   const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
