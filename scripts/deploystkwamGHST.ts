@@ -34,7 +34,6 @@ export const sufficientAmnt = "1000000000000000000000"; //1000ghst
 export interface contractAddresses {
   wamGHST: WrappedAToken;
   stkwamGHST: ReceiptToken;
-  router: WrappedATokenRouter;
 }
 
 export async function deploy() {
@@ -103,18 +102,6 @@ export async function deploy() {
   )) as ReceiptToken;
   await receiptToken.deployed();
   console.log("stkwaPolyGHST token deployed to", receiptToken.address);
-
-  const WrappedATokenRouter = await ethers.getContractFactory(
-    "WrappedATokenRouter"
-  );
-  const wrappedATokenRouter = await WrappedATokenRouter.deploy(
-    wamGHSTToken.address,
-    lendingPoolV3,
-    stakingDiamond,
-    ghstAddress,
-    amGHSTV3
-  );
-  //new pools
 
   const poolData: PoolObject[] = [
     {
@@ -238,7 +225,6 @@ export async function deploy() {
   const deployed: contractAddresses = {
     wamGHST: wamGHSTToken,
     stkwamGHST: receiptToken,
-    router: wrappedATokenRouter,
   };
 
   return deployed;

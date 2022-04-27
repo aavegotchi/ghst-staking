@@ -1,11 +1,5 @@
 import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
-import {
-  ERC20,
-  StakingFacet,
-  WrappedAToken,
-  WrappedATokenRouter,
-  ReceiptToken,
-} from "../typechain";
+import { ERC20, StakingFacet, WrappedAToken, ReceiptToken } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
 import { ethers } from "hardhat";
@@ -35,7 +29,6 @@ let receiptToken: ReceiptToken;
 let amGHSTSigner: Signer;
 let wamGHST: WrappedAToken;
 let ghstSigner: Signer;
-let router: WrappedATokenRouter;
 let junkSigner: Signer;
 const secondAddress = "0x92fedfc12357771c3f4cf2374714904f3690fbe1";
 const amGHSTHolder = "0x40bcbA5032F5f7746835ADd89CE9025D8593d20A";
@@ -77,10 +70,6 @@ describe("Perform all staking calculations", async function () {
       "WrappedAToken",
       deployedAddresses.wamGHST.address
     );
-    router = await ethers.getContractAt(
-      "WrappedATokenRouter",
-      deployedAddresses.router.address
-    );
     ghstContract = (await ethers.getContractAt(
       "contracts/test/GHST/ERC20.sol:ERC20",
       ghstAddress
@@ -104,55 +93,6 @@ describe("Perform all staking calculations", async function () {
     await wamGHST.transferOwnership(secondAddress);
     const owner = await wamGHST.owner();
     expect(owner.toLowerCase()).to.equal(secondAddress.toLowerCase());
-  });
-  it("Should be able to stake through the router with atokens", async () => {
-    const amount = ethers.utils.parseEther("1");
-    await amGHSTContract.connect(amGHSTSigner).approve(router.address, amount);
-    await wamGHST.connect(amGHSTSigner).approve(stakingDiamond, amount);
-    await router
-      .connect(amGHSTSigner)
-      .wrapAndDeposit(amount, await amGHSTSigner.getAddress(), false);
-  });
-  it("Should be able to stake through the router with GHST", async () => {
-    const amount = ethers.utils.parseEther("1");
-    await ghstContract.connect(ghstSigner).approve(router.address, amount);
-    await wamGHST.connect(ghstSigner).approve(stakingDiamond, amount);
-    await router
-      .connect(ghstSigner)
-      .wrapAndDeposit(amount, await ghstSigner.getAddress(), true);
-  });
-  it("Should be able to unstake through the router to get aTokens", async () => {
-    const oldATokenBalance = await amGHSTContract.balanceOf(
-      await amGHSTSigner.getAddress()
-    );
-    const amount = await receiptToken.balanceOf(
-      await amGHSTSigner.getAddress()
-    );
-    await wamGHST.connect(amGHSTSigner).approve(router.address, amount);
-    await router
-      .connect(amGHSTSigner)
-      .unwrapAndWithdraw(amount, await amGHSTSigner.getAddress(), false);
-
-    expect(
-      (await amGHSTContract.balanceOf(await amGHSTSigner.getAddress())).sub(
-        oldATokenBalance
-      )
-    ).to.be.gt(ethers.utils.parseEther("0.9999"));
-  });
-  it("Should be able to unstake through the router to get GHST", async () => {
-    const oldGHSTBalance = await ghstContract.balanceOf(
-      await ghstSigner.getAddress()
-    );
-    const amount = await receiptToken.balanceOf(await ghstSigner.getAddress());
-    await wamGHST.connect(ghstSigner).approve(router.address, amount);
-    await router
-      .connect(ghstSigner)
-      .unwrapAndWithdraw(amount, await ghstSigner.getAddress(), true);
-    expect(
-      (await ghstContract.balanceOf(await ghstSigner.getAddress())).sub(
-        oldGHSTBalance
-      )
-    ).to.be.gt(ethers.utils.parseEther("0.9999"));
   });
 
   it("Should make an empty wamGHST contract", async () => {
