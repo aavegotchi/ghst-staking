@@ -6,6 +6,7 @@ import {OwnableUpgradeable as Ownable} from "@openzeppelin/contracts-upgradeable
 import {SafeERC20Upgradeable as SafeTransferLib} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import {ERC4626Upgradeable as ERC4626} from "./dependencies/ERC4626Upgradeable.sol";
 import {IRewardsController} from "./interfaces/IRewardsController.sol";
+import {ILendingPool} from "./interfaces/ILendingPool.sol";
 
 /**
  * @title WrappedAToken
@@ -17,7 +18,9 @@ import {IRewardsController} from "./interfaces/IRewardsController.sol";
 contract WrappedAToken is Ownable, ERC4626 {
     using SafeTransferLib for ERC20;
 
-    IRewardsController public REWARDS_CONTROLLER;
+    IRewardsController public rewardsController;
+    ILendingPool public lendingPool;
+    ERC20 public underlying;
 
     address public treasury;
 
@@ -29,6 +32,8 @@ contract WrappedAToken is Ownable, ERC4626 {
 
     function initialize(
         address _asset,
+        address _underlying,
+        address _lendingPool,
         address _rewardsController,
         address _treasury,
         address _owner,
@@ -41,8 +46,15 @@ contract WrappedAToken is Ownable, ERC4626 {
         __ERC4626_init_unchained(ERC20(_asset)); // Initialize the vault with the underlying asset
         _transferOwnership(_owner);
 
-        REWARDS_CONTROLLER = IRewardsController(_rewardsController);
+        underlying = ERC20(_underlying);
+        lendingPool = ILendingPool(_lendingPool);
+        rewardsController = IRewardsController(_rewardsController);
         treasury = _treasury;
+
+        // Should not approve if underlying is the asset
+        if (_underlying != address(0) && _underlying != _asset) {
+            underlying.safeApprove(address(lendingPool), type(uint256).max);
+        }
 
         // Sacrifice an initial seed of shares to ensure a healthy amount of precision in minting shares.
         // Set to 0 at your own risk.
@@ -78,9 +90,45 @@ contract WrappedAToken is Ownable, ERC4626 {
         redeem(shares, sender, sender);
     }
 
+    /** @notice Deposits from underlying */
+    function enterWithUnderlying(uint256 assets) public virtual returns (uint256 shares) {
+        // Check for rounding error since we round down in previewDeposit.
+        require((shares = previewDeposit(assets)) != 0, "ZERO_SHARES");
+
+        address sender = _msgSender(); // Gas savings
+
+        // Need to transfer before minting or ERC777s could reenter.
+        underlying.safeTransferFrom(sender, address(this), assets);
+        lendingPool.deposit(address(underlying), assets, address(this), 0); // asset, amount, onBehalfOf, referralCode
+
+        _mint(sender, shares);
+
+        emit Deposit(sender, sender, assets, shares); // caller, owner, assets, shares
+
+        // Removing hook in this custom function just to be safe
+        // afterDeposit(assets, shares);
+    }
+
+    /** @notice Withdraws to underlying */
+    function leaveToUnderlying(uint256 shares) external returns (uint256 assets) {
+        address sender = _msgSender(); // Gas savings
+
+        // Check for rounding error since we round down in previewRedeem.
+        require((assets = previewRedeem(shares)) != 0, "ZERO_ASSETS");
+
+        // Removing hook in this custom function just to be safe
+        // beforeWithdraw(assets, shares);
+
+        _burn(sender, shares);
+
+        emit Withdraw(sender, sender, sender, assets, shares); // caller, receiver, owner, amount, shares
+
+        lendingPool.withdraw(address(underlying), assets, sender); // Withdraw to sender
+    }
+
     /** @notice Claims all reward tokens accrued by the aTokens in this contract to the treasury. */
     function claimRewardTokensToTreasury(address[] calldata assets) external {
-        REWARDS_CONTROLLER.claimAllRewards(assets, treasury);
+        rewardsController.claimAllRewards(assets, treasury);
     }
 
     /** @notice Transfers any tokens besides the asset to the treasury. */
@@ -94,6 +142,6 @@ contract WrappedAToken is Ownable, ERC4626 {
     }
 
     function getRewardsController() external view returns (address) {
-        return address(REWARDS_CONTROLLER);
+        return address(rewardsController);
     }
 }

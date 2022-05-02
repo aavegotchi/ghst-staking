@@ -8,7 +8,6 @@ import {
   ReceiptToken__factory,
   StakingFacet,
   WrappedAToken,
-  WrappedATokenRouter,
 } from "../typechain";
 
 import {
@@ -56,6 +55,8 @@ export async function deploy() {
     ethers.constants.AddressZero,
     ethers.constants.AddressZero,
     ethers.constants.AddressZero,
+    ethers.constants.AddressZero,
+    ethers.constants.AddressZero,
     0,
     "ECKSDEE",
     "XD"
@@ -87,6 +88,8 @@ export async function deploy() {
   await aToken.approve(wamGHSTToken.address, BigNumber.from(1e10));
   await wamGHSTToken.initialize(
     amGHSTV3,
+    ghstAddress,
+    lendingPoolV3,
     rewardsControllerV3,
     daoTreasury,
     ghstOwner,

@@ -108,6 +108,8 @@ describe("Perform all staking calculations", async function () {
       .connect(ghstSigner)
       .initialize(
         amGHSTV3,
+        ghstAddress,
+        lendingPoolV3,
         rewardsControllerV3,
         daoTreasury,
         amGHSTHolder,
@@ -158,6 +160,51 @@ describe("Perform all staking calculations", async function () {
     );
     expect(await amGHSTContract.balanceOf(wamGHST.address)).to.equal(0);
   });
+
+  it("Should deposit from GHST", async () => {
+    const initialVaultBalance = await amGHSTContract.balanceOf(wamGHST.address);
+    const depositAmount = ethers.utils.parseEther("10");
+    await ghstContract
+      .connect(ghstSigner)
+      .approve(wamGHST.address, depositAmount);
+    await wamGHST.connect(ghstSigner).enterWithUnderlying(depositAmount);
+    let wamGHSTBalance = await wamGHST.balanceOf(await ghstSigner.getAddress());
+    expect(wamGHSTBalance).to.lte(depositAmount);
+    expect(wamGHSTBalance).to.be.gte(depositAmount.mul(1e6 - 1).div(1e6));
+    expect(await amGHSTContract.balanceOf(wamGHST.address)).to.be.gte(
+      initialVaultBalance.add(depositAmount)
+    );
+  });
+
+  it("Should withdraw to GHST", async () => {
+    const initialVaultAssets = await amGHSTContract.balanceOf(wamGHST.address);
+    const initialUserUnderlying = await ghstContract.balanceOf(
+      await ghstSigner.getAddress()
+    );
+    const initialUserShares = await wamGHST.balanceOf(
+      await ghstSigner.getAddress()
+    );
+    const initialShareSupply = await wamGHST.totalSupply();
+    const assetsReturned = await wamGHST
+      .connect(ghstSigner)
+      .leaveToUnderlying(initialUserShares);
+    expect(await wamGHST.balanceOf(await ghstSigner.getAddress())).to.equal(0);
+    expect(await amGHSTContract.balanceOf(wamGHST.address)).to.be.gte(
+      initialVaultAssets
+        .mul(initialShareSupply.sub(initialUserShares))
+        .div(initialShareSupply)
+    );
+
+    const userUnderlying = await ghstContract.balanceOf(
+      await ghstSigner.getAddress()
+    );
+    const expectedUnderlying = initialUserUnderlying.add(
+      initialVaultAssets.mul(initialUserShares).div(initialShareSupply)
+    );
+    expect(userUnderlying).to.be.lte(expectedUnderlying.mul(1e6 + 1).div(1e6));
+    expect(userUnderlying).to.be.gte(expectedUnderlying.mul(1e6 - 1).div(1e6));
+  });
+
   it(
     "Should be able to claim rewards (Difficult to test, and likely not necessary to test tbh)"
   );
