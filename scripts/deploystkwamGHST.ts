@@ -11,10 +11,8 @@ import {
 } from "../typechain";
 
 import {
-  amGHSTV2,
   amGHSTV3,
   ghstAddress,
-  lendingPoolV2,
   lendingPoolV3,
   stakingDiamond,
   rewardsControllerV3,
@@ -77,7 +75,7 @@ export async function deploy() {
   ); // logic, admin, data;
 
   // Attach implementation ABI to proxy
-  const wamGHSTToken = (await ethers.getContractAt(
+  const wapGHSTToken = (await ethers.getContractAt(
     "WrappedAToken",
     proxy.address,
     signer
@@ -85,8 +83,8 @@ export async function deploy() {
   console.log("Successfully attached");
 
   // Initialize Wrapped AToken with minimum shares
-  await aToken.approve(wamGHSTToken.address, BigNumber.from(1e10));
-  await wamGHSTToken.initialize(
+  await aToken.approve(wapGHSTToken.address, BigNumber.from(1e10));
+  await wapGHSTToken.initialize(
     amGHSTV3,
     ghstAddress,
     lendingPoolV3,
@@ -95,11 +93,11 @@ export async function deploy() {
     ghstOwner,
     BigNumber.from(1e10),
     "Wrapped Aave Polygon GHST",
-    "WaPolyGHST"
+    "wapGHST"
   );
-  console.log("wrapped amGHST static token deployed to", wamGHSTToken.address);
+  console.log("wrapped amGHST static token deployed to", wapGHSTToken.address);
 
-  const tokenOwner = await wamGHSTToken.owner();
+  const tokenOwner = await wapGHSTToken.owner();
   console.log("token owner:", tokenOwner);
 
   //deploy stkwamGHST receipt token
@@ -157,12 +155,12 @@ export async function deploy() {
 
     //amGHST Pool
     {
-      _poolAddress: wamGHSTToken.address,
+      _poolAddress: wapGHSTToken.address,
       _poolReceiptToken: receiptToken.address,
       _rate: "1",
-      _poolName: "wamGHST",
+      _poolName: "wapGHST",
       _poolUrl:
-        "https://app.aave.com/#/reserve-overview/0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7-0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a70xd05e3e715d945b59290df0ae8ef85c1bdb684744",
+        "https://app.aave.com/reserve-overview/?underlyingAsset=0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7&marketName=proto_polygon_v3",
     },
   ];
 
@@ -235,7 +233,7 @@ export async function deploy() {
   }
 
   const deployed: contractAddresses = {
-    wamGHST: wamGHSTToken,
+    wamGHST: wapGHSTToken,
     stkwamGHST: receiptToken,
   };
 
