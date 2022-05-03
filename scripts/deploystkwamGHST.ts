@@ -7,17 +7,20 @@ import {
   ReceiptToken,
   ReceiptToken__factory,
   StakingFacet,
-  StaticAmGHSTRouter,
-  StaticATokenLM,
+  WrappedAToken,
 } from "../typechain";
+
+import {
+  amGHSTV3,
+  ghstAddress,
+  lendingPoolV3,
+  stakingDiamond,
+  rewardsControllerV3,
+  daoTreasury,
+} from "../helpers/constants";
 import { gasPrice, getDiamondSigner } from "./helperFunctions";
 
 export const ghstOwner = "0x08F4d97DD326094B66CC5eb597F288c5b5567fcf";
-export const aaveLendingContract = "0x8dff5e27ea6b7ac08ebfdf9eb090f32ee9a30fcf";
-export const amGHSTV1 = "0x080b5bf8f360f624628e0fb961f4e67c9e3c7cf1";
-export const amGHSTv2 = "0x8Eb270e296023E9D92081fdF967dDd7878724424";
-export const stakingDiamond = "0xA02d547512Bb90002807499F05495Fe9C4C3943f";
-export const GHST = "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7";
 export const randAddress = "0x837704Ec8DFEC198789baF061D6e93B0e1555dA6";
 export let poolAddress: string;
 
@@ -26,65 +29,89 @@ let stakingFacet: StakingFacet;
 export const sufficientAmnt = "1000000000000000000000"; //1000ghst
 
 export interface contractAddresses {
-  wamGHST: StaticATokenLM;
+  wamGHST: WrappedAToken;
   stkwamGHST: ReceiptToken;
-  router: StaticAmGHSTRouter;
 }
 
 export async function deploy() {
   let testing = ["hardhat", "localhost"].includes(network.name);
   let signer: Signer = await getDiamondSigner(ethers, network, ghstOwner, true);
 
-  const address = await signer.getAddress();
+  console.log("signer:", ghstOwner);
 
-  console.log("signer:", await signer.getAddress());
-
-  console.log("address:", await signer.getAddress());
-
-  const contractOwner = await signer.getAddress();
-
-  //deploy wamGhst static token
-  const staticAToken = await ethers.getContractFactory(
-    "StaticATokenLM",
+  // Implementation Deployment
+  const staticAToken = await ethers.getContractFactory("WrappedAToken", signer);
+  const aToken = await ethers.getContractAt(
+    "contracts/interfaces/IERC20.sol:IERC20",
+    amGHSTV3,
     signer
   );
-  const wamGHST = await staticAToken.deploy(
-    aaveLendingContract,
-    amGHSTv2,
-    contractOwner,
-    { gasPrice: gasPrice }
-  );
+  let wamGHST = await staticAToken.deploy({ gasPrice: gasPrice });
   await wamGHST.deployed();
-  console.log("wrapped amGHST static token deployed to", wamGHST.address);
+  await wamGHST.initialize(
+    ethers.constants.AddressZero,
+    ethers.constants.AddressZero,
+    ethers.constants.AddressZero,
+    ethers.constants.AddressZero,
+    ethers.constants.AddressZero,
+    ethers.constants.AddressZero,
+    0,
+    "ECKSDEE",
+    "XD"
+  );
 
-  const wamGHSTToken = (await ethers.getContractAt(
-    "StaticATokenLM",
-    wamGHST.address
-  )) as StaticATokenLM;
+  // Proxy Admin Deployment
+  const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
+  const proxyAdmin = await ProxyAdmin.connect(signer).deploy();
 
-  const tokenOwner = await wamGHSTToken.contractOwner();
+  // Proxy Deployment
+  const TransparentUpgradeableProxy = await ethers.getContractFactory(
+    "TransparentUpgradeableProxy"
+  );
+  const proxy = await TransparentUpgradeableProxy.deploy(
+    wamGHST.address,
+    proxyAdmin.address,
+    "0x"
+  ); // logic, admin, data;
+
+  // Attach implementation ABI to proxy
+  const wapGHSTToken = (await ethers.getContractAt(
+    "WrappedAToken",
+    proxy.address,
+    signer
+  )) as WrappedAToken;
+  console.log("Successfully attached");
+
+  // Initialize Wrapped AToken with minimum shares
+  await aToken.approve(wapGHSTToken.address, BigNumber.from(1e10));
+  await wapGHSTToken.initialize(
+    amGHSTV3,
+    ghstAddress,
+    lendingPoolV3,
+    rewardsControllerV3,
+    daoTreasury,
+    ghstOwner,
+    BigNumber.from(1e10),
+    "Wrapped Aave Polygon GHST",
+    "wapGHST"
+  );
+  console.log("wrapped amGHST static token deployed to", wapGHSTToken.address);
+
+  const tokenOwner = await wapGHSTToken.owner();
   console.log("token owner:", tokenOwner);
-
-  // const wamGhstAddress = "0x3172cE4f647a4afA70EaE383401AB8aE2FE2E9f7";
-  // const stkWamGhstAddress = "0xe5f6166D8e10b205c0E500175E7F6C3bC4B3D252";
 
   //deploy stkwamGHST receipt token
   const receiptTokenFactory = (await ethers.getContractFactory(
     "ReceiptToken"
   )) as ReceiptToken__factory;
-  const token = (await receiptTokenFactory.deploy(
+  const receiptToken = (await receiptTokenFactory.deploy(
     stakingDiamond,
     "Staked Wrapped amGHST",
     "stkwamGHST",
     { gasPrice: gasPrice }
   )) as ReceiptToken;
-  await token.deployed();
-  console.log("stkwamGHST token deployed to", token.address);
-
-  //new pools
-
-  const wamGhstAddress = wamGHSTToken.address;
-  const stkWamGhstAddress = token.address;
+  await receiptToken.deployed();
+  console.log("stkwaPolyGHST token deployed to", receiptToken.address);
 
   const poolData: PoolObject[] = [
     {
@@ -128,12 +155,12 @@ export async function deploy() {
 
     //amGHST Pool
     {
-      _poolAddress: wamGhstAddress,
-      _poolReceiptToken: stkWamGhstAddress,
+      _poolAddress: wapGHSTToken.address,
+      _poolReceiptToken: receiptToken.address,
       _rate: "1",
-      _poolName: "wamGHST",
+      _poolName: "wapGHST",
       _poolUrl:
-        "https://app.aave.com/#/reserve-overview/0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7-0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a70xd05e3e715d945b59290df0ae8ef85c1bdb684744",
+        "https://app.aave.com/reserve-overview/?underlyingAsset=0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7&marketName=proto_polygon_v3",
     },
   ];
 
@@ -183,7 +210,7 @@ export async function deploy() {
       gas.maxPriorityFeePerGas?.toString()
     );
 
-    const nonce = await ethers.provider.getTransactionCount(address);
+    const nonce = await ethers.provider.getTransactionCount(ghstOwner);
 
     console.log("current nonce:", nonce);
 
@@ -205,10 +232,12 @@ export async function deploy() {
     console.log("tx data:", addTx.data);
   }
 
-  return {
-    wamGHST: wamGhstAddress,
-    stkwamGHST: stkWamGhstAddress,
+  const deployed: contractAddresses = {
+    wamGHST: wapGHSTToken,
+    stkwamGHST: receiptToken,
   };
+
+  return deployed;
 }
 if (require.main === module) {
   deploy()
