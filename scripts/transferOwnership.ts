@@ -12,7 +12,7 @@ async function main() {
     signer
   )) as WrappedAToken;
 
-  // console.log("powneraship:", ownershipFacet);
+  console.log("powneraship:", ownershipFacet);
 
   const owner = await ownershipFacet.owner();
   console.log("Old owner:", owner);
