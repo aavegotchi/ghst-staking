@@ -94,7 +94,7 @@ describe("Check balances before and after", async function () {
       diamondAddress
     )) as StakingFacet;
 
-    await upgrade();
+    // await upgrade();
 
     balances = await stakingFacet.bulkFrens(stakersList);
     beforeBalances = toStringBulk(balances);

@@ -26,8 +26,6 @@ export let poolAddress: string;
 
 let stakingFacet: StakingFacet;
 
-export const sufficientAmnt = "1000000000000000000000"; //1000ghst
-
 export interface contractAddresses {
   wamGHST: WrappedAToken;
   stkwamGHST: ReceiptToken;
@@ -35,83 +33,106 @@ export interface contractAddresses {
 
 export async function deploy() {
   let testing = ["hardhat", "localhost"].includes(network.name);
-  let signer: Signer = await getDiamondSigner(ethers, network, ghstOwner, true);
+  const deployer = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
+  let signer: Signer = await getDiamondSigner(ethers, network, deployer, true);
 
-  console.log("signer:", ghstOwner);
+  // console.log("Deploying static atoken");
 
-  // Implementation Deployment
-  const staticAToken = await ethers.getContractFactory("WrappedAToken", signer);
-  const aToken = await ethers.getContractAt(
-    "contracts/interfaces/IERC20.sol:IERC20",
-    amGHSTV3,
-    signer
-  );
-  let wamGHST = await staticAToken.deploy({ gasPrice: gasPrice });
-  await wamGHST.deployed();
-  await wamGHST.initialize(
-    ethers.constants.AddressZero,
-    ethers.constants.AddressZero,
-    ethers.constants.AddressZero,
-    ethers.constants.AddressZero,
-    ethers.constants.AddressZero,
-    ethers.constants.AddressZero,
-    0,
-    "ECKSDEE",
-    "XD"
-  );
+  // console.log("Deployer:", deployer);
+  // // console.log("signer:", ghstOwner);
 
-  // Proxy Admin Deployment
-  const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
-  const proxyAdmin = await ProxyAdmin.connect(signer).deploy();
+  // // Implementation Deployment
+  // const staticAToken = await ethers.getContractFactory("WrappedAToken", signer);
+  // const aToken = await ethers.getContractAt(
+  //   "contracts/interfaces/IERC20.sol:IERC20",
+  //   amGHSTV3,
+  //   signer
+  // );
+  // let wamGHST = await staticAToken.deploy({ gasPrice: gasPrice });
+  // await wamGHST.deployed();
+  // console.log("initialize");
+  // let tx = await wamGHST.initialize(
+  //   ethers.constants.AddressZero,
+  //   ethers.constants.AddressZero,
+  //   ethers.constants.AddressZero,
+  //   ethers.constants.AddressZero,
+  //   ethers.constants.AddressZero,
+  //   ethers.constants.AddressZero,
+  //   0,
+  //   "ECKSDEE",
+  //   "XD",
+  //   { gasPrice: gasPrice }
+  // );
+  // await tx.wait();
 
-  // Proxy Deployment
-  const TransparentUpgradeableProxy = await ethers.getContractFactory(
-    "TransparentUpgradeableProxy"
-  );
-  const proxy = await TransparentUpgradeableProxy.deploy(
-    wamGHST.address,
-    proxyAdmin.address,
-    "0x"
-  ); // logic, admin, data;
+  // // Proxy Admin Deployment
+  // const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
+  // const proxyAdmin = await ProxyAdmin.connect(signer).deploy({
+  //   gasPrice: gasPrice,
+  // });
+  // await proxyAdmin.deployed();
 
-  // Attach implementation ABI to proxy
-  const wapGHSTToken = (await ethers.getContractAt(
-    "WrappedAToken",
-    proxy.address,
-    signer
-  )) as WrappedAToken;
-  console.log("Successfully attached");
+  // // Proxy Deployment
+  // const TransparentUpgradeableProxy = await ethers.getContractFactory(
+  //   "TransparentUpgradeableProxy"
+  // );
+  // const proxy = await TransparentUpgradeableProxy.deploy(
+  //   wamGHST.address,
+  //   proxyAdmin.address,
+  //   "0x",
+  //   { gasPrice: gasPrice }
+  // ); // logic, admin, data;
 
-  // Initialize Wrapped AToken with minimum shares
-  await aToken.approve(wapGHSTToken.address, BigNumber.from(1e10));
-  await wapGHSTToken.initialize(
-    amGHSTV3,
-    ghstAddress,
-    lendingPoolV3,
-    rewardsControllerV3,
-    daoTreasury,
-    ghstOwner,
-    BigNumber.from(1e10),
-    "Wrapped Aave Polygon GHST",
-    "wapGHST"
-  );
-  console.log("wrapped amGHST static token deployed to", wapGHSTToken.address);
+  // await proxy.deployed();
 
-  const tokenOwner = await wapGHSTToken.owner();
-  console.log("token owner:", tokenOwner);
+  // // Attach implementation ABI to proxy
+  // const wapGHSTToken = (await ethers.getContractAt(
+  //   "WrappedAToken",
+  //   proxy.address,
+  //   signer
+  // )) as WrappedAToken;
+  // console.log("Successfully attached");
 
-  //deploy stkwamGHST receipt token
-  const receiptTokenFactory = (await ethers.getContractFactory(
-    "ReceiptToken"
-  )) as ReceiptToken__factory;
-  const receiptToken = (await receiptTokenFactory.deploy(
-    stakingDiamond,
-    "Staked Wrapped amGHST",
-    "stkwamGHST",
-    { gasPrice: gasPrice }
-  )) as ReceiptToken;
-  await receiptToken.deployed();
-  console.log("stkwaPolyGHST token deployed to", receiptToken.address);
+  // // Initialize Wrapped AToken with minimum shares
+  // tx = await aToken.approve(
+  //   wapGHSTToken.address,
+  //   ethers.utils.parseEther("10"),
+  //   {
+  //     gasPrice: gasPrice,
+  //   }
+  // );
+  // await tx.wait();
+  // tx = await wapGHSTToken.initialize(
+  //   amGHSTV3,
+  //   ghstAddress,
+  //   lendingPoolV3,
+  //   rewardsControllerV3,
+  //   daoTreasury,
+  //   deployer,
+  //   BigNumber.from(1e9),
+  //   "Wrapped Aave Polygon GHST",
+  //   "wapGHST"
+  // );
+  // await tx.wait();
+  // console.log("wrapped amGHST static token deployed to", wapGHSTToken.address);
+
+  // const tokenOwner = await wapGHSTToken.owner();
+  // console.log("token owner:", tokenOwner);
+
+  // //deploy stkwamGHST receipt token
+  // const receiptTokenFactory = (await ethers.getContractFactory(
+  //   "ReceiptToken"
+  // )) as ReceiptToken__factory;
+  // const receiptToken = (await receiptTokenFactory.deploy(
+  //   stakingDiamond,
+  //   "Staked Wrapped Aave Polygon GHST",
+  //   "stkwapGHST",
+  //   { gasPrice: gasPrice }
+  // )) as ReceiptToken;
+  // await receiptToken.deployed();
+  // console.log("stkwaPolyGHST token deployed to", receiptToken.address);
+
+  // return "";
 
   const poolData: PoolObject[] = [
     {
@@ -124,7 +145,7 @@ export async function deploy() {
     {
       _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
       _poolReceiptToken: "0xA02d547512Bb90002807499F05495Fe9C4C3943f",
-      _rate: "29",
+      _rate: "30",
       _poolName: "GHST-QUICK",
       _poolUrl:
         "https://quickswap.exchange/#/add/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7/0x831753DD7087CaC61aB5644b308642cc1c33Dc13",
@@ -132,7 +153,7 @@ export async function deploy() {
     {
       _poolAddress: "0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4",
       _poolReceiptToken: "0x04439eC4ba8b09acfae0E9b5D75A82cC63b19f09",
-      _rate: "73270159",
+      _rate: "75367104",
       _poolName: "GHST-USDC",
       _poolUrl:
         "https://quickswap.exchange/#/add/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7/0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
@@ -140,7 +161,7 @@ export async function deploy() {
     {
       _poolAddress: "0xccb9d2100037f1253e6c1682adf7dc9944498aff",
       _poolReceiptToken: "0x388E2a3d389F27504212030c2D42Abf0a8188cd1",
-      _rate: "11560572",
+      _rate: "12574053",
       _poolName: "GHST-WETH",
       _poolUrl:
         "https://quickswap.exchange/#/add/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7/0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
@@ -155,8 +176,8 @@ export async function deploy() {
 
     //amGHST Pool
     {
-      _poolAddress: wapGHSTToken.address,
-      _poolReceiptToken: receiptToken.address,
+      _poolAddress: "0x73958d46B7aA2bc94926d8a215Fa560A5CdCA3eA",
+      _poolReceiptToken: "0x102cb2F13D9fb33Fdc007EE7D273AD1dfaA73aE8",
       _rate: "1",
       _poolName: "wapGHST",
       _poolUrl:
@@ -164,28 +185,28 @@ export async function deploy() {
     },
   ];
 
-  let owner = await (
-    await ethers.getContractAt("OwnershipFacet", stakingDiamond)
-  ).owner();
+  // let owner = await (
+  //   await ethers.getContractAt("OwnershipFacet", stakingDiamond)
+  // ).owner();
 
   if (testing) {
     await network.provider.request({
       method: "hardhat_impersonateAccount",
-      params: [owner],
+      params: [deployer],
     });
     stakingFacet = await ethers.getContractAt(
       "StakingFacet",
       stakingDiamond,
       signer
     );
-    let tx = await stakingFacet
-      .connect(await ethers.getSigner(owner))
-      .addRateManagers([ghstOwner]);
-    const receipt = await tx.wait();
-    if (!receipt.status) {
-      throw Error(`Adding rate manager failed: ${tx.hash}`);
-    }
-    console.log("Adding rate manager succeeded:", tx.hash);
+    // let tx = await stakingFacet
+    //   .connect(await ethers.getSigner(owner))
+    //   .addRateManagers([deployer]);
+    // const receipt = await tx.wait();
+    // if (!receipt.status) {
+    //   throw Error(`Adding rate manager failed: ${tx.hash}`);
+    // }
+    // console.log("Adding rate manager succeeded:", tx.hash);
     console.log(await stakingFacet.currentEpoch());
 
     const addTx = await stakingFacet.updateRates(2, poolData);
@@ -202,42 +223,21 @@ export async function deploy() {
 
     console.log("Updating rates");
 
-    const gas = await ethers.provider.getFeeData();
-
-    console.log(
-      "gas:",
-      gas.maxFeePerGas?.toString(),
-      gas.maxPriorityFeePerGas?.toString()
-    );
-
-    const nonce = await ethers.provider.getTransactionCount(ghstOwner);
-
-    console.log("current nonce:", nonce);
-
     const tx = await stakingFacet.updateRates(2, poolData, {
-      maxFeePerGas: 32339967253,
-      maxPriorityFeePerGas: 32339967253,
-      // gasPrice: gas.gasPrice ? gas.gasPrice : gasPrice,
+      gasPrice: gasPrice,
     });
 
     console.log("tx hash:", tx.hash);
 
     await tx.wait();
-
-    const addTx = await stakingFacet.populateTransaction.updateRates(
-      2,
-      poolData,
-      { gasPrice: gasPrice }
-    );
-    console.log("tx data:", addTx.data);
   }
 
-  const deployed: contractAddresses = {
-    wamGHST: wapGHSTToken,
-    stkwamGHST: receiptToken,
-  };
+  // const deployed: contractAddresses = {
+  //   wamGHST: wapGHSTToken,
+  //   stkwamGHST: receiptToken,
+  // };
 
-  return deployed;
+  // return deployed;
 }
 if (require.main === module) {
   deploy()

@@ -2,6 +2,7 @@ import { PopulatedTransaction } from "ethers";
 import { run, ethers, network } from "hardhat";
 
 import {
+  getDiamondSigner,
   impersonate,
   maticStakingAddress,
   stakingDiamondUpgrader,
@@ -20,19 +21,28 @@ async function togglePause() {
   );
   const owner = await ownershipFacet.owner();
 
+  const signer = await getDiamondSigner(ethers, network, undefined, true);
+
   if (network.name === "matic") {
     const tx: PopulatedTransaction =
       await stakingFacet.populateTransaction.togglePauseTickets();
 
     console.log("tx data:", tx.data);
 
-    console.log(
-      "Please submit the data above to multisig address: https://https://polygonscan.com/address/0x258cC4C495Aef8D809944aD94C6722ef41216ef3, with destination: 0xA02d547512Bb90002807499F05495Fe9C4C3943f and value: 0"
-    );
+    await sendToMultisig(stakingDiamondUpgrader, signer, tx, ethers);
   } else {
     stakingFacet = await impersonate(owner, stakingFacet, ethers, network);
 
     await stakingFacet.togglePauseTickets();
+
+    stakingFacet = await impersonate(
+      "0x51208e5cC9215c6360210C48F81C8270637a5218",
+      stakingFacet,
+      ethers,
+      network
+    );
+
+    await stakingFacet.claimTickets([0], [1]);
   }
 }
 

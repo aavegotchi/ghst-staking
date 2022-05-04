@@ -1,24 +1,17 @@
-import { impersonate, maticStakingAddress } from "../scripts/helperFunctions";
-import { ERC20, StakingFacet, WrappedAToken, ReceiptToken } from "../typechain";
+import { impersonate } from "../scripts/helperFunctions";
+import { ERC20, WrappedAToken, ReceiptToken } from "../typechain";
 import { expect } from "chai";
 import { network } from "hardhat";
 import { ethers } from "hardhat";
+import { contractAddresses, ghstOwner } from "../scripts/deploystkwamGHST";
 import {
-  contractAddresses,
-  ghstOwner,
-  sufficientAmnt,
-} from "../scripts/deploystkwamGHST";
-import {
-  amGHSTV2,
   amGHSTV3,
   ghstAddress,
-  lendingPoolV2,
   lendingPoolV3,
-  stakingDiamond,
   rewardsControllerV3,
   daoTreasury,
 } from "../helpers/constants";
-import { Signer, BigNumber } from "ethers";
+import { Signer } from "ethers";
 
 const { deploy } = require("../scripts/deploystkwamGHST");
 

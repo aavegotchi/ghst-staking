@@ -43,7 +43,7 @@ module.exports = {
       url: process.env.MATIC_URL,
       accounts: [process.env.SECRET],
       blockGasLimit: 200000000000,
-      gasPrice: 10000000000,
+      gasPrice: 150000000000,
       timeout: 90000,
       gas: "auto",
     },
