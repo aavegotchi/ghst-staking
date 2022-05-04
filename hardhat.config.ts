@@ -29,7 +29,7 @@ module.exports = {
   networks: {
     hardhat: {
       forking: {
-        url: process.env.MATIC_URL_INFURA,
+        url: process.env.MATIC_URL,
         timeout: 8000000000,
       },
       blockGasLimit: 20000000,
