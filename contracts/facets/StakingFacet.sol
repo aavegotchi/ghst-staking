@@ -165,31 +165,24 @@ contract StakingFacet {
         }
         Epoch memory epoch = s.epochs[_epoch];
         address[] memory supportedPools = epoch.supportedPools;
-        uint256 sinceLastFrensUpdate = block.timestamp - s.accounts[_account].lastFrensUpdate;
 
         uint256 duration = 0;
 
         if (epoch.endTime == 0) {
+            uint256 sinceLastFrensUpdate = block.timestamp - s.accounts[_account].lastFrensUpdate;
             uint256 epochDuration = block.timestamp - epoch.beginTime;
             //Time since last update is longer than the current epoch, so only use epoch time
-            if (sinceLastFrensUpdate > epochDuration) {
-                duration = epochDuration;
-            } else {
-                //Otherwise use timeSinceLastFrensUpdate
-                duration = sinceLastFrensUpdate;
-            }
+            duration = sinceLastFrensUpdate > epochDuration ? epochDuration : sinceLastFrensUpdate;
         }
         //When epoch is over
         else {
-            uint256 epochDuration = epoch.endTime - epoch.beginTime;
-
-            //Duration cannot exceed epochDuration
-            if (sinceLastFrensUpdate > epochDuration) {
-                duration = epochDuration;
-
-                //last update is shorter than epochDuration
-            } else {
-                duration = sinceLastFrensUpdate;
+            if (s.accounts[_account].lastFrensUpdate > epoch.beginTime) {
+                if (s.accounts[_account].lastFrensUpdate > epoch.endTime) {
+                    duration = epoch.endTime - epoch.beginTime; // epoch duration
+                } else {
+                    // last update is shorter than epoch duration
+                    duration = s.accounts[_account].lastFrensUpdate - epoch.beginTime;
+                }
             }
         }
 
