@@ -176,12 +176,12 @@ contract StakingFacet {
         }
         //When epoch is over
         else {
-            if (s.accounts[_account].lastFrensUpdate > epoch.beginTime) {
-                if (s.accounts[_account].lastFrensUpdate > epoch.endTime) {
+            if (s.accounts[_account].lastFrensUpdate < epoch.endTime) {
+                if (s.accounts[_account].lastFrensUpdate < epoch.beginTime) {
                     duration = epoch.endTime - epoch.beginTime; // epoch duration
                 } else {
                     // last update is shorter than epoch duration
-                    duration = s.accounts[_account].lastFrensUpdate - epoch.beginTime;
+                    duration = epoch.endTime - s.accounts[_account].lastFrensUpdate;
                 }
             }
         }
