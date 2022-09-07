@@ -1,8 +1,11 @@
-import { maticStakingAddress } from "../scripts/helperFunctions";
+import {
+  getDiamondSigner,
+  maticStakingAddress,
+} from "../scripts/helperFunctions";
 import { StakingFacet } from "../typechain";
 import { expect } from "chai";
-import { ethers } from "hardhat";
-import { BigNumber } from "ethers";
+import { ethers, network } from "hardhat";
+import { BigNumber, Signer } from "ethers";
 import { deploy } from "../scripts/upgrades/turnoffFrens";
 
 function toStringBulk(input: BigNumber[]) {
@@ -72,6 +75,7 @@ const stakersList = [
   "0x94bbaf0999db51f5d957fa638520d562bbe114ed",
 ];
 
+const deployer = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
 let stakingFacet: StakingFacet;
 
 describe("Test upgrades for turning off frens generation", async function () {
@@ -85,9 +89,16 @@ describe("Test upgrades for turning off frens generation", async function () {
   before(async function () {
     this.timeout(2000000000);
 
+    let signer: Signer = await getDiamondSigner(
+      ethers,
+      network,
+      deployer,
+      true
+    );
     stakingFacet = (await ethers.getContractAt(
       "StakingFacet",
-      diamondAddress
+      diamondAddress,
+      signer
     )) as StakingFacet;
 
     await deploy();
@@ -114,5 +125,92 @@ describe("Test upgrades for turning off frens generation", async function () {
     afterBalances = toStringBulk(balances);
 
     expect(afterBalances).to.deep.equal(beforeBalances);
+  });
+
+  describe("Epoch Tests (GHST Only) after turn on again", async function () {
+    const poolData: any[] = [
+      {
+        _poolAddress: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
+        _poolReceiptToken: ethers.constants.AddressZero,
+        _rate: "2",
+        _poolName: "GHST",
+        _poolUrl: "",
+      },
+      {
+        _poolAddress: "0x8b1fd78ad67c7da09b682c5392b65ca7caa101b9",
+        _poolReceiptToken: "0xA02d547512Bb90002807499F05495Fe9C4C3943f",
+        _rate: "2",
+        _poolName: "GHST-QUICK",
+        _poolUrl:
+          "https://quickswap.exchange/#/add/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7/0x831753DD7087CaC61aB5644b308642cc1c33Dc13",
+      },
+      {
+        _poolAddress: "0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4",
+        _poolReceiptToken: "0x04439eC4ba8b09acfae0E9b5D75A82cC63b19f09",
+        _rate: "2",
+        _poolName: "GHST-USDC",
+        _poolUrl:
+          "https://quickswap.exchange/#/add/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7/0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+      },
+      {
+        _poolAddress: "0xccb9d2100037f1253e6c1682adf7dc9944498aff",
+        _poolReceiptToken: "0x388E2a3d389F27504212030c2D42Abf0a8188cd1",
+        _rate: "2",
+        _poolName: "GHST-WETH",
+        _poolUrl:
+          "https://quickswap.exchange/#/add/0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7/0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+      },
+      {
+        _poolAddress: "0xf69e93771f11aecd8e554aa165c3fe7fd811530c",
+        _poolReceiptToken: "0x6fcac9eee338e29205a24692bbf87e0eb9431997",
+        _rate: "2",
+        _poolName: "GHST-MATIC",
+        _poolUrl: "",
+      },
+      {
+        _poolAddress: "0x73958d46B7aA2bc94926d8a215Fa560A5CdCA3eA",
+        _poolReceiptToken: "0x102cb2F13D9fb33Fdc007EE7D273AD1dfaA73aE8",
+        _rate: "2",
+        _poolName: "wapGHST",
+        _poolUrl:
+          "https://app.aave.com/reserve-overview/?underlyingAsset=0x385eeac5cb85a38a9a07a70c73e0a3271cfb54a7&marketName=proto_polygon_v3",
+      },
+    ];
+
+    it("Check epoch value and rates after upgrade", async function () {
+      let currentEpoch = await stakingFacet.currentEpoch();
+      const tx = await stakingFacet.updateRates(currentEpoch, poolData);
+      await tx.wait();
+      currentEpoch = await stakingFacet.currentEpoch();
+      expect(currentEpoch).to.equal(5);
+      const rates = await stakingFacet.poolRatesInEpoch(currentEpoch);
+      rates.forEach((poolRate) => {
+        expect(poolRate.rate).to.equal(2);
+      });
+    });
+    it("Check frens after few days later from upgrade", async function () {
+      const duration = 30; // days
+      const durationDelta = 10; // seconds
+      const prevBalances = await stakingFacet.bulkFrens(stakersList);
+
+      await ethers.provider.send("evm_increaseTime", [86400 * duration]);
+      await ethers.provider.send("evm_mine", []);
+
+      await stakingFacet.bulkFrens(stakersList);
+      balances = await stakingFacet.bulkFrens(stakersList);
+      for (let index = 0; index < prevBalances.length; index++) {
+        const allUserStaked = await stakingFacet.stakedInCurrentEpoch(
+          stakersList[index]
+        );
+        let sumFrens = BigNumber.from(0);
+        for (const stakedInPool of allUserStaked) {
+          sumFrens = sumFrens.add(stakedInPool.rate.mul(stakedInPool.amount));
+        }
+        const frensDiff = balances[index]
+          .sub(prevBalances[index])
+          .sub(sumFrens.mul(duration));
+        expect(frensDiff.lte(sumFrens.div(86400))).to.equal(true);
+      }
+    });
   });
 });
