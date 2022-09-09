@@ -62,4 +62,5 @@ struct AppStorage {
     mapping(address => Pool) pools;
     mapping(uint256 => Epoch) epochs;
     bool pauseTickets;
+    uint256 sunsetTime;
 }

@@ -83,7 +83,8 @@ describe("Test upgrades for GHST staking upgrade", async function () {
 
   //get balances before upgrade
   let beforeBalances: BigNumber[] = [];
-  let afterBalances: BigNumber[] = [];
+  let afterUpgradeBalances: BigNumber[] = [];
+  let afterDeltaBalances: BigNumber[] = [];
 
   before(async function () {
     this.timeout(2000000000);
@@ -107,22 +108,46 @@ describe("Test upgrades for GHST staking upgrade", async function () {
   });
 
   it("Check frens after upgrade", async function () {
-    const durationDelta = 10; // seconds
+    // const durationDelta = 10; // seconds
     await stakingFacet.bulkFrens(stakersList);
-    afterBalances = await stakingFacet.bulkFrens(stakersList);
+    afterUpgradeBalances = await stakingFacet.bulkFrens(stakersList);
 
     for (let index = 0; index < beforeBalances.length; index++) {
-      const allUserStaked = await stakingFacet.stakedInCurrentEpoch(
-        stakersList[index]
-      );
-      let sumFrens = BigNumber.from(0);
-      for (const stakedInPool of allUserStaked) {
-        sumFrens = sumFrens.add(stakedInPool.rate.mul(stakedInPool.amount));
-      }
-      const frensDiff = afterBalances[index].sub(beforeBalances[index]);
-      console.log(frensDiff)
+      // const allUserStaked = await stakingFacet.stakedInCurrentEpoch(
+      //   stakersList[index]
+      // );
+      // let sumFrens = BigNumber.from(0);
+      // for (const stakedInPool of allUserStaked) {
+      //   sumFrens = sumFrens.add(stakedInPool.rate.mul(stakedInPool.amount));
+      // }
+      const frensDiff = afterUpgradeBalances[index].sub(beforeBalances[index]);
+      console.log(ethers.utils.formatEther(frensDiff.toString()));
       // console.log(sumFrens)
-      console.log("-----")
+      console.log("-----");
+      // expect(frensDiff.lte(sumFrens.mul(durationDelta).div(86400))).to.equal(true);
+    }
+  });
+  it("Check frens after delta", async function () {
+    await ethers.provider.send("evm_increaseTime", [86400 * 30]);
+    await ethers.provider.send("evm_mine", []);
+
+    await stakingFacet.bulkFrens(stakersList);
+    afterDeltaBalances = await stakingFacet.bulkFrens(stakersList);
+
+    for (let index = 0; index < afterUpgradeBalances.length; index++) {
+      // const allUserStaked = await stakingFacet.stakedInCurrentEpoch(
+      //   stakersList[index]
+      // );
+      // let sumFrens = BigNumber.from(0);
+      // for (const stakedInPool of allUserStaked) {
+      //   sumFrens = sumFrens.add(stakedInPool.rate.mul(stakedInPool.amount));
+      // }
+      const frensDiff = afterDeltaBalances[index].sub(
+        afterUpgradeBalances[index]
+      );
+      console.log(ethers.utils.formatEther(frensDiff.toString()));
+      // console.log(sumFrens)
+      console.log("-----");
       // expect(frensDiff.lte(sumFrens.mul(durationDelta).div(86400))).to.equal(true);
     }
   });

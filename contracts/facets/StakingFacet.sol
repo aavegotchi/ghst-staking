@@ -167,22 +167,22 @@ contract StakingFacet {
         address[] memory supportedPools = epoch.supportedPools;
 
         uint256 duration = 0;
+        uint256 sinceLastFrensUpdate = s.sunsetTime - s.accounts[_account].lastFrensUpdate;
 
         if (epoch.endTime == 0) {
-            uint256 sinceLastFrensUpdate = block.timestamp - s.accounts[_account].lastFrensUpdate;
-            uint256 epochDuration = block.timestamp - epoch.beginTime;
+            uint256 epochDuration = s.sunsetTime - epoch.beginTime;
             //Time since last update is longer than the current epoch, so only use epoch time
             duration = sinceLastFrensUpdate > epochDuration ? epochDuration : sinceLastFrensUpdate;
-        }
-        //When epoch is over
-        else {
-            if (s.accounts[_account].lastFrensUpdate < epoch.endTime) {
-                if (s.accounts[_account].lastFrensUpdate < epoch.beginTime) {
-                    duration = epoch.endTime - epoch.beginTime; // epoch duration
-                } else {
-                    // last update is shorter than epoch duration
-                    duration = epoch.endTime - s.accounts[_account].lastFrensUpdate;
-                }
+        } else {
+            uint256 epochDuration = epoch.endTime - epoch.beginTime;
+
+            //Duration cannot exceed epochDuration
+            if (sinceLastFrensUpdate > epochDuration) {
+                duration = epochDuration;
+
+                //last update is shorter than epochDuration
+            } else {
+                duration = sinceLastFrensUpdate;
             }
         }
 
@@ -299,7 +299,10 @@ contract StakingFacet {
         require(_newPools.length > 0, "StakingFacet: Pools length cannot be zero");
         //Used to prevent duplicate rate updates from happening in bad network conditions
         require(_currentEpoch == s.currentEpoch, "StakingFacet: Incorrect epoch given");
+        _updateRates(_newPools);
+    }
 
+    function _updateRates(PoolInput[] calldata _newPools) internal {
         //End current epoch
         Epoch storage epochNow = s.epochs[s.currentEpoch];
         epochNow.endTime = block.timestamp;
@@ -314,6 +317,12 @@ contract StakingFacet {
         //Add pools
         _addPools(_newPools);
         emit EpochIncreased(s.currentEpoch);
+    }
+
+    function sunsetFrens(PoolInput[] calldata _newPools) external {
+        LibDiamond.enforceIsContractOwner();
+        _updateRates(_newPools);
+        s.sunsetTime = block.timestamp;
     }
 
     //Escape hatch mechanism callable by anyone to bump a user to a certain epoch.

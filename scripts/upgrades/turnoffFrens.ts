@@ -74,19 +74,19 @@ export async function deploy() {
     `Current pools before upgrade: ${JSON.stringify(currentPoolRates)}`
   );
 
-  console.log("Updating rates...");
-  if (testing) {
-    const addTx = await stakingFacet.updateRates(currentEpoch, poolData);
-    console.log("tx hash:", addTx.hash);
-    await addTx.wait();
-  } else {
-    const tx = await stakingFacet.updateRates(currentEpoch, poolData, {
-      gasPrice: gasPrice,
-    });
-    console.log("tx hash:", tx.hash);
+  // console.log("Updating rates...");
+  // if (testing) {
+  //   const addTx = await stakingFacet.updateRates(currentEpoch, poolData);
+  //   console.log("tx hash:", addTx.hash);
+  //   await addTx.wait();
+  // } else {
+  //   const tx = await stakingFacet.updateRates(currentEpoch, poolData, {
+  //     gasPrice: gasPrice,
+  //   });
+  //   console.log("tx hash:", tx.hash);
 
-    await tx.wait();
-  }
+  //   await tx.wait();
+  // }
 
   currentEpoch = await stakingFacet.currentEpoch();
   console.log(`Current epoch after upgrade: ${currentEpoch}`);
