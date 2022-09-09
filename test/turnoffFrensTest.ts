@@ -101,7 +101,7 @@ describe("Test upgrades for turning off frens generation", async function () {
       signer
     )) as StakingFacet;
 
-    await deploy();
+    // await deploy();
 
     // Save frens balances after upgrade()
     balances = await stakingFacet.bulkFrens(stakersList);

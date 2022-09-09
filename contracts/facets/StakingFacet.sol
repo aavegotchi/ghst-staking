@@ -166,13 +166,15 @@ contract StakingFacet {
         Epoch memory epoch = s.epochs[_epoch];
         address[] memory supportedPools = epoch.supportedPools;
 
-        uint256 duration = 0;
         uint256 sinceLastFrensUpdate = s.sunsetTime - s.accounts[_account].lastFrensUpdate;
+        uint256 duration = 0;
 
         if (epoch.endTime == 0) {
             uint256 epochDuration = s.sunsetTime - epoch.beginTime;
             //Time since last update is longer than the current epoch, so only use epoch time
             duration = sinceLastFrensUpdate > epochDuration ? epochDuration : sinceLastFrensUpdate;
+
+            //When epoch is over
         } else {
             uint256 epochDuration = epoch.endTime - epoch.beginTime;
 
