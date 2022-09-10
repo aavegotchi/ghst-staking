@@ -6,7 +6,7 @@ import { StakingFacet } from "../typechain";
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
 import { BigNumber, Signer } from "ethers";
-import { upgrade } from "../scripts/upgrades/upgradeStakingFacet";
+import { upgrade } from "../scripts/upgrades/upgrade-sunsetFrens";
 
 function toStringBulk(input: BigNumber[]) {
   let output: string[] = [];
@@ -107,27 +107,19 @@ describe("Test upgrades for GHST staking upgrade", async function () {
     await upgrade();
   });
 
-  it("Check frens after upgrade", async function () {
+  it("Check frens immediately after upgrade", async function () {
     // const durationDelta = 10; // seconds
     await stakingFacet.bulkFrens(stakersList);
     afterUpgradeBalances = await stakingFacet.bulkFrens(stakersList);
 
     for (let index = 0; index < beforeBalances.length; index++) {
-      // const allUserStaked = await stakingFacet.stakedInCurrentEpoch(
-      //   stakersList[index]
-      // );
-      // let sumFrens = BigNumber.from(0);
-      // for (const stakedInPool of allUserStaked) {
-      //   sumFrens = sumFrens.add(stakedInPool.rate.mul(stakedInPool.amount));
-      // }
       const frensDiff = afterUpgradeBalances[index].sub(beforeBalances[index]);
       console.log(ethers.utils.formatEther(frensDiff.toString()));
-      // console.log(sumFrens)
+
       console.log("-----");
-      // expect(frensDiff.lte(sumFrens.mul(durationDelta).div(86400))).to.equal(true);
     }
   });
-  it("Check frens after delta", async function () {
+  it("Check frens three days after upgrade", async function () {
     await ethers.provider.send("evm_increaseTime", [86400 * 30]);
     await ethers.provider.send("evm_mine", []);
 

@@ -3,7 +3,7 @@ import { ethers, network } from "hardhat";
 import { StakingFacet } from "../../typechain";
 import { stakingDiamond } from "../../helpers/constants";
 import { gasPrice, getDiamondSigner } from "../helperFunctions";
-import { upgrade as upgradeStakingFacet } from "./upgradeStakingFacet";
+import { upgrade as upgradeStakingFacet } from "./upgrade-sunsetFrens";
 
 const poolData: any[] = [
   {

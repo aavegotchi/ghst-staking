@@ -6,7 +6,7 @@ import { StakingFacet } from "../typechain";
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
 import { BigNumber, Signer } from "ethers";
-import { upgrade } from "../scripts/upgrades/upgradeStakingFacet";
+import { upgrade } from "../scripts/upgrades/upgrade-sunsetFrens";
 
 function toStringBulk(input: BigNumber[]) {
   let output: string[] = [];
