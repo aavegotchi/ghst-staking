@@ -6,7 +6,7 @@ import { StakingFacet } from "../typechain";
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
 import { BigNumber, Signer } from "ethers";
-import { deploy } from "../scripts/upgrades/turnoffFrens";
+import { upgrade } from "../scripts/upgrades/upgradeStakingFacet";
 
 function toStringBulk(input: BigNumber[]) {
   let output: string[] = [];
@@ -101,7 +101,7 @@ describe("Test upgrades for turning off frens generation", async function () {
       signer
     )) as StakingFacet;
 
-    // await deploy();
+    await upgrade();
 
     // Save frens balances after upgrade()
     balances = await stakingFacet.bulkFrens(stakersList);
