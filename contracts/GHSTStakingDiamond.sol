@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
 /******************************************************************************\
 * Author: Nick Mudge
 * Aavegotchi GHST Staking Diamond
 * 18 October 2020
-* 
-* 
+*
+*
 * Uses the diamond-2, version 1.3.4, diamond implementation:
 * https://github.com/mudgen/diamond-2
 /******************************************************************************/

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
 struct AppStorage {
@@ -14,7 +14,7 @@ struct AppStorage {
 contract ReceiptToken {
     AppStorage s;
 
-    uint256 constant MAX_UINT = uint256(-1);
+    uint256 constant MAX_UINT = 2**256 - 1;
 
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
     event Transfer(address indexed _from, address indexed _to, uint256 _value);

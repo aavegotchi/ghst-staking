@@ -10,21 +10,13 @@ import "../libraries/LibStrings.sol";
 import "../libraries/LibMeta.sol";
 
 interface IERC1155Marketplace {
-    function updateERC1155Listing(
-        address _erc1155TokenAddress,
-        uint256 _erc1155TypeId,
-        address _owner
-    ) external;
+    function updateERC1155Listing(address _erc1155TokenAddress, uint256 _erc1155TypeId, address _owner) external;
 
-    function updateBatchERC1155Listing(
-        address _erc1155TokenAddress,
-        uint256[] calldata _erc1155TypeIds,
-        address _owner
-    ) external;
+    function updateBatchERC1155Listing(address _erc1155TokenAddress, uint256[] calldata _erc1155TypeIds, address _owner) external;
 }
 
-contract TicketsFacet is IERC1155 {
-    AppStorage internal s;
+contract TicketsFacetMock is IERC1155 {
+    AppStorage s;
     bytes4 internal constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
     bytes4 internal constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
 
@@ -60,13 +52,7 @@ contract TicketsFacet is IERC1155 {
         @param _value   Transfer amount
         @param _data    Additional data with no specified format, MUST be sent unaltered in call to `onERC1155Received` on `_to`
     */
-    function safeTransferFrom(
-        address _from,
-        address _to,
-        uint256 _id,
-        uint256 _value,
-        bytes calldata _data
-    ) external override {
+    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) external override {
         require(_to != address(0), "Tickets: Can't transfer to 0 address");
         address sender = LibMeta.msgSender();
         require(_from == sender || s.accounts[_from].ticketsApproved[sender], "Tickets: Not approved to transfer");
@@ -228,5 +214,11 @@ contract TicketsFacet is IERC1155 {
             }
             emit TransferBatch(sender, address(0), ticketOwner.owner, ticketOwner.ids, ticketOwner.values);
         }
+    }
+
+    function mint(uint256 id, uint256 value) external {
+        address sender = LibMeta.msgSender();
+        s.tickets[id].accountBalances[sender] += value;
+        s.tickets[id].totalSupply += uint96(value);
     }
 }
