@@ -101,8 +101,6 @@ describe("Deploy Tickets and Test", async function () {
     //Set min dst gas for swap
     await bridgePolygonSide.setMinDstGas(chainId_B, 1, 150000);
     await bridgeGotchichainSide.setMinDstGas(chainId_A, 1, 150000);
-    await bridgePolygonSide.setMinDstGas(chainId_B, 2, 150000);
-    await bridgeGotchichainSide.setMinDstGas(chainId_A, 2, 150000);
 
     //Set layer zero bridge on facet
     await ticketsGotchichain.setLayerZeroBridge(bridgeGotchichainSide.address);
