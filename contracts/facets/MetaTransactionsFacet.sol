@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity ^0.8.9;
 
 import {AppStorage} from "../libraries/AppStorage.sol";
 import {LibDiamond} from "../libraries/LibDiamond.sol";
@@ -21,7 +21,7 @@ contract MetaTransactionsFacet {
         );
     }
 
-    function getChainID() internal pure returns (uint256 id) {
+    function getChainID() view internal returns (uint256 id) {
         assembly {
             id := chainid()
         }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity ^0.8.9;
 
 /**
     @title ERC-1155 Multi Token Standard
@@ -16,24 +16,24 @@ interface IERC1155 {
         The `_id` argument MUST be the token type being transferred.
         The `_value` argument MUST be the number of tokens the holder balance is decreased by and match what the recipient balance is increased by.
         When minting/creating tokens, the `_from` argument MUST be set to `0x0` (i.e. zero address).
-        When burning/destroying tokens, the `_to` argument MUST be set to `0x0` (i.e. zero address).        
+        When burning/destroying tokens, the `_to` argument MUST be set to `0x0` (i.e. zero address).
     */
     event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
 
     /**
-        @dev Either `TransferSingle` or `TransferBatch` MUST emit when tokens are transferred, including zero value transfers as well as minting or burning (see "Safe Transfer Rules" section of the standard).      
+        @dev Either `TransferSingle` or `TransferBatch` MUST emit when tokens are transferred, including zero value transfers as well as minting or burning (see "Safe Transfer Rules" section of the standard).
         The `_operator` argument MUST be the address of an account/contract that is approved to make the transfer (SHOULD be msg.sender).
         The `_from` argument MUST be the address of the holder whose balance is decreased.
         The `_to` argument MUST be the address of the recipient whose balance is increased.
         The `_ids` argument MUST be the list of tokens being transferred.
         The `_values` argument MUST be the list of number of tokens (matching the list and order of tokens specified in _ids) the holder balance is decreased by and match what the recipient balance is increased by.
         When minting/creating tokens, the `_from` argument MUST be set to `0x0` (i.e. zero address).
-        When burning/destroying tokens, the `_to` argument MUST be set to `0x0` (i.e. zero address).                
+        When burning/destroying tokens, the `_to` argument MUST be set to `0x0` (i.e. zero address).
     */
     event TransferBatch(address indexed _operator, address indexed _from, address indexed _to, uint256[] _ids, uint256[] _values);
 
     /**
-        @dev MUST emit when approval for a second party/operator address to manage all tokens for an owner address is enabled or disabled (absence of an event assumes disabled).        
+        @dev MUST emit when approval for a second party/operator address to manage all tokens for an owner address is enabled or disabled (absence of an event assumes disabled).
     */
     event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
 
@@ -51,7 +51,7 @@ interface IERC1155 {
         MUST revert if balance of holder for token `_id` is lower than the `_value` sent.
         MUST revert on any other error.
         MUST emit the `TransferSingle` event to reflect the balance change (see "Safe Transfer Rules" section of the standard).
-        After the above conditions are met, this function MUST check if `_to` is a smart contract (e.g. code size > 0). If so, it MUST call `onERC1155Received` on `_to` and act appropriately (see "Safe Transfer Rules" section of the standard).        
+        After the above conditions are met, this function MUST check if `_to` is a smart contract (e.g. code size > 0). If so, it MUST call `onERC1155Received` on `_to` and act appropriately (see "Safe Transfer Rules" section of the standard).
         @param _from    Source address
         @param _to      Target address
         @param _id      ID of the token type
@@ -72,10 +72,10 @@ interface IERC1155 {
         MUST revert if `_to` is the zero address.
         MUST revert if length of `_ids` is not the same as length of `_values`.
         MUST revert if any of the balance(s) of the holder(s) for token(s) in `_ids` is lower than the respective amount(s) in `_values` sent to the recipient.
-        MUST revert on any other error.        
+        MUST revert on any other error.
         MUST emit `TransferSingle` or `TransferBatch` event(s) such that all the balance changes are reflected (see "Safe Transfer Rules" section of the standard).
         Balance changes and events MUST follow the ordering of the arrays (_ids[0]/_values[0] before _ids[1]/_values[1], etc).
-        After the above conditions for the transfer(s) in the batch are met, this function MUST check if `_to` is a smart contract (e.g. code size > 0). If so, it MUST call the relevant `ERC1155TokenReceiver` hook(s) on `_to` and act appropriately (see "Safe Transfer Rules" section of the standard).                      
+        After the above conditions for the transfer(s) in the batch are met, this function MUST check if `_to` is a smart contract (e.g. code size > 0). If so, it MUST call the relevant `ERC1155TokenReceiver` hook(s) on `_to` and act appropriately (see "Safe Transfer Rules" section of the standard).
         @param _from    Source address
         @param _to      Target address
         @param _ids     IDs of each token type (order and length must match _values array)

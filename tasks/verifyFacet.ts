@@ -88,13 +88,13 @@ task(
     );
 
     sourceCode = sourceCode.replace(
-      "pragma solidity 0.7.6;",
+      "pragma solidity ^0.8.9;",
       "solidityindicator"
     );
     sourceCode = sourceCode.replace(/pragma solidity 0\.7\.6\;/g, "");
     sourceCode = sourceCode.replace(
       "solidityindicator",
-      "pragma solidity 0.7.6;"
+      "pragma solidity ^0.8.9;"
     );
 
     sourceCode = sourceCode.replace(
