@@ -51,7 +51,7 @@ contract DiamondCutFacet is IDiamondCut {
         if (selectorCount % 8 > 0) {
             ds.selectorSlots[selectorCount / 8] = selectorSlot;
         }
-        emit DiamondCut(_diamondCut, _init, _calldata);
+        emit LibDiamond.DiamondCut(_diamondCut, _init, _calldata);
         LibDiamond.initializeDiamondCut(_init, _calldata);
     }
 }

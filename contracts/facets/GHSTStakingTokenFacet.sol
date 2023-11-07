@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "../libraries/AppStorage.sol";
 import "../libraries/LibMeta.sol";
+import "../libraries/LibEvents.sol";
 
 contract GHSTStakingTokenFacet {
     AppStorage s;
@@ -11,7 +12,6 @@ contract GHSTStakingTokenFacet {
     uint256 constant MAX_UINT = uint256(-1);
 
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
-    event Transfer(address indexed _from, address indexed _to, uint256 _value);
 
     function name() external pure returns (string memory) {
         return "Staked GHST-QUICK LP";
@@ -39,7 +39,7 @@ contract GHSTStakingTokenFacet {
         require(frombalance >= _value, "Not enough GHSTStakingToken to transfer");
         s.accounts[sender].ghstStakingTokens = frombalance - _value;
         s.accounts[_to].ghstStakingTokens += _value;
-        emit Transfer(sender, _to, _value);
+        emit LibEvents.Transfer(sender, _to, _value);
         success = true;
     }
 
@@ -61,7 +61,7 @@ contract GHSTStakingTokenFacet {
         require(fromBalance >= _value, "Not enough GHSTStakingToken to transfer");
         s.accounts[_from].ghstStakingTokens = fromBalance - _value;
         s.accounts[_to].ghstStakingTokens += _value;
-        emit Transfer(_from, _to, _value);
+        emit LibEvents.Transfer(_from, _to, _value);
         success = true;
     }
 
