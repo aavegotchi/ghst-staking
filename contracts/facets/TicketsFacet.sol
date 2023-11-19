@@ -8,6 +8,7 @@ import "../libraries/AppStorage.sol";
 import "../libraries/LibDiamond.sol";
 import "../libraries/LibStrings.sol";
 import "../libraries/LibMeta.sol";
+import "../libraries/LibEvents.sol";
 
 interface IERC1155Marketplace {
     function updateERC1155Listing(
@@ -126,7 +127,7 @@ contract TicketsFacet is IERC1155 {
             s.tickets[id].accountBalances[_from] = bal - value;
             s.tickets[id].accountBalances[_to] += value;
         }
-        emit TransferBatch(sender, _from, _to, _ids, _values);
+        emit LibEvents.TransferBatch(sender, _from, _to, _ids, _values);
         address aavegotchiDiamond = s.aavegotchiDiamond;
         if (aavegotchiDiamond != address(0)) {
             IERC1155Marketplace(aavegotchiDiamond).updateBatchERC1155Listing(address(this), _ids, _from);
@@ -226,7 +227,7 @@ contract TicketsFacet is IERC1155 {
                 s.tickets[id].accountBalances[ticketOwner.owner] += value;
                 s.tickets[id].totalSupply += uint96(value);
             }
-            emit TransferBatch(sender, address(0), ticketOwner.owner, ticketOwner.ids, ticketOwner.values);
+            emit LibEvents.TransferBatch(sender, address(0), ticketOwner.owner, ticketOwner.ids, ticketOwner.values);
         }
     }
 }

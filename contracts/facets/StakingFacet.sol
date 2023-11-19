@@ -8,6 +8,7 @@ import "../libraries/LibERC20.sol";
 import "../interfaces/IERC20.sol";
 import "../interfaces/IERC1155TokenReceiver.sol";
 import "../libraries/LibMeta.sol";
+import "../libraries/LibEvents.sol";
 import {Epoch} from "../libraries/AppStorage.sol";
 
 interface IERC1155Marketplace {
@@ -27,8 +28,6 @@ interface IERC20Mintable {
 contract StakingFacet {
     AppStorage internal s;
     bytes4 internal constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
-    event TransferBatch(address indexed _operator, address indexed _from, address indexed _to, uint256[] _ids, uint256[] _values);
-    event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event PoolTokensRate(uint256 _newRate);
     event GhstUsdcRate(uint256 _newRate);
     event RateManagerAdded(address indexed rateManager_);
@@ -364,7 +363,7 @@ contract StakingFacet {
             //Keep the GHST-QUICK staking token balance up to date
             s.accounts[_sender].ghstStakingTokens += _amount;
             s.ghstStakingTokensTotalSupply += _amount;
-            emit Transfer(address(0), _sender, _amount);
+            emit LibEvents.Transfer(address(0), _sender, _amount);
         } else {
             //Use mintable for minting other stkGHST- tokens
             address stkTokenAddress = s.pools[_poolContractAddress].receiptToken;
@@ -405,7 +404,7 @@ contract StakingFacet {
             s.accounts[_sender].ghstStakingTokens -= _amount;
             s.ghstStakingTokensTotalSupply -= _amount;
 
-            emit Transfer(_sender, address(0), _amount);
+            emit LibEvents.Transfer(_sender, address(0), _amount);
         } else {
             IERC20Mintable(receiptTokenAddress).burn(_sender, _amount);
         }
@@ -596,7 +595,7 @@ contract StakingFacet {
             s.tickets[id].totalSupply += uint96(value);
         }
         s.accounts[sender].frens = frensBal;
-        emit TransferBatch(sender, address(0), sender, _ids, _values);
+        emit LibEvents.TransferBatch(sender, address(0), sender, _ids, _values);
         uint256 size;
         assembly {
             size := extcodesize(sender)
@@ -632,7 +631,7 @@ contract StakingFacet {
         require(totalCost > 0, "Staking: Invalid Ticket Ids and Values");
         require(totalCost % dropTicketCost == 0, "Staking: Cannot partially convert Drop Tickets");
 
-        emit TransferBatch(sender, sender, address(0), _ids, _values);
+        emit LibEvents.TransferBatch(sender, sender, address(0), _ids, _values);
 
         uint256 newDropTickets = totalCost / dropTicketCost;
         uint256[] memory eventTicketIds = new uint256[](1);
@@ -647,7 +646,7 @@ contract StakingFacet {
         if (s.aavegotchiDiamond != address(0)) {
             IERC1155Marketplace(s.aavegotchiDiamond).updateBatchERC1155Listing(address(this), _ids, sender);
         }
-        emit TransferBatch(sender, address(0), sender, eventTicketIds, eventTicketValues);
+        emit LibEvents.TransferBatch(sender, address(0), sender, eventTicketIds, eventTicketValues);
 
         uint256 size;
         assembly {
